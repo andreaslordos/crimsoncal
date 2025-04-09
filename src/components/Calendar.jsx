@@ -6,13 +6,13 @@ const Calendar = () => {
     const { myCourses } = useAppContext();
     
     // Time slots
-    const timeSlots = [8, 9, 10, 11, 12, 1, 2, 3, 4, 5];
+    const timeSlots = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
     
     // Days of the week
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
     
     return (
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-lg shadow w-full overflow-auto">
         {/* Calendar header */}
         <div className="grid grid-cols-6 text-center py-2 border-b">
           <div className="text-sm font-semibold text-gray-500">Eastern</div>
@@ -29,9 +29,13 @@ const Calendar = () => {
           {timeSlots.map((hour) => (
             <div key={hour} className="grid grid-cols-6 border-b" style={{ height: '42px' }}>
               <div className="text-xs text-gray-500 pr-2 text-right">
-                {hour}{hour >= 8 && hour <= 11 ? 'am' : 'pm'}
+                {hour}pm
               </div>
-              <div className="col-span-5"></div>
+              <div className="border-l"></div>
+              <div className="border-l"></div>
+              <div className="border-l"></div>
+              <div className="border-l"></div>
+              <div className="border-l"></div>
             </div>
           ))}
           

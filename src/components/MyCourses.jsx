@@ -3,7 +3,7 @@ import { formatTime } from "../utils/timeUtils";
 import { Minus } from "lucide-react";
 
 const MyCourses = () => {
-    const { myCourses, removeCourse } = useAppContext();
+    const { myCourses, removeCourse, setSelectedCourse } = useAppContext();
     
     return (
       <div className="bg-white border-t border-gray-200 p-4">
@@ -15,7 +15,8 @@ const MyCourses = () => {
             myCourses.map(course => (
               <div 
                 key={course.course_id}
-                className="flex items-center bg-blue-100 text-blue-800 rounded-lg px-3 py-2 text-sm"
+                className="flex items-center bg-blue-100 text-blue-800 rounded-lg px-3 py-2 text-sm cursor-pointer"
+                onClick={() => setSelectedCourse(course)}
               >
                 <div className="mr-2">
                   <div className="font-semibold">{course.subject_catalog}</div>
@@ -23,7 +24,10 @@ const MyCourses = () => {
                 </div>
                 <button 
                   className="text-blue-800 hover:text-blue-900"
-                  onClick={() => removeCourse(course.course_id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeCourse(course.course_id);
+                  }}
                 >
                   <Minus size={16} />
                 </button>
@@ -32,7 +36,7 @@ const MyCourses = () => {
           )}
         </div>
         
-        <div className="mt-2 flex text-sm space-x-4 text-gray-500">
+        <div className="mt-2 flex flex-wrap text-sm space-x-4 text-gray-500">
           <button className="hover:underline">Export to Google Calendar</button>
           <button className="hover:underline">Export to text</button>
           <button className="hover:underline">Share courses via URL</button>
@@ -43,4 +47,3 @@ const MyCourses = () => {
   };
 
   export default MyCourses;
-  

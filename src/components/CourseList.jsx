@@ -6,12 +6,13 @@ const CourseList = () => {
     
     return (
       <div className="mb-4">
-        <div className="grid grid-cols-3 font-semibold text-sm mb-2 px-2">
-          <div>Course</div>
-          <div className="text-center">Rating</div>
+        <div className="grid grid-cols-4 font-semibold text-sm mb-2 px-2">
+          <div className="col-span-1">Course</div>
+          <div className="text-center">Rating ▼</div>
           <div className="text-center">Hours</div>
+          <div className="text-right">Name</div>
         </div>
-        <div className="divide-y max-h-60 overflow-y-auto">
+        <div className="divide-y max-h-80 overflow-y-auto border rounded">
           {filteredCourses.length === 0 ? (
             <div className="py-4 text-center text-gray-500">No courses match your filter criteria</div>
           ) : (

@@ -4,19 +4,22 @@ const CategoryFilters = () => {
     const { filters, setFilters } = useAppContext();
     
     const categories = [
-      { id: 'all', name: 'All Categories' },
-      { id: 'arts and humanities', name: 'Arts and Humanities' },
-      { id: 'science and technology in society', name: 'Science and Technology in Society' },
-      { id: 'social sciences', name: 'Social Sciences' }
+      { id: 'aesthetics', name: 'Aesthetics and Culture' },
+      { id: 'ethics', name: 'Ethics and Civics' },
+      { id: 'histories', name: 'Histories, Societies, Individuals' },
+      { id: 'science-society', name: 'Science and Technology in Society' },
+      { id: 'arts', name: 'Arts and Humanities' },
+      { id: 'social', name: 'Social Sciences' },
+      { id: 'science-engineering', name: 'Science & Engineering & Applied Science' }
     ];
     
     return (
-      <div className="flex flex-wrap gap-1 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4">
         {categories.map(category => (
           <button 
             key={category.id}
-            className={`px-2 py-1 text-xs rounded ${filters.category === category.id ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}
-            onClick={() => setFilters({...filters, category: category.id})}
+            className={`px-3 py-1 text-xs rounded-full border ${filters.category === category.id ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-white text-gray-700 border-gray-300'}`}
+            onClick={() => setFilters({...filters, category: category.id === filters.category ? 'all' : category.id})}
           >
             {category.name}
           </button>
