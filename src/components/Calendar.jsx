@@ -120,8 +120,8 @@ const Calendar = () => {
     
     return (
       <div className="bg-white rounded-lg shadow w-full overflow-auto">
-        {/* Calendar header */}
-        <div className="grid grid-cols-12 text-center py-2 border-b">
+        {/* Calendar header - using grid-cols-11 for balanced layout */}
+        <div className="grid grid-cols-11 text-center py-2 border-b">
           <div className="col-span-1 text-sm font-semibold text-gray-500">Eastern</div>
           <div className="col-span-2 text-sm font-semibold">Monday</div>
           <div className="col-span-2 text-sm font-semibold">Tuesday</div>
@@ -130,11 +130,11 @@ const Calendar = () => {
           <div className="col-span-2 text-sm font-semibold">Friday</div>
         </div>
         
-        {/* Calendar time slots */}
+        {/* Calendar time slots - using grid-cols-11 for balanced layout */}
         <div className="relative">
           {/* Time markers */}
           {timeSlots.map((slot) => (
-            <div key={`${slot.hour}${slot.meridiem}`} className="grid grid-cols-12 border-b" style={{ height: '42px' }}>
+            <div key={`${slot.hour}${slot.meridiem}`} className="grid grid-cols-11 border-b" style={{ height: '42px' }}>
               <div className="col-span-1 text-xs text-gray-500 pr-2 text-right">
                 {slot.hour}{slot.meridiem}
               </div>
