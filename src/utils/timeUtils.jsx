@@ -1,3 +1,4 @@
+// src/utils/timeUtils.jsx
 // Format time string for display
 export const formatTime = (timeStr) => {
     if (!timeStr) return '';
@@ -47,7 +48,8 @@ export const formatTime = (timeStr) => {
       }
     }
   
-    return (hour - 8) * 42 + (minute / 60) * 42;
+    // Convert to position - 9am is the start of our grid (first hour shown)
+    return (hour - 9) * 42 + (minute / 60) * 42;
   };
   
   // Calculate height for time duration

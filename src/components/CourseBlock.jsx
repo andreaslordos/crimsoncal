@@ -1,3 +1,4 @@
+// src/components/CourseBlock.jsx
 import { useAppContext } from "../context/AppContext";
 import { getCourseColor, getTimePosition, getTimeHeight, formatTime } from "../utils/timeUtils";
 
@@ -8,12 +9,21 @@ const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts 
     const height = getTimeHeight(course.start_time, course.end_time);
     
     // Calculate width based on number of conflicts
-    const blockWidth = 16.67 / totalConflicts; // Divide day column width by number of conflicts
+    // With 12-col grid: 1 col for time + 2 cols per day
+    const dayColWidth = 2; // Each day takes 2 columns in the 12-col grid
+    const blockWidth = dayColWidth / totalConflicts; // Divide day column width by number of conflicts
     
     // Calculate left position based on day index and conflict index
-    // Each conflict is positioned to the right of the previous one
-    const blockOffset = conflictIndex * blockWidth;
-    const leftPosition = `calc(${16.67 * dayIndex + blockOffset}% + 2px)`;
+    // dayIndex * 2 + 1 accounts for the time column (col-span-1) and positions in the correct day
+    const colOffset = dayIndex * dayColWidth + 1; // +1 to skip the time column
+    const columnWidth = 100 / 12; // Width percentage of each column in a 12-col grid
+    
+    // Calculate the actual percentage for left position
+    const conflictOffset = (conflictIndex * blockWidth) * columnWidth;
+    const leftPosition = `${colOffset * columnWidth + conflictOffset}%`;
+    
+    // Calculate the width as a percentage
+    const widthPercentage = `${(blockWidth * columnWidth)}%`;
     
     return (
       <div 
@@ -21,7 +31,7 @@ const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts 
         style={{ 
           top: `${startPos}px`, 
           left: leftPosition, 
-          width: `calc(${blockWidth}% - 4px)`,
+          width: widthPercentage,
           height: `${height}px`,
           zIndex: conflictIndex + 1, // Stack conflicts with higher z-index
         }}
