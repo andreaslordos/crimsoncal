@@ -65,7 +65,7 @@ export const AppProvider = ({ children }) => {
     return code.replace(/\s+/g, '').toUpperCase();
   };
   
-  // Parse weekdays string into day array
+  // Parse weekdays string into day mapping
   const parseWeekdays = (weekdaysStr) => {
     if (!weekdaysStr) return null;
     
@@ -111,7 +111,7 @@ export const AppProvider = ({ children }) => {
       if (evalData && evalData.course_code) {
         const normalizedCode = normalizeCode(evalData.course_code);
         if (normalizedCode) {
-          // If multiple evals exist for same course, use the most recent or highest rated
+          // If multiple evals exist for the same course, prefer the one with a higher course score mean
           if (!evalMap[normalizedCode] || 
               (evalData.course_score_mean && evalMap[normalizedCode].course_score_mean < evalData.course_score_mean)) {
             evalMap[normalizedCode] = evalData;
@@ -125,10 +125,10 @@ export const AppProvider = ({ children }) => {
       // Generate normalized code for matching
       const normalizedCode = normalizeCode(course.subject_catalog);
       
-      // Find matching eval data
+      // Find matching evaluation data
       const evalData = normalizedCode ? evalMap[normalizedCode] : null;
       
-      // Parse day mapping from both explicit flags and weekdays field
+      // Parse day mapping from lecture_* fields
       let dayMap = {
         monday: course.lecture_monday === "True",
         tuesday: course.lecture_tuesday === "True",
@@ -139,21 +139,28 @@ export const AppProvider = ({ children }) => {
         sunday: course.lecture_sunday === "True"
       };
       
-      // If no days are set via the lecture_* fields but weekdays is available, use that
+      // If no days are set via the lecture_* fields but a weekdays string is provided, use that
       if (!Object.values(dayMap).some(Boolean) && course.weekdays) {
         const parsedDayMap = parseWeekdays(course.weekdays);
         if (parsedDayMap) {
           dayMap = parsedDayMap;
         }
       }
-            
-      // Get hours from workload score or use a default
+      
+      // Get hours from evaluation's workload score, defaulting if not available
       const hours = evalData ? evalData.workload_score_mean : null;
       
-      // Get the proper course rating
+      // Get the course rating from evaluation data
       const rating = evalData ? evalData.course_score_mean : null;
       
-      // Create an URL-friendly unique identifier
+      // Extract capacity from the enrolled field (e.g. "0/99")
+      let capacity = 'N/A';
+      if (course.enrolled && typeof course.enrolled === 'string' && course.enrolled.includes('/')) {
+        capacity = course.enrolled.split('/')[1];
+        if (capacity === '9999') capacity = 'N/A';
+      }
+      
+      // Create a URL-friendly unique identifier
       const urlId = `${normalizedCode || ''}-${course.course_id || ''}`.toLowerCase();
       
       return {
@@ -161,10 +168,11 @@ export const AppProvider = ({ children }) => {
         evalData,
         rating,
         hours,
+        capacity,  // Added capacity field
         displayName: `${course.subject_catalog || ''} ${course.course_title || ''}`.trim(),
         dayMap,
         urlId,
-        // Ensure consistent naming convention for fields used in the UI
+        // Ensure consistent naming conventions for fields used in the UI
         subject_catalog: course.subject_catalog || '',
         course_title: course.course_title || '',
         description: course.description || '',
@@ -177,7 +185,7 @@ export const AppProvider = ({ children }) => {
     });
   }, [courseEvals, courseInfo, isLoading]);
 
-  // Filter courses based on filters
+  // Filter courses based on search and category filters
   const filteredCourses = useMemo(() => {
     if (!processedCourses.length) return [];
     
@@ -186,22 +194,21 @@ export const AppProvider = ({ children }) => {
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         const matchesSubjectCatalog = course.subject_catalog && 
-                                     course.subject_catalog.toLowerCase().includes(searchLower);
+                                      course.subject_catalog.toLowerCase().includes(searchLower);
         const matchesTitle = course.course_title && 
-                            course.course_title.toLowerCase().includes(searchLower);
+                             course.course_title.toLowerCase().includes(searchLower);
         const matchesDescription = course.description && 
                                   course.description.toLowerCase().includes(searchLower);
         const matchesInstructor = course.instructors && 
-                                 course.instructors.toLowerCase().includes(searchLower);
-                                 
+                                  course.instructors.toLowerCase().includes(searchLower);
+                                  
         if (!(matchesSubjectCatalog || matchesTitle || matchesDescription || matchesInstructor)) {
           return false;
         }
       }
       
-      // Filter by categories (if any selected)
+      // Filter by selected categories, if any
       if (filters.categories && filters.categories.length > 0) {
-        // Check if the course matches any of the selected categories
         const categoryMatch = filters.categories.some(categoryId => {
           switch(categoryId) {
             case 'arts':
@@ -211,22 +218,17 @@ export const AppProvider = ({ children }) => {
             case 'science-engineering':
               return course.divisional_distribution === 'Science & Engineering & Applied Science';
             case 'aesthetics':
-              // Add mapping for this category if data exists
               return course.general_education === 'Aesthetics and Culture';
             case 'ethics':
-              // Add mapping for this category if data exists
               return course.general_education === 'Ethics and Civics';
             case 'histories':
-              // Add mapping for this category if data exists
               return course.general_education === 'Histories, Societies, Individuals';
             case 'science-society':
-              // Add mapping for this category if data exists
               return course.general_education === 'Science and Technology in Society';
             default:
               return false;
           }
         });
-        
         if (!categoryMatch) return false;
       }
       
@@ -249,35 +251,30 @@ export const AppProvider = ({ children }) => {
   // Get total hours for selected courses
   const totalHours = useMemo(() => {
     if (!myCourses.length) return 0;
-    
     const sum = myCourses.reduce((total, course) => {
-      // Use hours if available, otherwise default to 4
       const courseHours = course.hours || 4;
       return total + courseHours;
     }, 0);
-    
-    return Math.round(sum * 10) / 10; // Round to 1 decimal place
+    return Math.round(sum * 10) / 10; // Rounded to one decimal place
   }, [myCourses]);
 
   // Get total units for selected courses
   const totalUnits = useMemo(() => {
     if (!myCourses.length) return 0;
-    
     return myCourses.reduce((total, course) => {
       const courseUnits = typeof course.units === 'number' ? course.units : 4;
       return total + courseUnits;
     }, 0);
   }, [myCourses]);
 
-  // Share courses via URL
+  // Generate a shareable URL for the selected courses
   const generateShareableURL = () => {
     if (!myCourses.length) return window.location.origin;
-    
     const courseIds = myCourses.map(course => course.urlId).join(',');
     return `${window.location.origin}?courses=${courseIds}`;
   };
 
-  // Clear all courses
+  // Clear all selected courses
   const clearAllCourses = () => {
     setMyCourses([]);
   };
