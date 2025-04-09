@@ -14,17 +14,6 @@ const CourseDetails = () => {
           {selectedCourse.subject_catalog}: {selectedCourse.course_title}
         </h2>
         
-        {selectedCourse.evalData && (
-          <div className="mb-2 text-sm bg-blue-50 p-2 rounded border border-blue-100">
-            {selectedCourse.evalData.best_comment && (
-              <p className="text-gray-700 italic mb-1">"{selectedCourse.evalData.best_comment}"</p>
-            )}
-            <div className="text-blue-600 flex items-center">
-              <Map size={14} className="mr-1" /> Cambridge Campus
-            </div>
-          </div>
-        )}
-        
         <div className="text-sm">
           <div className="grid grid-cols-2 gap-2">
             <div className="flex items-center text-gray-600 mb-1">
