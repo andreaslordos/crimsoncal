@@ -12,7 +12,7 @@ const CourseList = () => {
           <div className="text-center">Hours</div>
           <div className="text-right">Name</div>
         </div>
-        <div className="divide-y max-h-80 overflow-y-auto border rounded">
+        <div className="divide-y max-h-80 overflow-y-auto border rounded bg-white">
           {filteredCourses.length === 0 ? (
             <div className="py-4 text-center text-gray-500">No courses match your filter criteria</div>
           ) : (
@@ -28,4 +28,4 @@ const CourseList = () => {
     );
   };
 
-  export default CourseList;
+export default CourseList;

@@ -1,6 +1,6 @@
 import { useAppContext } from "../context/AppContext";
 import CourseBlock from "./CourseBlock";
-import React from "react";
+import React, { useMemo } from "react";
 
 const Calendar = () => {
     const { myCourses } = useAppContext();
@@ -10,6 +10,38 @@ const Calendar = () => {
     
     // Days of the week
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    
+    // Find conflicting courses
+    const coursesByDayAndTime = useMemo(() => {
+      const conflicts = {};
+      
+      // Initialize conflicts object for each day
+      days.forEach(day => {
+        conflicts[day] = {};
+      });
+      
+      // Group courses by day and time to detect conflicts
+      myCourses
+        .filter(course => course.start_time && days.some(day => course.dayMap[day]))
+        .forEach(course => {
+          days.forEach((day, dayIndex) => {
+            if (course.dayMap[day]) {
+              // Create a unique key for this time slot
+              const timeKey = `${course.start_time}-${course.end_time}`;
+              
+              // Initialize array if it doesn't exist
+              if (!conflicts[day][timeKey]) {
+                conflicts[day][timeKey] = [];
+              }
+              
+              // Add course to this day and time slot
+              conflicts[day][timeKey].push(course);
+            }
+          });
+        });
+      
+      return conflicts;
+    }, [myCourses]);
     
     return (
       <div className="bg-white rounded-lg shadow w-full overflow-auto">
@@ -29,7 +61,7 @@ const Calendar = () => {
           {timeSlots.map((hour) => (
             <div key={hour} className="grid grid-cols-6 border-b" style={{ height: '42px' }}>
               <div className="text-xs text-gray-500 pr-2 text-right">
-                {hour}pm
+                {hour}{hour >= 8 && hour <= 11 ? 'am' : 'pm'}
               </div>
               <div className="border-l"></div>
               <div className="border-l"></div>
@@ -40,22 +72,22 @@ const Calendar = () => {
           ))}
           
           {/* Course blocks */}
-          {myCourses
-            .filter(course => course.start_time && days.some(day => course.dayMap[day]))
-            .map(course => (
-              <React.Fragment key={course.course_id}>
-                {days.map((day, index) => (
-                  course.dayMap[day] && (
-                    <CourseBlock 
-                      key={`${course.course_id}-${day}`} 
-                      course={course} 
-                      day={day} 
-                      dayIndex={index} 
-                    />
-                  )
-                ))}
-              </React.Fragment>
-            ))}
+          {days.map((day, dayIndex) => (
+            <React.Fragment key={day}>
+              {Object.entries(coursesByDayAndTime[day]).map(([timeKey, conflictingCourses]) => (
+                conflictingCourses.map((course, conflictIndex) => (
+                  <CourseBlock 
+                    key={`${course.course_id}-${day}-${conflictIndex}`} 
+                    course={course} 
+                    day={day} 
+                    dayIndex={dayIndex}
+                    conflictIndex={conflictIndex}
+                    totalConflicts={conflictingCourses.length}
+                  />
+                ))
+              ))}
+            </React.Fragment>
+          ))}
         </div>
       </div>
     );

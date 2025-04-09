@@ -14,18 +14,24 @@ const CategoryFilters = () => {
     ];
     
     return (
-      <div className="flex flex-wrap gap-2 mb-4">
-        {categories.map(category => (
-          <button 
-            key={category.id}
-            className={`px-3 py-1 text-xs rounded-full border ${filters.category === category.id ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-white text-gray-700 border-gray-300'}`}
-            onClick={() => setFilters({...filters, category: category.id === filters.category ? 'all' : category.id})}
-          >
-            {category.name}
-          </button>
-        ))}
+      <div className="mb-4">
+        <div className="flex flex-col gap-2">
+          {categories.map(category => (
+            <button 
+              key={category.id}
+              className={`px-3 py-2 text-sm rounded text-left ${
+                filters.category === category.id 
+                  ? 'bg-blue-100 text-blue-800 font-medium' 
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+              }`}
+              onClick={() => setFilters({...filters, category: category.id === filters.category ? 'all' : category.id})}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
       </div>
     );
   };
 
-  export default CategoryFilters;
+export default CategoryFilters;

@@ -23,7 +23,7 @@ const AppContent = () => {
       <Header />
       
       <div className="flex flex-1 overflow-hidden w-full relative">
-        {/* Sidebar toggle button (for mobile) */}
+        {/* Mobile sidebar toggle button */}
         <button 
           className="md:hidden absolute top-2 right-2 z-10 bg-white p-2 rounded-full shadow"
           onClick={() => setSidebarVisible(!sidebarVisible)}
@@ -31,15 +31,17 @@ const AppContent = () => {
           <Menu size={20} />
         </button>
         
-        {/* Calendar view */}
-        <div className={`flex-1 overflow-auto transition-all ${sidebarVisible ? 'md:pr-0' : 'pr-0'}`}>
-          <div className="p-4">
-            <Calendar />
-          </div>
+        {/* Main content area with calendar */}
+        <div className="flex-1 overflow-auto p-4">
+          <Calendar />
         </div>
         
         {/* Sidebar */}
-        <div className={`transition-all duration-300 ease-in-out ${sidebarVisible ? 'translate-x-0' : 'translate-x-full md:translate-x-0'} absolute md:relative right-0 top-0 h-full z-20 md:z-0`}>
+        <div 
+          className={`transition-all duration-300 ease-in-out fixed md:relative md:translate-x-0 right-0 top-0 h-full z-30 md:z-0 md:w-2/5 lg:w-2/5 xl:w-2/5 ${
+            sidebarVisible ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
           <Sidebar />
         </div>
       </div>
