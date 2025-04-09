@@ -38,7 +38,7 @@ const AppContent = () => {
         
         {/* Sidebar */}
         <div 
-          className={`transition-all duration-300 ease-in-out fixed md:relative md:translate-x-0 right-0 top-0 h-full z-30 md:z-0 md:w-2/5 lg:w-2/5 xl:w-2/5 ${
+          className={`transition-all duration-300 ease-in-out fixed md:relative md:translate-x-0 right-0 top-0 h-full z-30 md:z-0 md:w-2/5 lg:w-2/5 xl:w-21/50 ${
             sidebarVisible ? 'translate-x-0' : 'translate-x-full'
           }`}
         >

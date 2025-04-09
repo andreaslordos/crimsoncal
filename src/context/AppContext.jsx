@@ -12,7 +12,7 @@ export const AppProvider = ({ children }) => {
   const [myCourses, setMyCourses] = useState([]);
   const [selectedSemester, setSelectedSemester] = useState('Fall 2025');
   const [filters, setFilters] = useState({
-    category: 'all',
+    categories: [], // Changed from 'category' to 'categories' as an array
     search: '',
   });
   
@@ -63,7 +63,7 @@ export const AppProvider = ({ children }) => {
     
     // Create a map of course codes to evaluation data
     const evalMap = {};
-    courseEvals.forEach(evalData => {  // Changed 'eval' to 'evalData'
+    courseEvals.forEach(evalData => {
       const courseCode = evalData.course_code;
       if (courseCode) {
         evalMap[courseCode] = evalData;
@@ -105,21 +105,35 @@ export const AppProvider = ({ children }) => {
         return false;
       }
       
-      // Filter by category
-      if (filters.category !== 'all') {
-        const category = filters.category.toLowerCase();
-        if (category === 'arts and humanities' && 
-            !(course.divisional_distribution === 'Arts and Humanities')) {
-          return false;
-        }
-        if (category === 'science and technology in society' && 
-            !(course.divisional_distribution === 'Science & Engineering & Applied Science')) {
-          return false;
-        }
-        if (category === 'social sciences' && 
-            !(course.divisional_distribution === 'Social Sciences')) {
-          return false;
-        }
+      // Filter by categories (if any selected)
+      if (filters.categories && filters.categories.length > 0) {
+        // Check if the course matches any of the selected categories
+        const categoryMatch = filters.categories.some(categoryId => {
+          switch(categoryId) {
+            case 'arts':
+              return course.divisional_distribution === 'Arts and Humanities';
+            case 'social':
+              return course.divisional_distribution === 'Social Sciences';
+            case 'science-engineering':
+              return course.divisional_distribution === 'Science & Engineering & Applied Science';
+            case 'aesthetics':
+              // Add mapping for this category if data exists
+              return course.category === 'Aesthetics and Culture';
+            case 'ethics':
+              // Add mapping for this category if data exists
+              return course.category === 'Ethics and Civics';
+            case 'histories':
+              // Add mapping for this category if data exists
+              return course.category === 'Histories, Societies, Individuals';
+            case 'science-society':
+              // Add mapping for this category if data exists
+              return course.category === 'Science and Technology in Society';
+            default:
+              return false;
+          }
+        });
+        
+        if (!categoryMatch) return false;
       }
       
       return true;
