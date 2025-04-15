@@ -13,6 +13,14 @@ const Header = () => {
             </h1>
         </div>
         <div className="flex space-x-4">
+        <a 
+            href="https://venmo.com/u/lordos" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline hover:text-blue-700 transition-colors duration-150"
+        >
+            buy me a (grendels) beer
+        </a>
         <button 
             className={`text-blue-600 hover:underline hover:text-blue-700 transition-colors duration-150 ${selectedSemester === 'Fall 2025' ? 'font-bold' : ''}`}
             onClick={() => setSelectedSemester('Fall 2025')}
