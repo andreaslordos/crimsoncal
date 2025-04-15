@@ -9,12 +9,31 @@ export const AppProvider = ({ children }) => {
   const [courseInfo, setCourseInfo] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [myCourses, setMyCourses] = useState([]);
+  // Load saved courses from localStorage or use empty array if nothing is saved
+  const [myCourses, setMyCourses] = useState(() => {
+    const savedCourses = localStorage.getItem('myCourses');
+    return savedCourses ? JSON.parse(savedCourses) : [];
+  });
   const [selectedSemester, setSelectedSemester] = useState('Fall 2025');
   const [filters, setFilters] = useState({
     categories: [], 
     search: '',
   });
+  // Load hidden courses from localStorage or use empty object if nothing is saved
+  const [hiddenCourses, setHiddenCourses] = useState(() => {
+    const savedHiddenCourses = localStorage.getItem('hiddenCourses');
+    return savedHiddenCourses ? JSON.parse(savedHiddenCourses) : {};
+  });
+  
+  // Save myCourses to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('myCourses', JSON.stringify(myCourses));
+  }, [myCourses]);
+  
+  // Save hiddenCourses to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('hiddenCourses', JSON.stringify(hiddenCourses));
+  }, [hiddenCourses]);
   
   // Load CSV data
   useEffect(() => {
@@ -279,10 +298,7 @@ export const AppProvider = ({ children }) => {
     setMyCourses([]);
   };
 
-  // In AppContext.jsx, add to the existing state:
-  const [hiddenCourses, setHiddenCourses] = useState({});
-
-  // Add this function to toggle course visibility
+  // Toggle course visibility
   const toggleCourseVisibility = (courseId) => {
     setHiddenCourses(prev => ({
       ...prev,
