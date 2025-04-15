@@ -45,7 +45,7 @@ const CourseDetails = () => {
           {/* Consent / Instructor */}
           <div className="flex items-center text-gray-600 mb-1">
             <User size={14} className="mr-1" /> 
-            <span className="font-medium mr-1">Consent:</span> {selectedCourse.instructors || 'Instructor'}
+            <span className="font-medium mr-1">Instructor:</span> {selectedCourse.instructors || 'Instructor'}
           </div>
 
           {/* Capacity */}

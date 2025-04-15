@@ -1,3 +1,4 @@
+// CourseListItem.jsx
 import { useAppContext } from "../context/AppContext";
 import { Plus, Minus } from "lucide-react";
 
@@ -8,16 +9,16 @@ const CourseListItem = ({ course }) => {
     
     return (
       <div 
-        className={`grid grid-cols-4 py-2 px-2 text-sm hover:bg-gray-100 cursor-pointer ${isSelected ? 'bg-blue-50' : ''}`}
+        className={`grid grid-cols-16 py-2 px-2 text-sm hover:bg-gray-100 cursor-pointer ${isSelected ? 'bg-blue-50' : ''}`}
         onClick={() => setSelectedCourse(course)}
       >
-        <div className="truncate font-medium">{course.subject_catalog}</div>
-        <div className="text-center">{course.rating ? Math.round(course.rating * 10) / 10 : 'N/A'}</div>
-        <div className="text-center">{course.units || 'N/A'}</div>
-        <div className="text-right truncate">{course.course_title}</div>
+        <div className="col-span-3 truncate font-medium">{course.subject_catalog}</div>
+        <div className="col-span-2 text-center">{course.rating ? Math.round(course.rating * 10) / 10 : 'N/A'}</div>
+        <div className="col-span-2 text-center">{course.hours ? course.hours : 'N/A'}</div>
+        <div className="col-span-9 text-right truncate">{course.course_title}</div>
         
         {isSelected && (
-          <div className="col-span-4 flex justify-between items-center mt-2">
+          <div className="col-span-16 flex justify-between items-center mt-2">
             {isAdded ? (
               <button 
                 className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded flex items-center"

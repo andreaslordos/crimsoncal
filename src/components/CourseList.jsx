@@ -1,3 +1,4 @@
+// CourseList.jsx
 import { useAppContext } from "../context/AppContext";
 import CourseListItem from "./CourseListItem";
 
@@ -6,11 +7,11 @@ const CourseList = () => {
     
     return (
       <div className="mb-4">
-        <div className="grid grid-cols-4 font-semibold text-sm mb-2 px-2">
-          <div className="col-span-1">Course</div>
-          <div className="text-center">Rating ▼</div>
-          <div className="text-center">Hours</div>
-          <div className="text-right">Name</div>
+        <div className="grid grid-cols-16 font-semibold text-sm mb-2 px-2">
+          <div className="col-span-3">Course</div>
+          <div className="col-span-2 text-center">Rating</div>
+          <div className="col-span-2 text-center">Hours</div>
+          <div className="col-span-9 text-right">Name</div>
         </div>
         <div className="divide-y max-h-50 overflow-y-auto border rounded bg-white">
           {filteredCourses.length === 0 ? (
