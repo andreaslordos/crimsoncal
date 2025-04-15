@@ -115,16 +115,16 @@ const CourseDetails = () => {
       )}
 
       <div className="mt-4 flex gap-2">
-        {isAdded ? (
+      {isAdded ? (
           <button 
-            className="w-full py-2 bg-white text-teal-600 border border-teal-500 rounded-md flex items-center justify-center hover:bg-teal-50 transition-colors duration-200"
+            className="cursor-pointer w-full py-2 bg-white text-teal-600 border border-teal-500 rounded-md flex items-center justify-center hover:bg-teal-50 hover:text-teal-700 transition-colors duration-200"
             onClick={() => removeCourse(selectedCourse.course_id)}
           >
             <Minus size={16} className="mr-2" /> Remove course
           </button>
         ) : (
           <button 
-            className="w-full py-2 bg-teal-600 text-white rounded-md flex items-center justify-center hover:bg-teal-700 transition-colors duration-200"
+            className="cursor-pointer w-full py-2 bg-teal-600 text-white rounded-md flex items-center justify-center hover:bg-teal-700 transition-colors duration-200"
             onClick={() => addCourse(selectedCourse)}
           >
             <Plus size={16} className="mr-2" /> Add course
@@ -133,8 +133,8 @@ const CourseDetails = () => {
       </div>
 
       <div className="mt-3 flex justify-between text-sm text-blue-600">
-        <button className="hover:underline">Show course notes</button>
-        <button className="hover:underline">Show evaluation history</button>
+        <button className="cursor-pointer hover:underline hover:text-blue-700 transition-colors duration-150">Show course notes</button>
+        <button className="cursor-pointer hover:underline hover:text-blue-700 transition-colors duration-150">Show evaluation history</button>
       </div>
     </div>
   );

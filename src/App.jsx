@@ -25,7 +25,7 @@ const AppContent = () => {
       <div className="flex flex-1 overflow-hidden w-full relative">
         {/* Mobile sidebar toggle button */}
         <button 
-          className="md:hidden absolute top-2 right-2 z-10 bg-white p-2 rounded-full shadow"
+          className="md:hidden absolute top-2 right-2 z-10 bg-white p-2 rounded-full shadow hover:bg-gray-100 transition-colors duration-150"
           onClick={() => setSidebarVisible(!sidebarVisible)}
         >
           <Menu size={20} />

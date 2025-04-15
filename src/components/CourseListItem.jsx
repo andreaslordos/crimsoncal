@@ -9,13 +9,13 @@ const CourseListItem = ({ course }) => {
     
     return (
       <div 
-        className={`grid grid-cols-16 py-2 px-2 text-sm hover:bg-gray-100 cursor-pointer ${isSelected ? 'bg-blue-50' : ''}`}
+        className={`grid grid-cols-16 py-2 px-2 text-sm hover:bg-gray-100 cursor-pointer transition-colors duration-150 ${isSelected ? 'bg-blue-50' : ''}`}
         onClick={() => setSelectedCourse(course)}
       >
         <div className="col-span-1 flex items-center justify-center">
           {isAdded ? (
             <button 
-              className="w-6 h-6 flex items-center justify-center text-white bg-red-500 rounded"
+              className="w-6 h-6 flex items-center cursor-pointer justify-center text-white bg-red-500 rounded hover:bg-red-600 transition-colors duration-150"
               onClick={(e) => {
                 e.stopPropagation();
                 removeCourse(course.course_id);
@@ -25,7 +25,7 @@ const CourseListItem = ({ course }) => {
             </button>
           ) : (
             <button 
-              className="w-6 h-6 flex items-center justify-center text-teal-500 border border-teal-500 rounded hover:bg-teal-50"
+              className="w-6 h-6 flex items-center cursor-pointer justify-center text-teal-500 border border-teal-500 rounded hover:bg-teal-50 hover:text-teal-600 transition-colors duration-150"
               onClick={(e) => {
                 e.stopPropagation();
                 addCourse(course);

@@ -28,13 +28,13 @@ const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts 
     
     return (
       <div 
-        className={`absolute ${colorClass} text-white rounded p-1 overflow-hidden cursor-pointer`}
+        className={`absolute ${colorClass} text-white rounded p-1 overflow-hidden cursor-pointer hover:brightness-110 hover:shadow-md transition-all duration-150`}
         style={{ 
           top: `${startPos}px`, 
           left: leftPosition, 
           width: widthPercentage,
           height: `${height}px`,
-          zIndex: conflictIndex + 1, // Stack conflicts with higher z-index
+          zIndex: conflictIndex + 1,
         }}
         onClick={() => setSelectedCourse(course)}
       >

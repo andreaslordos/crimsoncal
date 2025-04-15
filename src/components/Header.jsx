@@ -13,12 +13,12 @@ const Header = () => {
             </h1>
         </div>
         <div className="flex space-x-4">
-            <button 
-            className={`text-blue-600 hover:underline ${selectedSemester === 'Fall 2025' ? 'font-bold' : ''}`}
+        <button 
+            className={`text-blue-600 hover:underline hover:text-blue-700 transition-colors duration-150 ${selectedSemester === 'Fall 2025' ? 'font-bold' : ''}`}
             onClick={() => setSelectedSemester('Fall 2025')}
             >
             Fall 2025
-            </button>
+        </button>
         </div>
         </header>
     );

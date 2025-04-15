@@ -26,8 +26,8 @@ const MyCourses = () => {
                     <div className="font-semibold">{course.subject_catalog}</div>
                   </div>
                   <div className="flex items-center">
-                    <button 
-                      className="w-5 h-5 rounded-full border-2 border-white mr-2 flex items-center justify-center overflow-hidden"
+                  <button 
+                      className="w-5 h-5 rounded-full border-2 cursor-pointer border-white mr-2 flex items-center justify-center overflow-hidden hover:bg-white/20 transition-colors duration-150"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleCourseVisibility(course.course_id);
@@ -36,7 +36,7 @@ const MyCourses = () => {
                       <div className={`w-2 h-2 rounded-full bg-white ${isHidden ? 'opacity-0' : 'opacity-100'}`}></div>
                     </button>
                     <button 
-                      className="text-white hover:text-gray-200"
+                      className="text-white hover:text-gray-200 transition-colors cursor-pointer duration-150"
                       onClick={(e) => {
                         e.stopPropagation();
                         removeCourse(course.course_id);
