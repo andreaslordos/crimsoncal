@@ -5,13 +5,13 @@ import CourseDetails from "./CourseDetails";
 import { Search } from "lucide-react";
 
 const Sidebar = () => {
-    const { filters, setFilters, selectedCourse } = useAppContext();
+    const { filters, setFilters, selectedCourse, totalHours, totalUnits } = useAppContext();
     
     return (
       <div className="w-auto border-l border-gray-200 bg-white overflow-auto h-full flex-shrink-0">
         <div className="p-4">
           <div className="text-center text-sm text-gray-600 mb-4">
-            <div>3 hours • 4 units</div>
+            <div>{totalHours} hours • {totalUnits} units</div>
           </div>
           
           {/* Category filters */}
