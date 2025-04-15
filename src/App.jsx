@@ -31,9 +31,10 @@ const AppContent = () => {
           <Menu size={20} />
         </button>
         
-        {/* Main content area with calendar */}
+        {/* Main content area with calendar and MyCourses */}
         <div className="flex-1 overflow-auto p-4">
           <Calendar />
+          <MyCourses />
         </div>
         
         {/* Sidebar */}
@@ -45,9 +46,6 @@ const AppContent = () => {
           <Sidebar />
         </div>
       </div>
-
-      {/* My Courses footer */}
-      {/* <MyCourses /> */}
     </div>
   );
 };

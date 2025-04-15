@@ -15,7 +15,7 @@ const CourseListItem = ({ course }) => {
         <div className="col-span-3 truncate font-medium">{course.subject_catalog}</div>
         <div className="col-span-2 text-center">{course.rating ? Math.round(course.rating * 10) / 10 : 'N/A'}</div>
         <div className="col-span-2 text-center">{course.hours ? course.hours : 'N/A'}</div>
-        <div className="col-span-9 text-right truncate">{course.course_title}</div>
+        <div className="col-span-9 text-left truncate">{course.course_title}</div>
         
         {isSelected && (
           <div className="col-span-16 flex justify-between items-center mt-2">

@@ -105,7 +105,7 @@ const CourseList = () => {
             )}
           </div>
           <div 
-            className="col-span-9 text-right flex items-center justify-end hover:text-blue-600 cursor-pointer"
+            className="col-span-9 text-right flex items-center justify-start hover:text-blue-600 cursor-pointer"
             onClick={() => handleSortClick("course_title")}
           >
             Name
