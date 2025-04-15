@@ -28,7 +28,7 @@ const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts 
     
     return (
       <div 
-        className={`absolute ${colorClass} text-white rounded p-1 overflow-hidden`}
+        className={`absolute ${colorClass} text-white rounded p-1 overflow-hidden cursor-pointer`}
         style={{ 
           top: `${startPos}px`, 
           left: leftPosition, 

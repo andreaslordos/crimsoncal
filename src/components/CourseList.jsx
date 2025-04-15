@@ -71,6 +71,7 @@ const CourseList = () => {
     return (
       <div className="mb-4">
         <div className="grid grid-cols-16 font-semibold text-sm mb-2 px-2">
+          <div className="col-span-1"></div>
           <div 
             className="col-span-3 flex items-center hover:text-blue-600 cursor-pointer"
             onClick={() => handleSortClick("subject_catalog")}
@@ -105,7 +106,7 @@ const CourseList = () => {
             )}
           </div>
           <div 
-            className="col-span-9 text-right flex items-center justify-start hover:text-blue-600 cursor-pointer"
+            className="col-span-8 text-right flex items-center justify-start hover:text-blue-600 cursor-pointer"
             onClick={() => handleSortClick("course_title")}
           >
             Name

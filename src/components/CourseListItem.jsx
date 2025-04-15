@@ -12,36 +12,33 @@ const CourseListItem = ({ course }) => {
         className={`grid grid-cols-16 py-2 px-2 text-sm hover:bg-gray-100 cursor-pointer ${isSelected ? 'bg-blue-50' : ''}`}
         onClick={() => setSelectedCourse(course)}
       >
-        <div className="col-span-3 truncate">{course.subject_catalog}</div>
-        <div className="col-span-2 text-center">{course.rating ? Math.round(course.rating * 10) / 10 : 'n/a'}</div>
-        <div className="col-span-2 text-center">{course.hours ? course.hours : 'n/a'}</div>
-        <div className="col-span-9 text-left truncate">{course.course_title}</div>
-        
-        {isSelected && (
-          <div className="col-span-16 flex justify-between items-center mt-2">
-            {isAdded ? (
-              <button 
-                className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded flex items-center"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeCourse(course.course_id);
-                }}
-              >
-                <Minus size={12} className="mr-1" /> Remove
-              </button>
-            ) : (
-              <button 
-                className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded flex items-center"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  addCourse(course);
-                }}
-              >
-                <Plus size={12} className="mr-1" /> Add
-              </button>
-            )}
-          </div>
-        )}
+        <div className="col-span-1 flex items-center justify-center">
+          {isAdded ? (
+            <button 
+              className="w-6 h-6 flex items-center justify-center text-white bg-red-500 rounded"
+              onClick={(e) => {
+                e.stopPropagation();
+                removeCourse(course.course_id);
+              }}
+            >
+              <Minus size={14} />
+            </button>
+          ) : (
+            <button 
+              className="w-6 h-6 flex items-center justify-center text-teal-500 border border-teal-500 rounded hover:bg-teal-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                addCourse(course);
+              }}
+            >
+              <Plus size={14} />
+            </button>
+          )}
+        </div>
+        <div className="col-span-3 truncate font-medium">{course.subject_catalog}</div>
+        <div className="col-span-2 text-center">{course.rating ? Math.round(course.rating * 10) / 10 : 'N/A'}</div>
+        <div className="col-span-2 text-center">{course.hours ? course.hours : 'N/A'}</div>
+        <div className="col-span-8 text-left truncate">{course.course_title}</div>
       </div>
     );
   };
