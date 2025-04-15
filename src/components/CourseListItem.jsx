@@ -36,7 +36,7 @@ const CourseListItem = ({ course }) => {
             </button>
           )}
         </div>
-        <div className="col-span-3 truncate font-medium">{course.subject_catalog}</div>
+        <div className="col-span-3 truncate font-medium text-left">{course.subject_catalog}</div>
         <div className="col-span-2 text-center">{course.rating ? Math.round(course.rating * 10) / 10 : 'n/a'}</div>
         <div className="col-span-2 text-center">{course.hours ? course.hours : 'n/a'}</div>
         <div className="col-span-8 text-left truncate">{course.course_title}</div>

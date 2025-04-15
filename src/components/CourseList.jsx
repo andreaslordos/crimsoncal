@@ -15,9 +15,14 @@ const CourseList = () => {
             // Toggle direction if same field
             setSortDirection(sortDirection === "asc" ? "desc" : "asc");
         } else {
-            // New field, default to ascending
+            // New field, default to ascending for subject_catalog and course_title
+            // but descending (highest first) for rating and hours
+            if (field === "rating" || field === "hours") {
+                setSortDirection("desc");
+            } else {
+                setSortDirection("asc");
+            }
             setSortField(field);
-            setSortDirection("asc");
         }
     };
     

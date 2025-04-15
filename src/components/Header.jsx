@@ -8,8 +8,8 @@ const Header = () => {
         <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center">
             <h1 className="text-2xl font-semibold">
-            <span className="text-gray-800">veri</span>
-            <span className="text-pink-500">class</span>
+            <span className="text-gray-800">place</span>
+            <span className="text-pink-500">holder</span>
             </h1>
         </div>
         <div className="flex space-x-4">
