@@ -41,55 +41,63 @@ const CourseDetails = () => {
       </h2>
 
       <div className="text-sm">
-        <div className="grid grid-cols-2 gap-2">
-          {/* Consent / Instructor */}
-          <div className="flex items-center text-gray-600 mb-1">
-            <User size={14} className="mr-1" /> 
-            <span className="font-medium mr-1">Instructor:</span> {selectedCourse.instructors || 'Instructor'}
-          </div>
+      <div className="grid grid-cols-2 gap-2">
+        {/* Instructor - always show */}
+        <div className="flex items-center text-gray-600 mb-1 col-span-2">
+          <User size={14} className="mr-1" /> 
+          <span className="font-medium mr-1">Instructor:</span> {selectedCourse.instructors || 'TBA'}
+        </div>
 
-          {/* Capacity */}
+        {/* Capacity - only show if not n/a */}
+        {selectedCourse.capacity && selectedCourse.capacity !== 'n/a' && (
           <div className="flex items-center text-gray-600 mb-1">
             <GraduationCap size={14} className="mr-1" /> 
             <span className="font-medium mr-1">Capacity:</span> {selectedCourse.capacity}
           </div>
+        )}
 
-          {/* Units */}
+        {/* Units - only show if not null or N/A */}
+        {selectedCourse.units && selectedCourse.units !== 'n/a' && (
           <div className="flex items-center text-gray-600 mb-1">
             <Book size={14} className="mr-1" /> 
-            <span className="font-medium mr-1">Units:</span> {selectedCourse.units || 'N/A'}
+            <span className="font-medium mr-1">Units:</span> {selectedCourse.units}
           </div>
+        )}
 
-          {/* Rating */}
+        {/* Rating - only show if exists */}
+        {selectedCourse.evalData?.course_score_mean && (
           <div className="flex items-center text-gray-600 mb-1">
             <Star size={14} className="mr-1" /> 
             <span className="font-medium mr-1">Rating:</span>{" "}
-            {selectedCourse.evalData?.course_score_mean
-              ? Math.round(selectedCourse.evalData.course_score_mean * 10) / 10 + '/5'
-              : 'n/a'}
+            {Math.round(selectedCourse.evalData.course_score_mean * 10) / 10 + '/5'}
           </div>
+        )}
 
-          {/* Hours */}
+        {/* Hours - only show if exists */}
+        {selectedCourse.hours && (
           <div className="flex items-center text-gray-600 mb-1">
             <Clock size={14} className="mr-1" /> 
             <span className="font-medium mr-1">Hours:</span>{" "}
-            {selectedCourse.hours ? `${selectedCourse.hours} hrs` : 'N/A'}
+            {`${selectedCourse.hours} hrs`}
           </div>
+        )}
 
-          {/* Meeting Time */}
+        {/* Meeting Time - only show if we have meeting days */}
+        {meetingDays && meetingDays !== 'Not specified' && (
           <div className="flex items-center text-gray-600 mb-1">
             <Calendar size={14} className="mr-1 mt-1 flex-shrink-0" /> 
             <span className="font-medium mr-1">Time:</span>{" "}
             {meetingDays} {timeRange}
           </div>
-        </div>
-
-        {selectedCourse.course_component && (
-          <div className="flex items-center text-gray-600 mb-1">
-            <BookOpen size={14} className="mr-1" /> 
-            <span className="font-medium mr-1">Format:</span> {selectedCourse.course_component}
-          </div>
         )}
+      </div>
+
+      {selectedCourse.course_component && (
+        <div className="flex items-center text-gray-600 mb-1">
+          <BookOpen size={14} className="mr-1" /> 
+          <span className="font-medium mr-1">Format:</span> {selectedCourse.course_component}
+        </div>
+      )}
 
         {selectedCourse.evalData?.evalURL && (
           <div className="text-blue-600 text-xs mt-2">
@@ -132,9 +140,28 @@ const CourseDetails = () => {
         )}
       </div>
 
-      <div className="mt-3 flex justify-between text-sm text-blue-600">
-        <button className="cursor-pointer hover:underline hover:text-blue-700 transition-colors duration-150">Show course notes</button>
-        <button className="cursor-pointer hover:underline hover:text-blue-700 transition-colors duration-150">Show evaluation history</button>
+      <div className="mt-3 flex justify-between text-sm">
+        {selectedCourse.evalData?.link ? (
+          <a 
+            href={selectedCourse.evalData.link} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="cursor-pointer hover:underline text-blue-600 hover:text-blue-700 transition-colors duration-150"
+          >
+            Show evaluations
+          </a>
+        ) : (
+          <span className="text-gray-400 cursor-not-allowed">No evaluations available</span>
+        )}
+        
+        <a 
+          href={`https://portal.my.harvard.edu/psp/hrvihprd/EMPLOYEE/EMPL/h/?tab=HU_CLASS_SEARCH&SearchReqJSON=%7B%22ExcludeBracketed%22:true,%22SaveRecent%22:true,%22Facets%22:%5B%5D,%22PageNumber%22:1,%22SortOrder%22:%5B%22SCORE%22%5D,%22TopN%22:%22%22,%22PageSize%22:%22%22,%22SearchText%22:%22${selectedCourse.course_id}%22%7D`} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="cursor-pointer hover:underline text-blue-600 hover:text-blue-700 transition-colors duration-150"
+        >
+          View in my.harvard
+        </a>
       </div>
     </div>
   );

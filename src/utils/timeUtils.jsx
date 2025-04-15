@@ -72,12 +72,34 @@ export const formatTime = (timeStr) => {
       'bg-yellow-500',
       'bg-pink-500',
       'bg-indigo-500',
+      'bg-teal-500',
+      'bg-orange-500',
+      'bg-emerald-500',
+      'bg-cyan-500',
+      'bg-rose-500',
+      'bg-fuchsia-500',
+      'bg-violet-500',
+      'bg-lime-500',
+      'bg-amber-500',
     ];
-  
-    const hash = String(courseId).split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-  
-    return colors[Math.abs(hash) % colors.length];
+
+    // Use a static map to track assigned colors for each course ID
+    if (!window.courseColorMap) {
+      window.courseColorMap = new Map();
+      window.nextColorIndex = 0;
+    }
+
+    // If we've already assigned a color to this course, return it
+    if (window.courseColorMap.has(courseId)) {
+      return window.courseColorMap.get(courseId);
+    }
+
+    // Otherwise, assign the next color in the sequence
+    const colorIndex = window.nextColorIndex % colors.length;
+    const color = colors[colorIndex];
+    
+    window.courseColorMap.set(courseId, color);
+    window.nextColorIndex++;
+    
+    return color;
   };

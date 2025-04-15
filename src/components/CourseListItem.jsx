@@ -29,6 +29,7 @@ const CourseListItem = ({ course }) => {
               onClick={(e) => {
                 e.stopPropagation();
                 addCourse(course);
+                setSelectedCourse(course); // Add this line to show details
               }}
             >
               <Plus size={14} />
@@ -36,8 +37,8 @@ const CourseListItem = ({ course }) => {
           )}
         </div>
         <div className="col-span-3 truncate font-medium">{course.subject_catalog}</div>
-        <div className="col-span-2 text-center">{course.rating ? Math.round(course.rating * 10) / 10 : 'N/A'}</div>
-        <div className="col-span-2 text-center">{course.hours ? course.hours : 'N/A'}</div>
+        <div className="col-span-2 text-center">{course.rating ? Math.round(course.rating * 10) / 10 : 'n/a'}</div>
+        <div className="col-span-2 text-center">{course.hours ? course.hours : 'n/a'}</div>
         <div className="col-span-8 text-left truncate">{course.course_title}</div>
       </div>
     );
