@@ -4,7 +4,7 @@ import CourseBlock from "./CourseBlock";
 import React, { useMemo } from "react";
 
 const Calendar = () => {
-    const { myCourses } = useAppContext();
+    const { myCourses, hiddenCourses } = useAppContext();
     
     // Time slots (9am to 11pm with proper am/pm)
     const timeSlots = [
@@ -74,9 +74,12 @@ const Calendar = () => {
         result[day] = [];
       });
       
-      // Get courses with valid time data
+      // Get courses with valid time data that aren't hidden
       const validCourses = myCourses.filter(course => 
-        course.start_time && course.end_time && days.some(day => course.dayMap[day])
+        course.start_time && 
+        course.end_time && 
+        days.some(day => course.dayMap[day]) &&
+        !hiddenCourses[course.course_id]  // Add this line to filter out hidden courses
       );
       
       // For each day, find groups of overlapping courses
@@ -116,7 +119,7 @@ const Calendar = () => {
       });
       
       return result;
-    }, [myCourses]);
+    }, [myCourses, hiddenCourses]);
     
     return (
       <div className="bg-white rounded-lg shadow w-full overflow-auto">

@@ -1,9 +1,9 @@
 import { useAppContext } from "../context/AppContext";
-import { formatTime } from "../utils/timeUtils";
+import { formatTime, getCourseColor } from "../utils/timeUtils";
 import { Minus } from "lucide-react";
 
 const MyCourses = () => {
-    const { myCourses, removeCourse, setSelectedCourse } = useAppContext();
+    const { myCourses, removeCourse, setSelectedCourse, hiddenCourses, toggleCourseVisibility } = useAppContext();
     
     return (
       <div className="bg-white rounded-lg shadow mt-4 p-4">
@@ -12,26 +12,42 @@ const MyCourses = () => {
           {myCourses.length === 0 ? (
             <div className="text-sm text-gray-500">No courses selected</div>
           ) : (
-            myCourses.map(course => (
-              <div 
-                key={course.course_id}
-                className="flex items-center bg-blue-100 text-blue-800 rounded-lg px-3 py-2 text-sm cursor-pointer"
-                onClick={() => setSelectedCourse(course)}
-              >
-                <div className="mr-2">
-                  <div className="font-semibold">{course.subject_catalog}</div>
-                </div>
-                <button 
-                  className="text-blue-800 hover:text-blue-900"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeCourse(course.course_id);
-                  }}
+            myCourses.map(course => {
+              const colorClass = getCourseColor(course.course_id);
+              const isHidden = hiddenCourses[course.course_id];
+              
+              return (
+                <div 
+                  key={course.course_id}
+                  className={`flex items-center ${colorClass} text-white rounded-lg px-3 py-2 text-sm cursor-pointer`}
+                  onClick={() => setSelectedCourse(course)}
                 >
-                  <Minus size={16} />
-                </button>
-              </div>
-            ))
+                  <div className="mr-2">
+                    <div className="font-semibold">{course.subject_catalog}</div>
+                  </div>
+                  <div className="flex items-center">
+                    <button 
+                      className="w-5 h-5 rounded-full border-2 border-white mr-2 flex items-center justify-center overflow-hidden"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCourseVisibility(course.course_id);
+                      }}
+                    >
+                      <div className={`w-2 h-2 rounded-full bg-white ${isHidden ? 'opacity-0' : 'opacity-100'}`}></div>
+                    </button>
+                    <button 
+                      className="text-white hover:text-gray-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeCourse(course.course_id);
+                      }}
+                    >
+                      <Minus size={16} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
       </div>

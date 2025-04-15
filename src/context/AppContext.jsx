@@ -279,6 +279,17 @@ export const AppProvider = ({ children }) => {
     setMyCourses([]);
   };
 
+  // In AppContext.jsx, add to the existing state:
+  const [hiddenCourses, setHiddenCourses] = useState({});
+
+  // Add this function to toggle course visibility
+  const toggleCourseVisibility = (courseId) => {
+    setHiddenCourses(prev => ({
+      ...prev,
+      [courseId]: !prev[courseId]
+    }));
+  };
+
   return (
     <AppContext.Provider value={{
       courseEvals,
@@ -291,6 +302,8 @@ export const AppProvider = ({ children }) => {
       myCourses,
       addCourse,
       removeCourse,
+      hiddenCourses,
+      toggleCourseVisibility,  
       filters,
       setFilters,
       selectedSemester,
