@@ -154,10 +154,10 @@ export const AppProvider = ({ children }) => {
       const rating = evalData ? evalData.course_score_mean : null;
       
       // Extract capacity from the enrolled field (e.g. "0/99")
-      let capacity = 'N/A';
+      let capacity = 'n/a';
       if (course.enrolled && typeof course.enrolled === 'string' && course.enrolled.includes('/')) {
         capacity = course.enrolled.split('/')[1];
-        if (capacity === '9999') capacity = 'N/A';
+        if (capacity === '9999') capacity = 'n/a';
       }
       
       // Create a URL-friendly unique identifier
@@ -177,7 +177,7 @@ export const AppProvider = ({ children }) => {
         course_title: course.course_title || '',
         description: course.description || '',
         notes: course.notes || '',
-        units: course.units || 'N/A',
+        units: course.units || 'n/a',
         consent: course.consent || 'No Consent',
         instructors: course.instructors || 'TBA',
         evalURL: evalData && evalData.link ? evalData.link : null,

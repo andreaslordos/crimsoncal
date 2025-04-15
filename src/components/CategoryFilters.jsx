@@ -1,3 +1,4 @@
+// Updated CategoryFilters.jsx
 import { useAppContext } from "../context/AppContext";
 
 const CategoryFilters = () => {
@@ -48,10 +49,10 @@ const CategoryFilters = () => {
           {group.map(category => (
             <button 
               key={category.id}
-              className={`px-2 py-px rounded border flex-1 text-center mx-1 h-6 overflow-hidden ${
+              className={`px-2 py-px rounded-md border flex-1 text-center mx-1 h-6 overflow-hidden transition-all duration-200 ${
                 isCategorySelected(category.id) 
-                  ? 'bg-teal-500 border-teal-500 text-white font-medium' 
-                  : 'bg-white border-teal-500 text-teal-500 hover:bg-gray-50'
+                  ? 'bg-teal-600 border-teal-600 text-white font-medium shadow-sm' 
+                  : 'bg-white border-gray-300 text-gray-700 hover:border-teal-500 hover:text-teal-600'
               }`}
               style={{ fontSize: '0.65rem' }}
               onClick={() => toggleCategory(category.id)}

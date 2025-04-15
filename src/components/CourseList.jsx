@@ -35,12 +35,12 @@ const CourseList = () => {
                     valueB = b.subject_catalog || "";
                     break;
                 case "rating":
-                    valueA = a.rating || "N/A";
-                    valueB = b.rating || "N/A";
+                    valueA = a.rating || "n/a";
+                    valueB = b.rating || "n/a";
                     break;
                 case "hours":
-                    valueA = a.hours || "N/A";
-                    valueB = b.hours || "N/A";
+                    valueA = a.hours || "n/a";
+                    valueB = b.hours || "n/a";
                     break;
                 case "course_title":
                     valueA = a.course_title || "";
@@ -51,9 +51,9 @@ const CourseList = () => {
             }
             
             // Handle N/A values - always put them at the end
-            if (valueA === "N/A" && valueB !== "N/A") return 1;
-            if (valueA !== "N/A" && valueB === "N/A") return -1;
-            if (valueA === "N/A" && valueB === "N/A") return 0;
+            if (valueA === "n/a" && valueB !== "n/a") return 1;
+            if (valueA !== "n/a" && valueB === "n/a") return -1;
+            if (valueA === "n/a" && valueB === "n/a") return 0;
             
             // Compare based on type
             let result;

@@ -32,7 +32,7 @@ const CourseDetails = () => {
   const timeRange =
     selectedCourse.start_time && selectedCourse.end_time
       ? `${formatTime(selectedCourse.start_time)}-${formatTime(selectedCourse.end_time)}`
-      : 'N/A';
+      : 'n/a';
 
   return (
     <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -66,7 +66,7 @@ const CourseDetails = () => {
             <span className="font-medium mr-1">Rating:</span>{" "}
             {selectedCourse.evalData?.course_score_mean
               ? Math.round(selectedCourse.evalData.course_score_mean * 10) / 10 + '/5'
-              : 'N/A'}
+              : 'n/a'}
           </div>
 
           {/* Hours */}
@@ -117,14 +117,14 @@ const CourseDetails = () => {
       <div className="mt-4 flex gap-2">
         {isAdded ? (
           <button 
-            className="w-full py-2 bg-red-600 text-white rounded-lg flex items-center justify-center"
+            className="w-full py-2 bg-white text-teal-600 border border-teal-500 rounded-md flex items-center justify-center hover:bg-teal-50 transition-colors duration-200"
             onClick={() => removeCourse(selectedCourse.course_id)}
           >
             <Minus size={16} className="mr-2" /> Remove course
           </button>
         ) : (
           <button 
-            className="w-full py-2 bg-blue-600 text-white rounded-lg flex items-center justify-center"
+            className="w-full py-2 bg-teal-600 text-white rounded-md flex items-center justify-center hover:bg-teal-700 transition-colors duration-200"
             onClick={() => addCourse(selectedCourse)}
           >
             <Plus size={16} className="mr-2" /> Add course
