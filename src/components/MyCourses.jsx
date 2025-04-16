@@ -23,7 +23,7 @@ const MyCourses = () => {
                   onClick={() => setSelectedCourse(course)}
                 >
                   <div className="font-semibold truncate max-w-[70%]">{course.subject_catalog}</div>
-                  <div className="flex items-center">
+                  <div className="flex items-center ml-2">
                     <button 
                       className="w-6 h-6 rounded-full border-2 cursor-pointer border-white mr-2 flex items-center justify-center overflow-hidden hover:bg-white/20 transition-colors duration-150"
                       onClick={(e) => {
