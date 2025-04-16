@@ -9,7 +9,7 @@ import { useAppContext } from './context/AppContext.jsx';
 import { Menu, X } from 'lucide-react';
 import './App.css';
 
-// App Content Component (wrapped by the AppProvider)
+// App.jsx - Make sidebar take full width on mobile
 const AppContent = () => {
   const { isLoading } = useAppContext();
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -46,9 +46,9 @@ const AppContent = () => {
           ></div>
         )}
         
-        {/* Sidebar - full height on mobile */}
+        {/* Sidebar - full height and width on mobile */}
         <div 
-          className={`transition-all duration-300 ease-in-out fixed md:relative md:translate-x-0 inset-y-0 right-0 h-full z-40 md:z-0 w-[90%] md:w-2/5 lg:w-2/5 xl:w-2/5 ${
+          className={`transition-all duration-300 ease-in-out fixed md:relative md:translate-x-0 inset-y-0 right-0 h-full z-40 md:z-0 w-full md:w-2/5 lg:w-2/5 xl:w-2/5 ${
             sidebarVisible ? 'translate-x-0' : 'translate-x-full'
           }`}
         >

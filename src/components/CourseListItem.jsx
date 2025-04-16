@@ -2,6 +2,7 @@
 import { useAppContext } from "../context/AppContext";
 import { Plus, Minus } from "lucide-react";
 
+// CourseListItem.jsx - Updated mobile layout
 const CourseListItem = ({ course }) => {
   const { selectedCourse, setSelectedCourse, myCourses, addCourse, removeCourse } = useAppContext();
   const isSelected = selectedCourse?.course_id === course.course_id;
@@ -9,7 +10,7 @@ const CourseListItem = ({ course }) => {
   
   return (
     <div 
-      className={`grid grid-cols-16 py-3 px-2 text-sm hover:bg-gray-100 cursor-pointer transition-colors duration-150 ${isSelected ? 'bg-blue-50' : ''}`}
+      className={`grid grid-cols-8 md:grid-cols-16 py-3 px-2 text-sm hover:bg-gray-100 cursor-pointer transition-colors duration-150 ${isSelected ? 'bg-blue-50' : ''}`}
       onClick={() => setSelectedCourse(course)}
     >
       <div className="col-span-1 flex items-center justify-center">
@@ -39,7 +40,7 @@ const CourseListItem = ({ course }) => {
       <div className="col-span-3 truncate font-medium text-left">{course.subject_catalog}</div>
       <div className="col-span-2 text-center">{course.rating ? Math.round(course.rating * 10) / 10 : 'n/a'}</div>
       <div className="col-span-2 text-center">{course.hours ? course.hours : 'n/a'}</div>
-      <div className="col-span-8 text-left truncate">{course.course_title}</div>
+      <div className="col-span-0 md:col-span-8 text-left truncate hidden md:block">{course.course_title}</div>
     </div>
   );
 };

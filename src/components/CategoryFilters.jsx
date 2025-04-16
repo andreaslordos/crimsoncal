@@ -10,7 +10,7 @@ const CategoryFilters = () => {
       { id: 'aesthetics', name: 'Aesthetics & Culture', shortName: 'Aesthetics' },
       { id: 'ethics', name: 'Ethics & Civics', shortName: 'Ethics' },
       { id: 'histories', name: 'Hist/Sci/Ind', shortName: 'Hist/Sci' },
-      { id: 'science-society', name: 'STS in Society', shortName: 'STS' }
+      { id: 'science-society', name: 'Sci/Tech in Society', shortName: 'STS' }
     ],
     [
       { id: 'arts', name: 'Arts & Humanities', shortName: 'Arts' },
