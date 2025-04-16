@@ -299,19 +299,26 @@ export const AppProvider = ({ children }) => {
         const categoryMatch = filters.categories.some(categoryId => {
           switch(categoryId) {
             case 'arts':
-              return course.divisional_distribution === 'Arts and Humanities';
+              return course.divisional_distribution && 
+                    course.divisional_distribution.includes('Arts and Humanities');
             case 'social':
-              return course.divisional_distribution === 'Social Sciences';
+              return course.divisional_distribution && 
+                    course.divisional_distribution.includes('Social Sciences');
             case 'science-engineering':
-              return course.divisional_distribution === 'Science & Engineering & Applied Science';
+              return course.divisional_distribution && 
+                    course.divisional_distribution.includes('Science & Engineering & Applied Science');
             case 'aesthetics':
-              return course.general_education === 'Aesthetics and Culture';
+              return course.general_education && 
+                    course.general_education.includes('Aesthetics and Culture');
             case 'ethics':
-              return course.general_education === 'Ethics and Civics';
+              return course.general_education && 
+                    course.general_education.includes('Ethics and Civics');
             case 'histories':
-              return course.general_education === 'Histories, Societies, Individuals';
+              return course.general_education && 
+                    course.general_education.includes('Histories, Societies, Individuals');
             case 'science-society':
-              return course.general_education === 'Science and Technology in Society';
+              return course.general_education && 
+                    course.general_education.includes('Science and Technology in Society');
             default:
               return false;
           }
