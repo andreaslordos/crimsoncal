@@ -2,7 +2,7 @@ import { useAppContext } from "../context/AppContext";
 
 // ===== Header Component =====
 const Header = () => {
-    const { selectedSemester, setSelectedSemester } = useAppContext();
+    const { selectedSemester } = useAppContext();
 
     return (
         <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex items-center justify-between">
@@ -21,12 +21,9 @@ const Header = () => {
                 >
                     buy me a beer
                 </a>
-                <button 
-                    className={`text-sm md:text-base text-blue-600 hover:underline hover:text-blue-700 transition-colors duration-150 ${selectedSemester === 'Fall 2025' ? 'font-bold' : ''}`}
-                    onClick={() => setSelectedSemester('Fall 2025')}
-                >
+                <span className="text-sm md:text-base font-bold">
                     Fall 2025
-                </button>
+                </span>
             </div>
         </header>
     );
