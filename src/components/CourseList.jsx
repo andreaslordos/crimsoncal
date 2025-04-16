@@ -140,7 +140,7 @@ const CourseList = () => {
           )}
         </div>
       </div>
-      <div className="divide-y max-h-50 overflow-y-auto border rounded bg-white">
+      <div className="divide-y max-h-80 overflow-y-auto border rounded bg-white">
         {sortedCourses.length === 0 ? (
           <div className="py-4 text-center text-gray-500">No courses match your filter criteria</div>
         ) : (
