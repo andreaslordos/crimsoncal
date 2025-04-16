@@ -21,8 +21,6 @@ const Calendar = () => {
       { hour: 7, meridiem: 'pm' },
       { hour: 8, meridiem: 'pm' },
       { hour: 9, meridiem: 'pm' },
-      { hour: 10, meridiem: 'pm' },
-      { hour: 11, meridiem: 'pm' }
     ];
     
     // Days of the week

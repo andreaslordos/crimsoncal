@@ -216,12 +216,10 @@ export const AppProvider = ({ children }) => {
                                       course.subject_catalog.toLowerCase().includes(searchLower);
         const matchesTitle = course.course_title && 
                              course.course_title.toLowerCase().includes(searchLower);
-        const matchesDescription = course.description && 
-                                  course.description.toLowerCase().includes(searchLower);
         const matchesInstructor = course.instructors && 
                                   course.instructors.toLowerCase().includes(searchLower);
                                   
-        if (!(matchesSubjectCatalog || matchesTitle || matchesDescription || matchesInstructor)) {
+        if (!(matchesSubjectCatalog || matchesTitle || matchesInstructor)) {
           return false;
         }
       }

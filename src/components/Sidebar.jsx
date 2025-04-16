@@ -21,7 +21,7 @@ const Sidebar = () => {
           <div className="mb-4 relative">
             <input
               type="text"
-              placeholder="Code or name"
+              placeholder="Code, course name or instructor.."
               className="w-full p-2 border rounded"
               value={filters.search}
               onChange={(e) => setFilters({...filters, search: e.target.value})}
