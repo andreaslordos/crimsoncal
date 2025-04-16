@@ -123,17 +123,22 @@ const CourseDetails = () => {
       )}
 
       <div className="mt-4 flex gap-2">
-      {isAdded ? (
+        {isAdded ? (
           <button 
-            className="cursor-pointer w-full py-2 bg-white text-teal-600 border border-teal-500 rounded-md flex items-center justify-center hover:bg-teal-50 hover:text-teal-700 transition-colors duration-200"
-            onClick={() => removeCourse(selectedCourse.course_id)}
+            className="cursor-pointer w-full py-3 md:py-2 bg-white text-teal-600 border border-teal-500 rounded-md flex items-center justify-center hover:bg-teal-50 hover:text-teal-700 transition-colors duration-200 text-base"
+            onClick={() => {
+              removeCourse(selectedCourse.course_id);
+            }}
           >
             <Minus size={16} className="mr-2" /> Remove course
           </button>
         ) : (
           <button 
-            className="cursor-pointer w-full py-2 bg-teal-600 text-white rounded-md flex items-center justify-center hover:bg-teal-700 transition-colors duration-200"
-            onClick={() => addCourse(selectedCourse)}
+            className="cursor-pointer w-full py-3 md:py-2 bg-teal-600 text-white rounded-md flex items-center justify-center hover:bg-teal-700 transition-colors duration-200 text-base"
+            onClick={() => {
+              addCourse(selectedCourse);
+              if (onAddCourse) onAddCourse(); // Close mobile sidebar after adding
+            }}
           >
             <Plus size={16} className="mr-2" /> Add course
           </button>

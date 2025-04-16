@@ -19,15 +19,13 @@ const MyCourses = () => {
               return (
                 <div 
                   key={course.course_id}
-                  className={`flex items-center ${colorClass} text-white rounded-lg px-3 py-2 text-sm cursor-pointer`}
+                  className={`flex items-center justify-between ${colorClass} text-white rounded-lg px-3 py-2 text-sm cursor-pointer w-full md:w-auto`}
                   onClick={() => setSelectedCourse(course)}
                 >
-                  <div className="mr-2">
-                    <div className="font-semibold">{course.subject_catalog}</div>
-                  </div>
+                  <div className="font-semibold truncate max-w-[70%]">{course.subject_catalog}</div>
                   <div className="flex items-center">
-                  <button 
-                      className="w-5 h-5 rounded-full border-2 cursor-pointer border-white mr-2 flex items-center justify-center overflow-hidden hover:bg-white/20 transition-colors duration-150"
+                    <button 
+                      className="w-6 h-6 rounded-full border-2 cursor-pointer border-white mr-2 flex items-center justify-center overflow-hidden hover:bg-white/20 transition-colors duration-150"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleCourseVisibility(course.course_id);

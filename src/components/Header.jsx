@@ -5,31 +5,31 @@ const Header = () => {
     const { selectedSemester, setSelectedSemester } = useAppContext();
 
     return (
-        <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center">
-            <h1 className="text-2xl font-semibold">
-            <span className="text-gray-800">Crimson</span>
-            <span className="text-pink-500">Cal</span>
-            </h1>
-        </div>
-        <div className="flex space-x-4">
-        <a 
-            href="https://venmo.com/u/lordos" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:underline hover:text-blue-700 transition-colors duration-150"
-        >
-            buy me a (grendels) beer
-        </a>
-        <button 
-            className={`text-blue-600 hover:underline hover:text-blue-700 transition-colors duration-150 ${selectedSemester === 'Fall 2025' ? 'font-bold' : ''}`}
-            onClick={() => setSelectedSemester('Fall 2025')}
-            >
-            Fall 2025
-        </button>
-        </div>
+        <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center">
+                <h1 className="text-xl md:text-2xl font-semibold">
+                    <span className="text-gray-800">Crimson</span>
+                    <span className="text-pink-500">Cal</span>
+                </h1>
+            </div>
+            <div className="flex flex-col md:flex-row md:space-x-4 items-end">
+                <a 
+                    href="https://venmo.com/u/lordos" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm md:text-base text-blue-600 hover:underline hover:text-blue-700 transition-colors duration-150"
+                >
+                    buy me a beer
+                </a>
+                <button 
+                    className={`text-sm md:text-base text-blue-600 hover:underline hover:text-blue-700 transition-colors duration-150 ${selectedSemester === 'Fall 2025' ? 'font-bold' : ''}`}
+                    onClick={() => setSelectedSemester('Fall 2025')}
+                >
+                    Fall 2025
+                </button>
+            </div>
         </header>
     );
 };
-  
+
 export default Header;

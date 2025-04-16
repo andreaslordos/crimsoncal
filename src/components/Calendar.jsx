@@ -119,26 +119,36 @@ const Calendar = () => {
       return result;
     }, [myCourses, hiddenCourses]);
     
+    const dayNames = [
+      { full: 'Monday', short: 'M' },
+      { full: 'Tuesday', short: 'Tu' },
+      { full: 'Wednesday', short: 'W' },
+      { full: 'Thursday', short: 'Th' },
+      { full: 'Friday', short: 'F' }
+    ];
+    
     return (
-      <div className="bg-white rounded-lg shadow w-full overflow-auto">
-        {/* Calendar header - using grid-cols-11 for balanced layout */}
+      <div className="bg-white rounded-lg shadow w-full overflow-hidden">
+        {/* Calendar header with responsive day names */}
         <div className="grid grid-cols-11 text-center py-2 border-b">
-          <div className="col-span-1 text-sm font-semibold text-gray-500">Eastern</div>
-          <div className="col-span-2 text-sm font-semibold">Monday</div>
-          <div className="col-span-2 text-sm font-semibold">Tuesday</div>
-          <div className="col-span-2 text-sm font-semibold">Wednesday</div>
-          <div className="col-span-2 text-sm font-semibold">Thursday</div>
-          <div className="col-span-2 text-sm font-semibold">Friday</div>
+          <div className="col-span-1 text-xs font-semibold text-gray-500 hidden md:block">Eastern</div>
+          <div className="col-span-1 text-xs font-semibold text-gray-500 md:hidden"></div>
+          {dayNames.map(day => (
+            <div key={day.full} className="col-span-2 text-xs md:text-sm font-semibold">
+              <span className="hidden md:inline">{day.full}</span>
+              <span className="md:hidden">{day.short}</span>
+            </div>
+          ))}
         </div>
         
-        {/* Calendar time slots - using grid-cols-11 for balanced layout */}
+        {/* Calendar time slots - fit to screen width on mobile */}
         <div className="relative">
-          {/* Time markers */}
           {timeSlots.map((slot) => (
             <div key={`${slot.hour}${slot.meridiem}`} className="grid grid-cols-11 border-b" style={{ height: '42px' }}>
-              <div className="col-span-1 text-xs text-gray-500 pr-2 text-right">
+              <div className="col-span-1 text-xs text-right pr-1">
                 {slot.hour}{slot.meridiem}
               </div>
+              {/* Day columns */}
               <div className="col-span-2 border-l"></div>
               <div className="col-span-2 border-l"></div>
               <div className="col-span-2 border-l"></div>
@@ -147,7 +157,7 @@ const Calendar = () => {
             </div>
           ))}
           
-          {/* Course blocks */}
+          {/* Course blocks with improved alignment */}
           {days.map((day, dayIndex) => (
             <React.Fragment key={day}>
               {coursesByDayAndTime[day].map((conflictGroup, groupIndex) => 
@@ -167,6 +177,5 @@ const Calendar = () => {
         </div>
       </div>
     );
-  };
-  
+};  
 export default Calendar;

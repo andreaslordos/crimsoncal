@@ -7,15 +7,15 @@ const CategoryFilters = () => {
   // Group the categories
   const filterGroups = [
     [
-      { id: 'aesthetics', name: 'Aesthetics & Culture' },
-      { id: 'ethics', name: 'Ethics & Civics' },
-      { id: 'histories', name: 'Hist/Sci/Ind' },
-      { id: 'science-society', name: 'STS in Society' }
+      { id: 'aesthetics', name: 'Aesthetics & Culture', shortName: 'Aesthetics' },
+      { id: 'ethics', name: 'Ethics & Civics', shortName: 'Ethics' },
+      { id: 'histories', name: 'Hist/Sci/Ind', shortName: 'Hist/Sci' },
+      { id: 'science-society', name: 'STS in Society', shortName: 'STS' }
     ],
     [
-      { id: 'arts', name: 'Arts & Humanities' },
-      { id: 'social', name: 'Social Sciences' },
-      { id: 'science-engineering', name: 'SEAS' }
+      { id: 'arts', name: 'Arts & Humanities', shortName: 'Arts' },
+      { id: 'social', name: 'Social Sciences', shortName: 'Social' },
+      { id: 'science-engineering', name: 'SEAS', shortName: 'SEAS' }
     ]
   ];
   
@@ -45,19 +45,19 @@ const CategoryFilters = () => {
   return (
     <div className="mb-4">
       {filterGroups.map((group, groupIndex) => (
-        <div key={`group-${groupIndex}`} className="flex mb-3 w-full space-x-1">
+        <div key={`group-${groupIndex}`} className="flex mb-2 w-full space-x-1">
           {group.map(category => (
             <button 
               key={category.id}
-              className={`px-2 py-px rounded-md border flex-1 text-center mx-1 h-6 overflow-hidden transition-all duration-200 ${
+              className={`px-1 py-1 rounded-md border flex-1 text-center mx-1 overflow-hidden transition-all duration-200 ${
                 isCategorySelected(category.id) 
                   ? 'bg-teal-600 border-teal-600 text-white font-medium shadow-sm' 
                   : 'bg-white border-gray-300 text-gray-700 hover:border-teal-500 hover:text-teal-600'
               }`}
-              style={{ fontSize: '0.65rem' }}
               onClick={() => toggleCategory(category.id)}
             >
-              {category.name}
+              <span className="text-xs md:hidden">{category.shortName}</span>
+              <span className="text-xs hidden md:inline">{category.name}</span>
             </button>
           ))}
         </div>
