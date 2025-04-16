@@ -35,21 +35,54 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('hiddenCourses', JSON.stringify(hiddenCourses));
   }, [hiddenCourses]);
   
+  // Normalize course code (remove spaces, make consistent format)
+  const normalizeCode = (code) => {
+    if (!code) return null;
+    return code.replace(/\s+/g, '').toUpperCase();
+  };
+  
   // Load CSV data
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
         
-        // Load course evaluation data
+        // Load primary course evaluation data
         const evalResponse = await fetch('/data/course_ratings.csv');
         const evalCsvData = await evalResponse.text();
-        const evalResults = Papa.parse(evalCsvData, {
+        const primaryEvalResults = Papa.parse(evalCsvData, {
           header: true,
           skipEmptyLines: true,
           dynamicTyping: true,
-          transformHeader: header => header.trim() // Trim whitespace from headers
+          transformHeader: header => header.trim()
         });
+        
+        // Load secondary course evaluation data
+        const evalResponse2 = await fetch('/data/course_ratings_2.csv');
+        const evalCsvData2 = await evalResponse2.text();
+        const secondaryEvalResults = Papa.parse(evalCsvData2, {
+          header: true,
+          skipEmptyLines: true,
+          dynamicTyping: true,
+          transformHeader: header => header.trim()
+        });
+        
+        // Load tertiary course evaluation data
+        const evalResponse3 = await fetch('/data/course_ratings_3.csv');
+        const evalCsvData3 = await evalResponse3.text();
+        const tertiaryEvalResults = Papa.parse(evalCsvData3, {
+          header: true,
+          skipEmptyLines: true,
+          dynamicTyping: true,
+          transformHeader: header => header.trim()
+        });
+                
+        // Merge evaluation data with priority
+        const mergedEvals = mergeCourseEvals(
+          primaryEvalResults.data, 
+          secondaryEvalResults.data, 
+          tertiaryEvalResults.data
+        );
         
         // Load course info data
         const infoResponse = await fetch('/data/all_courses.csv');
@@ -58,7 +91,7 @@ export const AppProvider = ({ children }) => {
           header: true,
           skipEmptyLines: true,
           dynamicTyping: true,
-          transformHeader: header => header.trim() // Trim whitespace from headers
+          transformHeader: header => header.trim()
         });
         
         // Filter courses for selected semester
@@ -66,7 +99,7 @@ export const AppProvider = ({ children }) => {
           return course.year_term && course.year_term.includes(selectedSemester.split(' ')[0]);
         });
         
-        setCourseEvals(evalResults.data);
+        setCourseEvals(mergedEvals);
         setCourseInfo(filteredCourses);
         setIsLoading(false);
       } catch (error) {
@@ -77,11 +110,47 @@ export const AppProvider = ({ children }) => {
     
     loadData();
   }, [selectedSemester]);
-  
-  // Normalize course code (remove spaces, make consistent format)
-  const normalizeCode = (code) => {
-    if (!code) return null;
-    return code.replace(/\s+/g, '').toUpperCase();
+
+  // Add a helper function to merge course evaluations with priority
+  const mergeCourseEvals = (primary, secondary, tertiary) => {
+    // Create a map using normalized course codes
+    const evalMap = new Map();
+    
+    // Process in reverse priority order (tertiary -> secondary -> primary)
+    // This way, newer data will overwrite older data for the same course
+    
+    // Add tertiary data (lowest priority)
+    tertiary.forEach(evalData => {
+      if (evalData && evalData.course_code) {
+        const normalizedCode = normalizeCode(evalData.course_code);
+        if (normalizedCode) {
+          evalMap.set(normalizedCode, evalData);
+        }
+      }
+    });
+    
+    // Add secondary data (medium priority)
+    secondary.forEach(evalData => {
+      if (evalData && evalData.course_code) {
+        const normalizedCode = normalizeCode(evalData.course_code);
+        if (normalizedCode) {
+          evalMap.set(normalizedCode, evalData);
+        }
+      }
+    });
+    
+    // Add primary data (highest priority)
+    primary.forEach(evalData => {
+      if (evalData && evalData.course_code) {
+        const normalizedCode = normalizeCode(evalData.course_code);
+        if (normalizedCode) {
+          evalMap.set(normalizedCode, evalData);
+        }
+      }
+    });
+    
+    // Convert map values back to array
+    return Array.from(evalMap.values());
   };
   
   // Parse weekdays string into day mapping
