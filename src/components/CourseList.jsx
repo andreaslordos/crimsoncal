@@ -1,4 +1,3 @@
-// CourseList.jsx
 import React, { useState, useMemo } from "react";
 import { useAppContext } from "../context/AppContext";
 import CourseListItem from "./CourseListItem";
@@ -75,8 +74,8 @@ const CourseList = () => {
   
   // Simple sortable icon component using SVG
   const SortableIcon = () => (
-    <span className="ml-1 inline-flex">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <span className="inline-flex ml-0.5">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
         <path d="M3 9.5L6.5 13L10 9.5" strokeWidth="1.5" stroke="currentColor" fill="none"/>
         <path d="M3 6.5L6.5 3L10 6.5" strokeWidth="1.5" stroke="currentColor" fill="none"/>
       </svg>
@@ -85,43 +84,43 @@ const CourseList = () => {
   
   return (
     <div className="mb-4">
-      <div className="grid grid-cols-8 md:grid-cols-16 font-semibold text-sm mb-2 px-2">
+      <div className="grid grid-cols-8 md:grid-cols-16 font-semibold text-xs sm:text-sm mb-2 px-2">
         <div className="col-span-1"></div>
         <div 
-          className="col-span-3 flex items-center underline hover:text-blue-600 cursor-pointer"
+          className="col-span-3 flex items-center underline hover:text-blue-600 cursor-pointer truncate pr-1"
           onClick={() => handleSortClick("subject_catalog")}
         >
           Course
           {sortField === "subject_catalog" ? (
             sortDirection === "asc" ? 
-              <ChevronUp size={16} className="ml-1" /> : 
-              <ChevronDown size={16} className="ml-1" />
+              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> : 
+              <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
           ) : (
             <SortableIcon />
           )}
         </div>
         <div 
-          className="col-span-2 text-center underline flex items-center justify-center hover:text-blue-600 cursor-pointer"
+          className="col-span-2 text-center underline flex items-center justify-center hover:text-blue-600 cursor-pointer truncate"
           onClick={() => handleSortClick("rating")}
         >
           Rating
           {sortField === "rating" ? (
             sortDirection === "asc" ? 
-              <ChevronUp size={16} className="ml-1" /> : 
-              <ChevronDown size={16} className="ml-1" />
+              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> : 
+              <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
           ) : (
             <SortableIcon />
           )}
         </div>
         <div 
-          className="col-span-2 text-center underline flex items-center justify-center hover:text-blue-600 cursor-pointer"
+          className="col-span-2 text-center underline flex items-center justify-center hover:text-blue-600 cursor-pointer truncate"
           onClick={() => handleSortClick("hours")}
         >
           Hours
           {sortField === "hours" ? (
             sortDirection === "asc" ? 
-              <ChevronUp size={16} className="ml-1" /> : 
-              <ChevronDown size={16} className="ml-1" />
+              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> : 
+              <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
           ) : (
             <SortableIcon />
           )}
@@ -133,8 +132,8 @@ const CourseList = () => {
           Name
           {sortField === "course_title" ? (
             sortDirection === "asc" ? 
-              <ChevronUp size={16} className="ml-1" /> : 
-              <ChevronDown size={16} className="ml-1" />
+              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> : 
+              <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
           ) : (
             <SortableIcon />
           )}

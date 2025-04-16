@@ -35,11 +35,11 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('hiddenCourses', JSON.stringify(hiddenCourses));
   }, [hiddenCourses]);
   
-  // Normalize course code (make consistent format but preserve spaces in display)
+  // Normalize course code (make consistent format and normalize spaces)
   const normalizeCode = (code) => {
     if (!code) return null;
-    // Return uppercase version but don't remove spaces
-    return code.toUpperCase();
+    // Return uppercase version with normalized spacing (multiple spaces become single space)
+    return code.toUpperCase().replace(/\s+/g, ' ').trim();
   };
   
   // Load CSV data
@@ -281,14 +281,16 @@ export const AppProvider = ({ children }) => {
     return processedCourses.filter(course => {
       // Filter by search term - search in multiple fields
       if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
+        // Normalize spaces in search term
+        const searchLower = filters.search.toLowerCase().replace(/\s+/g, ' ').trim();
+        
         const matchesSubjectCatalog = course.subject_catalog && 
-                                    course.subject_catalog.toLowerCase().includes(searchLower);
+                                    course.subject_catalog.toLowerCase().replace(/\s+/g, ' ').trim().includes(searchLower);
         const matchesTitle = course.course_title && 
-                            course.course_title.toLowerCase().includes(searchLower);
+                            course.course_title.toLowerCase().replace(/\s+/g, ' ').trim().includes(searchLower);
         const matchesInstructor = course.instructors && 
-                                course.instructors.toLowerCase().includes(searchLower);
-                                
+                                course.instructors.toLowerCase().replace(/\s+/g, ' ').trim().includes(searchLower);
+                                    
         if (!(matchesSubjectCatalog || matchesTitle || matchesInstructor)) {
           return false;
         }
