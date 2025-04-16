@@ -73,6 +73,16 @@ const CourseList = () => {
         });
     }, [filteredCourses, sortField, sortDirection]);
     
+    // Simple sortable icon component using SVG
+    const SortableIcon = () => (
+      <span className="ml-1 inline-flex">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 9.5L6.5 13L10 9.5" strokeWidth="1.5" stroke="currentColor" fill="none"/>
+          <path d="M3 6.5L6.5 3L10 6.5" strokeWidth="1.5" stroke="currentColor" fill="none"/>
+        </svg>
+      </span>
+    );
+    
     return (
       <div className="mb-4">
         <div className="grid grid-cols-16 font-semibold text-sm mb-2 px-2">
@@ -82,10 +92,12 @@ const CourseList = () => {
             onClick={() => handleSortClick("subject_catalog")}
           >
             Course
-            {sortField === "subject_catalog" && (
+            {sortField === "subject_catalog" ? (
               sortDirection === "asc" ? 
                 <ChevronUp size={16} className="ml-1" /> : 
                 <ChevronDown size={16} className="ml-1" />
+            ) : (
+              <SortableIcon />
             )}
           </div>
           <div 
@@ -93,10 +105,12 @@ const CourseList = () => {
             onClick={() => handleSortClick("rating")}
           >
             Rating
-            {sortField === "rating" && (
+            {sortField === "rating" ? (
               sortDirection === "asc" ? 
                 <ChevronUp size={16} className="ml-1" /> : 
                 <ChevronDown size={16} className="ml-1" />
+            ) : (
+              <SortableIcon />
             )}
           </div>
           <div 
@@ -104,10 +118,12 @@ const CourseList = () => {
             onClick={() => handleSortClick("hours")}
           >
             Hours
-            {sortField === "hours" && (
+            {sortField === "hours" ? (
               sortDirection === "asc" ? 
                 <ChevronUp size={16} className="ml-1" /> : 
                 <ChevronDown size={16} className="ml-1" />
+            ) : (
+              <SortableIcon />
             )}
           </div>
           <div 
@@ -115,10 +131,12 @@ const CourseList = () => {
             onClick={() => handleSortClick("course_title")}
           >
             Name
-            {sortField === "course_title" && (
+            {sortField === "course_title" ? (
               sortDirection === "asc" ? 
                 <ChevronUp size={16} className="ml-1" /> : 
                 <ChevronDown size={16} className="ml-1" />
+            ) : (
+              <SortableIcon />
             )}
           </div>
         </div>
