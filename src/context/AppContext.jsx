@@ -270,21 +270,30 @@ export const AppProvider = ({ children }) => {
   // Get total hours for selected courses
   const totalHours = useMemo(() => {
     if (!myCourses.length) return 0;
-    const sum = myCourses.reduce((total, course) => {
-      const courseHours = course.hours || 4;
+    
+    // Filter out hidden courses before calculating total
+    const visibleCourses = myCourses.filter(course => !hiddenCourses[course.course_id]);
+    
+    const sum = visibleCourses.reduce((total, course) => {
+      const courseHours = course.hours || 0;
       return total + courseHours;
     }, 0);
+    
     return Math.round(sum * 10) / 10; // Rounded to one decimal place
-  }, [myCourses]);
+  }, [myCourses, hiddenCourses]); // Added hiddenCourses to dependencies
 
   // Get total units for selected courses
   const totalUnits = useMemo(() => {
     if (!myCourses.length) return 0;
-    return myCourses.reduce((total, course) => {
+    
+    // Filter out hidden courses before calculating total
+    const visibleCourses = myCourses.filter(course => !hiddenCourses[course.course_id]);
+    
+    return visibleCourses.reduce((total, course) => {
       const courseUnits = typeof course.units === 'number' ? course.units : 4;
       return total + courseUnits;
     }, 0);
-  }, [myCourses]);
+  }, [myCourses, hiddenCourses]); // Added hiddenCourses to dependencies
 
   // Generate a shareable URL for the selected courses
   const generateShareableURL = () => {
