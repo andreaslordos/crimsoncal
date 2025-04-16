@@ -35,10 +35,11 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('hiddenCourses', JSON.stringify(hiddenCourses));
   }, [hiddenCourses]);
   
-  // Normalize course code (remove spaces, make consistent format)
+  // Normalize course code (make consistent format but preserve spaces in display)
   const normalizeCode = (code) => {
     if (!code) return null;
-    return code.replace(/\s+/g, '').toUpperCase();
+    // Return uppercase version but don't remove spaces
+    return code.toUpperCase();
   };
   
   // Load CSV data
@@ -282,12 +283,12 @@ export const AppProvider = ({ children }) => {
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         const matchesSubjectCatalog = course.subject_catalog && 
-                                      course.subject_catalog.toLowerCase().includes(searchLower);
+                                    course.subject_catalog.toLowerCase().includes(searchLower);
         const matchesTitle = course.course_title && 
-                             course.course_title.toLowerCase().includes(searchLower);
+                            course.course_title.toLowerCase().includes(searchLower);
         const matchesInstructor = course.instructors && 
-                                  course.instructors.toLowerCase().includes(searchLower);
-                                  
+                                course.instructors.toLowerCase().includes(searchLower);
+                                
         if (!(matchesSubjectCatalog || matchesTitle || matchesInstructor)) {
           return false;
         }
