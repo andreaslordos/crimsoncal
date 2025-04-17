@@ -77,7 +77,7 @@ const Calendar = () => {
         course.start_time && 
         course.end_time && 
         days.some(day => course.dayMap[day]) &&
-        !hiddenCourses[course.course_id]  // Add this line to filter out hidden courses
+        !hiddenCourses[course.course_id]
       );
       
       // For each day, find groups of overlapping courses
@@ -85,39 +85,81 @@ const Calendar = () => {
         // Get courses for this day
         const coursesForDay = validCourses.filter(course => course.dayMap[day]);
         
-        // Track which courses have been processed
-        const processedCourses = new Set();
+        // Skip if no courses for this day
+        if (coursesForDay.length === 0) return;
         
-        // Find conflict groups
+        // Create conflict groups
+        const conflictGroups = [];
+        
+        // Helper function to check if a course overlaps with any course in a group
+        const overlapsWithGroup = (course, group) => {
+          return group.some(groupCourse => 
+            isOverlapping(
+              course.start_time, course.end_time,
+              groupCourse.start_time, groupCourse.end_time
+            )
+          );
+        };
+        
+        // Process each course
         coursesForDay.forEach(course => {
-          // Skip if already processed
-          if (processedCourses.has(course.course_id)) return;
+          // Check if this course overlaps with any existing group
+          let addedToGroup = false;
           
-          // Start a new conflict group with this course
-          const conflictGroup = [course];
-          processedCourses.add(course.course_id);
-          
-          // Find all other courses that conflict with this one
-          coursesForDay.forEach(otherCourse => {
-            if (otherCourse.course_id !== course.course_id && 
-                !processedCourses.has(otherCourse.course_id) &&
-                isOverlapping(
-                  course.start_time, course.end_time,
-                  otherCourse.start_time, otherCourse.end_time
-                )) {
-              // Add to conflict group and mark as processed
-              conflictGroup.push(otherCourse);
-              processedCourses.add(otherCourse.course_id);
+          // Try to add to existing groups first
+          for (let i = 0; i < conflictGroups.length; i++) {
+            if (overlapsWithGroup(course, conflictGroups[i])) {
+              conflictGroups[i].push(course);
+              addedToGroup = true;
+              break;
             }
-          });
+          }
           
-          // Add this conflict group to the results
-          result[day].push(conflictGroup);
+          // If not added to any existing group, create a new group
+          if (!addedToGroup) {
+            conflictGroups.push([course]);
+          }
         });
+        
+        // Merge groups that share courses
+        let merged = true;
+        while (merged) {
+          merged = false;
+          
+          for (let i = 0; i < conflictGroups.length; i++) {
+            for (let j = i + 1; j < conflictGroups.length; j++) {
+              // Check if these groups share any overlapping courses
+              const shouldMerge = conflictGroups[i].some(courseI => 
+                conflictGroups[j].some(courseJ => 
+                  isOverlapping(
+                    courseI.start_time, courseI.end_time,
+                    courseJ.start_time, courseJ.end_time
+                  )
+                )
+              );
+              
+              if (shouldMerge) {
+                // Merge the groups
+                conflictGroups[i] = [...conflictGroups[i], ...conflictGroups[j]];
+                // Remove duplicate courses
+                conflictGroups[i] = Array.from(new Set(conflictGroups[i].map(c => c.course_id)))
+                  .map(id => conflictGroups[i].find(c => c.course_id === id));
+                // Remove the second group
+                conflictGroups.splice(j, 1);
+                merged = true;
+                break;
+              }
+            }
+            if (merged) break;
+          }
+        }
+        
+        // Add conflict groups to result
+        result[day] = conflictGroups;
       });
       
       return result;
-    }, [myCourses, hiddenCourses]);
+    }, [myCourses, hiddenCourses, isOverlapping, timeToMinutes, days]);
     
     const dayNames = [
       { full: 'Monday', short: 'M' },
