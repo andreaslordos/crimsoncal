@@ -1,9 +1,10 @@
 // CourseListItem.jsx
+import React from "react";
 import { useAppContext } from "../context/AppContext";
 import { Plus, Minus } from "lucide-react";
 
-// CourseListItem.jsx - Updated mobile layout
-const CourseListItem = ({ course }) => {
+// CourseListItem.jsx - Optimized with React.memo
+const CourseListItem = React.memo(({ course }) => {
   const { selectedCourse, setSelectedCourse, myCourses, addCourse, removeCourse } = useAppContext();
   const isSelected = selectedCourse?.course_id === course.course_id;
   const isAdded = myCourses.some(c => c.course_id === course.course_id);
@@ -43,6 +44,12 @@ const CourseListItem = ({ course }) => {
       <div className="col-span-0 md:col-span-8 text-left truncate hidden md:block">{course.course_title}</div>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function for memo
+  return prevProps.course.course_id === nextProps.course.course_id &&
+         prevProps.course.subject_catalog === nextProps.course.subject_catalog;
+});
+
+CourseListItem.displayName = 'CourseListItem';
   
-  export default CourseListItem;
+export default CourseListItem;

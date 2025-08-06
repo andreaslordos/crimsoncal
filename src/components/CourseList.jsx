@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useAppContext } from "../context/AppContext";
 import CourseListItem from "./CourseListItem";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { FixedSizeList as List } from 'react-window';
 
 const CourseList = () => {
   const { filteredCourses } = useAppContext();
@@ -81,6 +82,18 @@ const CourseList = () => {
       </svg>
     </span>
   );
+
+  // Row renderer for virtual list
+  const Row = useCallback(({ index, style }) => {
+    const course = sortedCourses[index];
+    return (
+      <div style={style} className={index % 2 === 0 ? '' : 'bg-gray-50'}>
+        <CourseListItem 
+          course={course}
+        />
+      </div>
+    );
+  }, [sortedCourses]);
   
   return (
     <div className="mb-4">
@@ -139,16 +152,19 @@ const CourseList = () => {
           )}
         </div>
       </div>
-      <div className="divide-y max-h-80 overflow-y-auto border rounded bg-white">
+      <div className="border rounded bg-white">
         {sortedCourses.length === 0 ? (
           <div className="py-4 text-center text-gray-500">No courses match your filter criteria</div>
         ) : (
-          sortedCourses.map((course, index) => (
-            <CourseListItem 
-              key={`${course.course_id}-${course.subject_catalog}-${index}`} 
-              course={course} 
-            />
-          ))
+          <List
+            height={320}
+            itemCount={sortedCourses.length}
+            itemSize={56}
+            width="100%"
+            className="scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100"
+          >
+            {Row}
+          </List>
         )}
       </div>
     </div>

@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { useDebounce } from '../hooks/useDebounce';
 
 // Create context
 export const AppContext = createContext();
@@ -17,6 +18,9 @@ export const AppProvider = ({ children }) => {
     categories: [], 
     search: '',
   });
+  
+  // Debounce search term for better performance
+  const debouncedSearch = useDebounce(filters.search, 300);
   // Load hidden courses from localStorage or use empty object if nothing is saved
   const [hiddenCourses, setHiddenCourses] = useState(() => {
     const savedHiddenCourses = localStorage.getItem('hiddenCourses');
@@ -40,18 +44,33 @@ export const AppProvider = ({ children }) => {
     return code.toUpperCase().replace(/\s+/g, ' ').trim();
   };
   
-  // Load JSON data
+  // Load JSON data with progressive loading
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
         
+        // Use requestIdleCallback for non-blocking load if available
+        const processData = (data) => {
+          if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => {
+              setCoursesData(data);
+              setIsLoading(false);
+            }, { timeout: 1000 });
+          } else {
+            // Fallback for browsers without requestIdleCallback
+            setTimeout(() => {
+              setCoursesData(data);
+              setIsLoading(false);
+            }, 0);
+          }
+        };
+        
         // Load master courses JSON file
         const response = await fetch('/data/master_courses.json');
         const data = await response.json();
         
-        setCoursesData(data);
-        setIsLoading(false);
+        processData(data);
       } catch (error) {
         console.error("Error loading data:", error);
         setIsLoading(false);
@@ -101,7 +120,9 @@ export const AppProvider = ({ children }) => {
   const processedCourses = useMemo(() => {
     if (isLoading || !coursesData.length) return [];
     
-    const processedList = [];
+    // Pre-allocate array for better performance
+    const processedList = new Array(coursesData.length);
+    let index = 0;
     
     coursesData.forEach(course => {
       // Skip if not matching selected semester
@@ -187,11 +208,18 @@ export const AppProvider = ({ children }) => {
         evalURL = `https://qreports.fas.harvard.edu/course/${course.course_id}`;
       }
       
-      processedList.push({
+      // Pre-compute search strings for better performance
+      const subjectCatalogLower = (course.course_code || '').toLowerCase();
+      const courseTitleLower = (course.course_title || '').toLowerCase();
+      
+      processedList[index++] = {
         // Course-level data from JSON
         course_id: course.course_id,
         subject_catalog: course.course_code || '',
         course_title: course.course_title || '',
+        // Pre-computed lowercase for search
+        subject_catalog_lower: subjectCatalogLower,
+        course_title_lower: courseTitleLower,
         description: course.description || '',
         notes: course.notes || '',
         school: course.school || '',
@@ -211,6 +239,7 @@ export const AppProvider = ({ children }) => {
         
         // Default section data (from first section, for backward compatibility)
         instructors: sections.map(s => s.instructors).filter((v, i, a) => a.indexOf(v) === i).join(', ') || 'TBA',
+        instructors_lower: (sections.map(s => s.instructors).filter((v, i, a) => a.indexOf(v) === i).join(', ') || 'TBA').toLowerCase(),
         class_number: firstSection.class_number || '',
         enrollment: firstSection.enrollment || '',
         enrolled: firstSection.enrolled || 'n/a',
@@ -250,10 +279,11 @@ export const AppProvider = ({ children }) => {
         lecture_friday: defaultDayMap.friday,
         lecture_saturday: defaultDayMap.saturday,
         lecture_sunday: defaultDayMap.sunday
-      });
+      };
     });
     
-    return processedList;
+    // Remove any empty slots if courses were filtered by semester
+    return processedList.slice(0, index);
   }, [coursesData, isLoading, selectedSemester]);
 
   // For backward compatibility, create courseInfo and courseEvals arrays
@@ -268,22 +298,26 @@ export const AppProvider = ({ children }) => {
     }));
   }, [processedCourses]);
 
+  // Memoize search string processing
+  const processedSearchTerm = useMemo(() => {
+    return debouncedSearch ? debouncedSearch.toLowerCase().replace(/\s+/g, ' ').trim() : '';
+  }, [debouncedSearch]);
+
   // Filter courses based on search and category filters
   const filteredCourses = useMemo(() => {
     if (!processedCourses.length) return [];
     
     return processedCourses.filter(course => {
-      // Filter by search term - search in multiple fields
-      if (filters.search) {
-        // Normalize spaces in search term
-        const searchLower = filters.search.toLowerCase().replace(/\s+/g, ' ').trim();
+      // Filter by search term - use pre-computed lowercase fields
+      if (processedSearchTerm) {
+        const searchLower = processedSearchTerm;
         
-        const matchesSubjectCatalog = course.subject_catalog && 
-                                    course.subject_catalog.toLowerCase().replace(/\s+/g, ' ').trim().includes(searchLower);
-        const matchesTitle = course.course_title && 
-                            course.course_title.toLowerCase().replace(/\s+/g, ' ').trim().includes(searchLower);
-        const matchesInstructor = course.instructors && 
-                                course.instructors.toLowerCase().replace(/\s+/g, ' ').trim().includes(searchLower);
+        const matchesSubjectCatalog = course.subject_catalog_lower && 
+                                    course.subject_catalog_lower.includes(searchLower);
+        const matchesTitle = course.course_title_lower && 
+                            course.course_title_lower.includes(searchLower);
+        const matchesInstructor = course.instructors_lower && 
+                                course.instructors_lower.includes(searchLower);
                                     
         if (!(matchesSubjectCatalog || matchesTitle || matchesInstructor)) {
           return false;
@@ -324,7 +358,7 @@ export const AppProvider = ({ children }) => {
       
       return true;
     });
-  }, [processedCourses, filters]);
+  }, [processedCourses, filters.categories, processedSearchTerm]);
 
   // Add a course to My Courses with optional section selection
   const addCourse = (course, selectedSection = null) => {
