@@ -50,9 +50,13 @@ def clean_subject_catalog(subject_catalog, is_mit=False):
     cleaned = re.sub(r'\s+', ' ', subject_catalog).strip()
     
     if is_mit:
-        # For MIT courses, remove space between number and dot
-        # e.g., "MIT 10 .952" -> "MIT 10.952"
-        cleaned = re.sub(r'(\d+)\s+\.(\d+)', r'\1.\2', cleaned)
+        # For MIT courses, remove space before dot in various patterns:
+        # - "MIT 10 .952" -> "MIT 10.952" (number.number)
+        # - "MIT 7 .MTHG" -> "MIT 7.MTHG" (number.letters)
+        # - "MIT 21A .901" -> "MIT 21A.901" (number+letter.number)
+        # - "MIT 21A .MTHG" -> "MIT 21A.MTHG" (number+letter.letters)
+        # General pattern: any alphanumeric, space, dot, any alphanumeric
+        cleaned = re.sub(r'([A-Za-z0-9]+)\s+\.([A-Za-z0-9]+)', r'\1.\2', cleaned)
     
     return cleaned
 
