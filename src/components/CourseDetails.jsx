@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useAppContext } from "../context/AppContext";
-import { Clock, Calendar, Book, BookOpen, Star, Plus, User, Minus, GraduationCap, ChevronDown, Users } from "lucide-react";
+import { Clock, Calendar, Book, BookOpen, Star, Plus, User, Minus, GraduationCap, ChevronDown, Users, ChevronUp } from "lucide-react";
 import { formatTime } from "../utils/timeUtils";
 
 const CourseDetails = ({ onAddCourse }) => {
   const { selectedCourse, myCourses, addCourse, removeCourse, updateCourseSection } = useAppContext();
   const [selectedSection, setSelectedSection] = useState(null);
   const [showSectionDropdown, setShowSectionDropdown] = useState(false);
+  const [showEvaluations, setShowEvaluations] = useState(false);
 
   // Reset selected section when course changes
   useEffect(() => {
@@ -268,14 +269,20 @@ const CourseDetails = ({ onAddCourse }) => {
       </div>
 
       <div className="mt-3 flex justify-between text-sm">
-        <a 
-          href={`https://qreports.fas.harvard.edu/search/courses?school=FAS&term=&department=&subject=&instructor=&search=${selectedCourse.course_id}`} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="cursor-pointer hover:underline text-blue-600 hover:text-blue-700 transition-colors duration-150"
-        >
-          Show evaluations
-        </a>
+        {selectedCourse.historical_semesters && Object.keys(selectedCourse.historical_semesters).length > 0 ? (
+          <button
+            onClick={() => setShowEvaluations(!showEvaluations)}
+            className="cursor-pointer hover:underline text-blue-600 hover:text-blue-700 transition-colors duration-150 flex items-center"
+          >
+            {showEvaluations ? (
+              <>Hide evaluations <ChevronUp size={14} className="ml-1" /></>
+            ) : (
+              <>Show evaluations <ChevronDown size={14} className="ml-1" /></>
+            )}
+          </button>
+        ) : (
+          <span className="text-gray-400 cursor-not-allowed">No evaluations available</span>
+        )}
         
         <a 
           href={`https://portal.my.harvard.edu/psp/hrvihprd/EMPLOYEE/EMPL/h/?tab=HU_CLASS_SEARCH&SearchReqJSON=%7B%22ExcludeBracketed%22:true,%22SaveRecent%22:true,%22Facets%22:%5B%5D,%22PageNumber%22:1,%22SortOrder%22:%5B%22SCORE%22%5D,%22TopN%22:%22%22,%22PageSize%22:%22%22,%22SearchText%22:%22${selectedCourse.course_id}%22%7D`} 
@@ -286,6 +293,74 @@ const CourseDetails = ({ onAddCourse }) => {
           View in my.harvard
         </a>
       </div>
+
+      {/* Expanded Evaluations Section */}
+      {showEvaluations && (
+        <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+          <div className="text-sm">
+            {selectedCourse.historical_semesters && Object.keys(selectedCourse.historical_semesters).length > 0 ? (
+              <>
+                <div className="mb-2">
+                  <a 
+                    href={`https://qreports.fas.harvard.edu/search/courses?school=FAS&term=&department=&subject=&instructor=&search=${selectedCourse.course_id}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline text-xs"
+                  >
+                    Go to QGuide →
+                  </a>
+                </div>
+                <div className="space-y-2">
+                  {Object.entries(selectedCourse.historical_semesters)
+                    .sort(([a], [b]) => b.localeCompare(a)) // Sort by semester, newest first
+                    .map(([semester, data]) => (
+                      <div key={semester} className="border-b border-gray-200 pb-2 last:border-0">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <span className="font-medium">{semester.replace(/(\d{4})([A-Z])/, '$1 $2')}</span>
+                            {data.avg_course_rating && (
+                              <span className="ml-2 text-gray-600">
+                                <Star size={12} className="inline mr-1" />
+                                {data.avg_course_rating.toFixed(2)}/5.0
+                              </span>
+                            )}
+                            {data.avg_hours_per_week && (
+                              <span className="ml-2 text-gray-600">
+                                <Clock size={12} className="inline mr-1" />
+                                {data.avg_hours_per_week.toFixed(1)} hrs
+                              </span>
+                            )}
+                            {data.avg_num_students && (
+                              <span className="ml-2 text-gray-600">
+                                <Users size={12} className="inline mr-1" />
+                                {Math.round(data.avg_num_students)} students
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {data.professors && data.professors.length > 0 && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Instructors: {data.professors.slice(0, 3).join(', ')}
+                            {data.professors.length > 3 && ` +${data.professors.length - 3} more`}
+                          </div>
+                        )}
+                        {data.num_sections && data.num_sections > 1 && (
+                          <div className="text-xs text-gray-500">
+                            {data.num_sections} sections
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-gray-500 text-center py-2">
+                No historical evaluation data available
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
