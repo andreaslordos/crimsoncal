@@ -36,6 +36,18 @@ const AppContent = () => {
         <div className="flex-1 overflow-auto p-4">
           <Calendar />
           <MyCourses />
+          
+          {/* Report Bug button - centered below calendar */}
+          <div className="flex justify-center mt-4">
+            <a 
+              href="https://docs.google.com/forms/d/e/1FAIpQLSdPks0Z_z6oamuEs4bMHJznTadvBFjVHmZK4l7vwdERCHWgBg/viewform?usp=header" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 hover:underline hover:text-blue-700 transition-colors duration-150"
+            >
+              Report Bug
+            </a>
+          </div>
         </div>
         
         {/* Mobile overlay */}
