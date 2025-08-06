@@ -149,25 +149,29 @@ const CourseDetails = ({ onAddCourse }) => {
       )}
 
       <div className="text-sm">
-        <div className="grid grid-cols-2 gap-2">
-          {/* Instructor - show selected section's instructor */}
-          <div className="flex items-center text-gray-600 mb-1 col-span-2">
-            <User size={14} className="mr-1" /> 
-            <span className="font-medium mr-1">Instructor:</span> 
-            {displaySection.instructors || selectedCourse.instructors || 'TBA'}
-          </div>
+        {/* Instructor - full width */}
+        <div className="flex items-center text-gray-600 mb-3">
+          <User size={14} className="mr-1" /> 
+          <span className="font-medium mr-1">Instructor:</span> 
+          {displaySection.instructors || selectedCourse.instructors || 'TBA'}
+        </div>
 
-          {/* Capacity */}
-          {displaySection.capacity && displaySection.capacity !== 'n/a' && (
-            <div className="flex items-center text-gray-600 mb-1">
-              <GraduationCap size={14} className="mr-1" /> 
-              <span className="font-medium mr-1">Capacity:</span> {displaySection.capacity}
+        {/* Two column grid for details */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+          {/* Left Column */}
+          
+          {/* Meeting Time */}
+          {displaySection.start_time && (
+            <div className="flex items-center text-gray-600">
+              <Calendar size={14} className="mr-1 flex-shrink-0" /> 
+              <span className="font-medium mr-1">Time:</span>{" "}
+              <span className="truncate">{getMeetingDays(displaySection)} {getTimeRange(displaySection)}</span>
             </div>
           )}
 
           {/* Units */}
           {selectedCourse.units && selectedCourse.units !== 'n/a' && (
-            <div className="flex items-center text-gray-600 mb-1">
+            <div className="flex items-center text-gray-600">
               <Book size={14} className="mr-1" /> 
               <span className="font-medium mr-1">Units:</span> {selectedCourse.units}
             </div>
@@ -175,53 +179,55 @@ const CourseDetails = ({ onAddCourse }) => {
 
           {/* Rating */}
           {selectedCourse.rating && (
-            <div className="flex items-center text-gray-600 mb-1">
+            <div className="flex items-center text-gray-600">
               <Star size={14} className="mr-1" /> 
               <span className="font-medium mr-1">Rating:</span>{" "}
-              {Math.round(selectedCourse.rating * 10) / 10 + '/5'}
+              {Math.round(selectedCourse.rating * 10) / 10}/5
             </div>
           )}
 
-          {/* Hours */}
+          {/* Capacity */}
+          {displaySection.capacity && displaySection.capacity !== 'n/a' && (
+            <div className="flex items-center text-gray-600">
+              <GraduationCap size={14} className="mr-1" /> 
+              <span className="font-medium mr-1">Capacity:</span> {displaySection.capacity}
+            </div>
+          )}
+
+          {/* Hours per week */}
           {selectedCourse.hours && (
-            <div className="flex items-center text-gray-600 mb-1">
+            <div className="flex items-center text-gray-600">
               <Clock size={14} className="mr-1" /> 
-              <span className="font-medium mr-1">Hours:</span>{" "}
-              {`${selectedCourse.hours} hrs`}
+              <span className="font-medium mr-1">Hours/week:</span>{" "}
+              {selectedCourse.hours}
             </div>
           )}
 
-          {/* Meeting Time - show selected section's time */}
-          {displaySection.start_time && (
-            <div className="flex items-center text-gray-600 mb-1">
-              <Calendar size={14} className="mr-1 mt-1 flex-shrink-0" /> 
-              <span className="font-medium mr-1">Time:</span>{" "}
-              {getMeetingDays(displaySection)} {getTimeRange(displaySection)}
+          {/* Average Students */}
+          {selectedCourse.latest_num_students && selectedCourse.latest_num_students > 0 && (
+            <div className="flex items-center text-gray-600">
+              <Users size={14} className="mr-1" /> 
+              <span className="font-medium mr-1">Avg Students:</span>{" "}
+              {Math.round(selectedCourse.latest_num_students)}
+            </div>
+          )}
+
+          {/* Format */}
+          {selectedCourse.course_component && (
+            <div className="flex items-center text-gray-600">
+              <BookOpen size={14} className="mr-1" /> 
+              <span className="font-medium mr-1">Format:</span> {selectedCourse.course_component}
+            </div>
+          )}
+
+          {/* Final Exam */}
+          {selectedCourse.exam && selectedCourse.exam !== 'N/A' && selectedCourse.exam !== '' && (
+            <div className="flex items-center text-gray-600">
+              <Calendar size={14} className="mr-1" /> 
+              <span className="font-medium mr-1">Final Exam:</span> {selectedCourse.exam}
             </div>
           )}
         </div>
-
-        {selectedCourse.course_component && (
-          <div className="flex items-center text-gray-600 mb-1">
-            <BookOpen size={14} className="mr-1" /> 
-            <span className="font-medium mr-1">Format:</span> {selectedCourse.course_component}
-          </div>
-        )}
-
-        {selectedCourse.exam && selectedCourse.exam !== 'N/A' && selectedCourse.exam !== '' && (
-          <div className="flex items-center text-gray-600 mb-1">
-            <Calendar size={14} className="mr-1" /> 
-            <span className="font-medium mr-1">Final Exam:</span> {selectedCourse.exam}
-          </div>
-        )}
-
-        {selectedCourse.evalURL && (
-          <div className="text-blue-600 text-xs mt-2">
-            <a href={selectedCourse.evalURL} target="_blank" rel="noopener noreferrer">
-              View Evaluations
-            </a>
-          </div>
-        )}
       </div>
 
       {selectedCourse.description && (
@@ -262,18 +268,14 @@ const CourseDetails = ({ onAddCourse }) => {
       </div>
 
       <div className="mt-3 flex justify-between text-sm">
-        {selectedCourse.evalURL ? (
-          <a 
-            href={selectedCourse.evalURL} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="cursor-pointer hover:underline text-blue-600 hover:text-blue-700 transition-colors duration-150"
-          >
-            Show evaluations
-          </a>
-        ) : (
-          <span className="text-gray-400 cursor-not-allowed">No evaluations available</span>
-        )}
+        <a 
+          href={`https://qreports.fas.harvard.edu/search/courses?school=FAS&term=&department=&subject=&instructor=&search=${selectedCourse.course_id}`} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="cursor-pointer hover:underline text-blue-600 hover:text-blue-700 transition-colors duration-150"
+        >
+          Show evaluations
+        </a>
         
         <a 
           href={`https://portal.my.harvard.edu/psp/hrvihprd/EMPLOYEE/EMPL/h/?tab=HU_CLASS_SEARCH&SearchReqJSON=%7B%22ExcludeBracketed%22:true,%22SaveRecent%22:true,%22Facets%22:%5B%5D,%22PageNumber%22:1,%22SortOrder%22:%5B%22SCORE%22%5D,%22TopN%22:%22%22,%22PageSize%22:%22%22,%22SearchText%22:%22${selectedCourse.course_id}%22%7D`} 
