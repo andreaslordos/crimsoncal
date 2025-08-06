@@ -6,12 +6,12 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
+*.txt
 node_modules
 dist
 dist-ssr
 *.local
-
+scraper/qguide/QGuides/*
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

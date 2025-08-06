@@ -5,8 +5,14 @@ import { getCourseColor, getTimePosition, getTimeHeight, formatTime } from "../u
 const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts = 1 }) => {
     const { setSelectedCourse } = useAppContext();
     const colorClass = getCourseColor(course.course_id);
-    const startPos = getTimePosition(course.start_time);
-    const height = getTimeHeight(course.start_time, course.end_time);
+    
+    // Use selected section data if available, otherwise use course defaults
+    const section = course.selectedSection || {};
+    const startTime = section.start_time || course.start_time;
+    const endTime = section.end_time || course.end_time;
+    
+    const startPos = getTimePosition(startTime);
+    const height = getTimeHeight(startTime, endTime);
     
     // Calculate width based on number of conflicts
     // With 11-col grid: 1 col for time + 2 cols per day
@@ -42,7 +48,7 @@ const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts 
           {course.subject_catalog}
         </div>
         <div className="text-xs truncate">
-          {formatTime(course.start_time)}-{formatTime(course.end_time)}
+          {formatTime(startTime)}-{formatTime(endTime)}
         </div>
       </div>
     );

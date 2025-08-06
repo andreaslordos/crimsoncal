@@ -1,12 +1,10 @@
 import React, { createContext, useState, useEffect, useMemo } from 'react';
-import Papa from 'papaparse';
 
 // Create context
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const [courseEvals, setCourseEvals] = useState([]);
-  const [courseInfo, setCourseInfo] = useState([]);
+  const [coursesData, setCoursesData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState(null);
   // Load saved courses from localStorage or use empty array if nothing is saved
@@ -42,66 +40,17 @@ export const AppProvider = ({ children }) => {
     return code.toUpperCase().replace(/\s+/g, ' ').trim();
   };
   
-  // Load CSV data
+  // Load JSON data
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
         
-        // Load primary course evaluation data
-        const evalResponse = await fetch('/data/course_ratings.csv');
-        const evalCsvData = await evalResponse.text();
-        const primaryEvalResults = Papa.parse(evalCsvData, {
-          header: true,
-          skipEmptyLines: true,
-          dynamicTyping: true,
-          transformHeader: header => header.trim()
-        });
+        // Load master courses JSON file
+        const response = await fetch('/data/master_courses.json');
+        const data = await response.json();
         
-        // Load secondary course evaluation data
-        const evalResponse2 = await fetch('/data/course_ratings_2.csv');
-        const evalCsvData2 = await evalResponse2.text();
-        const secondaryEvalResults = Papa.parse(evalCsvData2, {
-          header: true,
-          skipEmptyLines: true,
-          dynamicTyping: true,
-          transformHeader: header => header.trim()
-        });
-        
-        // Load tertiary course evaluation data
-        const evalResponse3 = await fetch('/data/course_ratings_3.csv');
-        const evalCsvData3 = await evalResponse3.text();
-        const tertiaryEvalResults = Papa.parse(evalCsvData3, {
-          header: true,
-          skipEmptyLines: true,
-          dynamicTyping: true,
-          transformHeader: header => header.trim()
-        });
-                
-        // Merge evaluation data with priority
-        const mergedEvals = mergeCourseEvals(
-          primaryEvalResults.data, 
-          secondaryEvalResults.data, 
-          tertiaryEvalResults.data
-        );
-        
-        // Load course info data
-        const infoResponse = await fetch('/data/all_courses.csv');
-        const infoCsvData = await infoResponse.text();
-        const infoResults = Papa.parse(infoCsvData, {
-          header: true,
-          skipEmptyLines: true,
-          dynamicTyping: true,
-          transformHeader: header => header.trim()
-        });
-        
-        // Filter courses for selected semester
-        const filteredCourses = infoResults.data.filter(course => {
-          return course.year_term && course.year_term.includes(selectedSemester.split(' ')[0]);
-        });
-        
-        setCourseEvals(mergedEvals);
-        setCourseInfo(filteredCourses);
+        setCoursesData(data);
         setIsLoading(false);
       } catch (error) {
         console.error("Error loading data:", error);
@@ -110,49 +59,7 @@ export const AppProvider = ({ children }) => {
     };
     
     loadData();
-  }, [selectedSemester]);
-
-  // Add a helper function to merge course evaluations with priority
-  const mergeCourseEvals = (primary, secondary, tertiary) => {
-    // Create a map using normalized course codes
-    const evalMap = new Map();
-    
-    // Process in reverse priority order (tertiary -> secondary -> primary)
-    // This way, newer data will overwrite older data for the same course
-    
-    // Add tertiary data (lowest priority)
-    tertiary.forEach(evalData => {
-      if (evalData && evalData.course_code) {
-        const normalizedCode = normalizeCode(evalData.course_code);
-        if (normalizedCode) {
-          evalMap.set(normalizedCode, evalData);
-        }
-      }
-    });
-    
-    // Add secondary data (medium priority)
-    secondary.forEach(evalData => {
-      if (evalData && evalData.course_code) {
-        const normalizedCode = normalizeCode(evalData.course_code);
-        if (normalizedCode) {
-          evalMap.set(normalizedCode, evalData);
-        }
-      }
-    });
-    
-    // Add primary data (highest priority)
-    primary.forEach(evalData => {
-      if (evalData && evalData.course_code) {
-        const normalizedCode = normalizeCode(evalData.course_code);
-        if (normalizedCode) {
-          evalMap.set(normalizedCode, evalData);
-        }
-      }
-    });
-    
-    // Convert map values back to array
-    return Array.from(evalMap.values());
-  };
+  }, []);
   
   // Parse weekdays string into day mapping
   const parseWeekdays = (weekdaysStr) => {
@@ -190,89 +97,176 @@ export const AppProvider = ({ children }) => {
     return dayMap;
   };
   
-  // Process and merge data
+  // Process courses - group sections under each course
   const processedCourses = useMemo(() => {
-    if (isLoading) return [];
+    if (isLoading || !coursesData.length) return [];
     
-    // Create a map of course codes to evaluation data
-    const evalMap = {};
-    courseEvals.forEach(evalData => {
-      if (evalData && evalData.course_code) {
-        const normalizedCode = normalizeCode(evalData.course_code);
-        if (normalizedCode) {
-          // If multiple evals exist for the same course, prefer the one with a higher course score mean
-          if (!evalMap[normalizedCode] || 
-              (evalData.course_score_mean && evalMap[normalizedCode].course_score_mean < evalData.course_score_mean)) {
-            evalMap[normalizedCode] = evalData;
+    const processedList = [];
+    
+    coursesData.forEach(course => {
+      // Skip if not matching selected semester
+      if (course.current_term && !course.current_term.includes(selectedSemester.split(' ')[0])) {
+        return;
+      }
+      
+      // Process sections for this course
+      const sections = (course.current_sections || []).map(section => {
+        // Parse day mapping from section's lecture_* fields
+        let dayMap = {
+          monday: section.lecture_monday === true,
+          tuesday: section.lecture_tuesday === true,
+          wednesday: section.lecture_wednesday === true,
+          thursday: section.lecture_thursday === true,
+          friday: section.lecture_friday === true,
+          saturday: section.lecture_saturday === true,
+          sunday: section.lecture_sunday === true
+        };
+        
+        // If no days are set via the lecture_* fields but a weekdays string is provided, use that
+        if (!Object.values(dayMap).some(Boolean) && section.weekdays) {
+          const parsedDayMap = parseWeekdays(section.weekdays);
+          if (parsedDayMap) {
+            dayMap = parsedDayMap;
           }
         }
-      }
-    });
-    
-    // Merge course info with evaluation data
-    return courseInfo.map(course => {
-      // Generate normalized code for matching
-      const normalizedCode = normalizeCode(course.subject_catalog);
+        
+        // Extract capacity from the enrollment field (e.g. "0/99")
+        let capacity = 'n/a';
+        let enrolled = 'n/a';
+        if (section.enrollment && typeof section.enrollment === 'string' && section.enrollment.includes('/')) {
+          const parts = section.enrollment.split('/');
+          enrolled = parts[0];
+          capacity = parts[1];
+          if (capacity === '9999') capacity = 'n/a';
+        }
+        
+        return {
+          section: section.section || 'default',
+          instructors: section.instructors || 'TBA',
+          class_number: section.class_number || '',
+          enrollment: section.enrollment || '',
+          enrolled: enrolled,
+          capacity: capacity,
+          instruction_mode: section.instruction_mode || '',
+          course_component: section.course_component || '',
+          grading_basis: section.grading_basis || '',
+          start_time: section.start_time || '',
+          end_time: section.end_time || '',
+          weekdays: section.weekdays || '',
+          dayMap,
+          lecture_monday: section.lecture_monday,
+          lecture_tuesday: section.lecture_tuesday,
+          lecture_wednesday: section.lecture_wednesday,
+          lecture_thursday: section.lecture_thursday,
+          lecture_friday: section.lecture_friday,
+          lecture_saturday: section.lecture_saturday,
+          lecture_sunday: section.lecture_sunday
+        };
+      });
       
-      // Find matching evaluation data
-      const evalData = normalizedCode ? evalMap[normalizedCode] : null;
+      // Get the first section's data for default values (used if no section is selected)
+      const firstSection = sections[0] || {};
       
-      // Parse day mapping from lecture_* fields
-      let dayMap = {
-        monday: course.lecture_monday === "True",
-        tuesday: course.lecture_tuesday === "True",
-        wednesday: course.lecture_wednesday === "True",
-        thursday: course.lecture_thursday === "True",
-        friday: course.lecture_friday === "True",
-        saturday: course.lecture_saturday === "True",
-        sunday: course.lecture_sunday === "True"
+      // Use first section's day map as default (not aggregate)
+      const defaultDayMap = firstSection.dayMap || {
+        monday: false,
+        tuesday: false,
+        wednesday: false,
+        thursday: false,
+        friday: false,
+        saturday: false,
+        sunday: false
       };
       
-      // If no days are set via the lecture_* fields but a weekdays string is provided, use that
-      if (!Object.values(dayMap).some(Boolean) && course.weekdays) {
-        const parsedDayMap = parseWeekdays(course.weekdays);
-        if (parsedDayMap) {
-          dayMap = parsedDayMap;
-        }
-      }
-      
-      // Get hours from evaluation's workload score, defaulting if not available
-      const hours = evalData ? evalData.workload_score_mean : null;
-      
-      // Get the course rating from evaluation data
-      const rating = evalData ? evalData.course_score_mean : null;
-      
-      // Extract capacity from the enrolled field (e.g. "0/99")
-      let capacity = 'n/a';
-      if (course.enrolled && typeof course.enrolled === 'string' && course.enrolled.includes('/')) {
-        capacity = course.enrolled.split('/')[1];
-        if (capacity === '9999') capacity = 'n/a';
-      }
-      
       // Create a URL-friendly unique identifier
-      const urlId = `${normalizedCode || ''}-${course.course_id || ''}`.toLowerCase();
+      const urlId = `${course.course_code || ''}-${course.course_id || ''}`.toLowerCase();
       
-      return {
-        ...course,
-        evalData,
-        rating,
-        hours,
-        capacity,  // Added capacity field
-        displayName: `${course.subject_catalog || ''} ${course.course_title || ''}`.trim(),
-        dayMap,
-        urlId,
-        // Ensure consistent naming conventions for fields used in the UI
-        subject_catalog: course.subject_catalog || '',
+      // Create Q guide URL if we have historical data
+      let evalURL = null;
+      if (course.historical_semesters && Object.keys(course.historical_semesters).length > 0) {
+        evalURL = `https://qreports.fas.harvard.edu/course/${course.course_id}`;
+      }
+      
+      processedList.push({
+        // Course-level data from JSON
+        course_id: course.course_id,
+        subject_catalog: course.course_code || '',
         course_title: course.course_title || '',
         description: course.description || '',
         notes: course.notes || '',
-        units: course.units || 'n/a',
+        school: course.school || '',
+        department: course.department || '',
+        credits: course.credits || 'n/a',
+        units: course.credits || 4, // Default to 4 if not specified
+        course_requirements: course.course_requirements || '',
         consent: course.consent || 'No Consent',
-        instructors: course.instructors || 'TBA',
-        evalURL: evalData && evalData.link ? evalData.link : null,
-      };
+        general_education: course.general_education || '',
+        divisional_distribution: course.divisional_distribution || '',
+        quantitative_reasoning: course.quantitative_reasoning || '',
+        course_level: course.course_level || '',
+        exam: course.exam || '',
+        
+        // All sections for this course
+        sections: sections,
+        
+        // Default section data (from first section, for backward compatibility)
+        instructors: sections.map(s => s.instructors).filter((v, i, a) => a.indexOf(v) === i).join(', ') || 'TBA',
+        class_number: firstSection.class_number || '',
+        enrollment: firstSection.enrollment || '',
+        enrolled: firstSection.enrolled || 'n/a',
+        capacity: firstSection.capacity || 'n/a',
+        instruction_mode: firstSection.instruction_mode || '',
+        course_component: firstSection.course_component || '',
+        grading_basis: firstSection.grading_basis || '',
+        start_time: firstSection.start_time || '',
+        end_time: firstSection.end_time || '',
+        weekdays: firstSection.weekdays || '',
+        
+        // Analytics data (from Q guides)
+        rating: course.latest_course_rating || null,
+        hours: course.latest_hours_per_week || null,
+        latest_num_students: course.latest_num_students || null,
+        latest_semester_with_data: course.latest_semester_with_data || 'N/A',
+        
+        // Historical data
+        historical_semesters: course.historical_semesters || {},
+        all_historical_codes: course.all_historical_codes || [],
+        all_historical_titles: course.all_historical_titles || [],
+        
+        // UI-specific fields
+        displayName: `${course.course_code || ''} ${course.course_title || ''}`.trim(),
+        dayMap: defaultDayMap,
+        urlId,
+        evalURL,
+        
+        // Keep year_term for filtering
+        year_term: course.current_term || '',
+        
+        // For backward compatibility with existing components
+        lecture_monday: defaultDayMap.monday,
+        lecture_tuesday: defaultDayMap.tuesday,
+        lecture_wednesday: defaultDayMap.wednesday,
+        lecture_thursday: defaultDayMap.thursday,
+        lecture_friday: defaultDayMap.friday,
+        lecture_saturday: defaultDayMap.saturday,
+        lecture_sunday: defaultDayMap.sunday
+      });
     });
-  }, [courseEvals, courseInfo, isLoading]);
+    
+    return processedList;
+  }, [coursesData, isLoading, selectedSemester]);
+
+  // For backward compatibility, create courseInfo and courseEvals arrays
+  const courseInfo = processedCourses;
+  const courseEvals = useMemo(() => {
+    // Create evaluation data from courses that have ratings
+    return processedCourses.filter(course => course.rating !== null).map(course => ({
+      course_code: course.subject_catalog,
+      course_score_mean: course.rating,
+      workload_score_mean: course.hours,
+      link: course.evalURL
+    }));
+  }, [processedCourses]);
 
   // Filter courses based on search and category filters
   const filteredCourses = useMemo(() => {
@@ -332,16 +326,31 @@ export const AppProvider = ({ children }) => {
     });
   }, [processedCourses, filters]);
 
-  // Add a course to My Courses
-  const addCourse = (course) => {
+  // Add a course to My Courses with optional section selection
+  const addCourse = (course, selectedSection = null) => {
+    // Store the course with selected section info
+    const courseToAdd = {
+      ...course,
+      selectedSection: selectedSection
+    };
+    
     if (!myCourses.some(c => c.course_id === course.course_id)) {
-      setMyCourses([...myCourses, course]);
+      setMyCourses([...myCourses, courseToAdd]);
     }
   };
 
   // Remove a course from My Courses
   const removeCourse = (courseId) => {
     setMyCourses(myCourses.filter(c => c.course_id !== courseId));
+  };
+
+  // Update selected section for a course
+  const updateCourseSection = (courseId, selectedSection) => {
+    setMyCourses(prevCourses => prevCourses.map(course => 
+      course.course_id === courseId 
+        ? { ...course, selectedSection: { ...selectedSection } } 
+        : course
+    ));
   };
 
   // Get total hours for selected courses
@@ -357,7 +366,7 @@ export const AppProvider = ({ children }) => {
     }, 0);
     
     return Math.round(sum * 10) / 10; // Rounded to one decimal place
-  }, [myCourses, hiddenCourses]); // Added hiddenCourses to dependencies
+  }, [myCourses, hiddenCourses]);
 
   // Get total units for selected courses
   const totalUnits = useMemo(() => {
@@ -370,7 +379,7 @@ export const AppProvider = ({ children }) => {
       const courseUnits = typeof course.units === 'number' ? course.units : 4;
       return total + courseUnits;
     }, 0);
-  }, [myCourses, hiddenCourses]); // Added hiddenCourses to dependencies
+  }, [myCourses, hiddenCourses]);
 
   // Generate a shareable URL for the selected courses
   const generateShareableURL = () => {
@@ -396,6 +405,7 @@ export const AppProvider = ({ children }) => {
     <AppContext.Provider value={{
       courseEvals,
       courseInfo,
+      coursesData,
       isLoading,
       processedCourses,
       filteredCourses,
@@ -404,6 +414,7 @@ export const AppProvider = ({ children }) => {
       myCourses,
       addCourse,
       removeCourse,
+      updateCourseSection,
       hiddenCourses,
       toggleCourseVisibility,  
       filters,

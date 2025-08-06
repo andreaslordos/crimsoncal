@@ -1,13 +1,37 @@
+import { useState, useEffect } from "react";
 import { useAppContext } from "../context/AppContext";
-import { Clock, Calendar, Book, BookOpen, Star, Plus, User, Minus, GraduationCap } from "lucide-react";
+import { Clock, Calendar, Book, BookOpen, Star, Plus, User, Minus, GraduationCap, ChevronDown, Users } from "lucide-react";
 import { formatTime } from "../utils/timeUtils";
 
-const CourseDetails = () => {
-  const { selectedCourse, myCourses, addCourse, removeCourse } = useAppContext();
+const CourseDetails = ({ onAddCourse }) => {
+  const { selectedCourse, myCourses, addCourse, removeCourse, updateCourseSection } = useAppContext();
+  const [selectedSection, setSelectedSection] = useState(null);
+  const [showSectionDropdown, setShowSectionDropdown] = useState(false);
+
+  // Reset selected section when course changes
+  useEffect(() => {
+    if (selectedCourse && selectedCourse.sections && selectedCourse.sections.length > 0) {
+      // Check if this course is already in myCourses and has a selected section
+      const existingCourse = myCourses.find(c => c.course_id === selectedCourse.course_id);
+      if (existingCourse && existingCourse.selectedSection) {
+        setSelectedSection(existingCourse.selectedSection);
+      } else {
+        // Default to first section
+        setSelectedSection(selectedCourse.sections[0]);
+      }
+    } else {
+      setSelectedSection(null);
+    }
+    setShowSectionDropdown(false);
+  }, [selectedCourse, myCourses]);
 
   if (!selectedCourse) return null;
 
   const isAdded = myCourses.some(c => c.course_id === selectedCourse.course_id);
+  const hasMultipleSections = selectedCourse.sections && selectedCourse.sections.length > 1;
+  
+  // Use selected section data if available, otherwise use course defaults
+  const displaySection = selectedSection || (selectedCourse.sections && selectedCourse.sections[0]) || {};
 
   // Define abbreviations for days
   const dayAbbrev = {
@@ -20,19 +44,35 @@ const CourseDetails = () => {
     sunday: 'Su'
   };
 
-  // Build a string from dayMap using abbreviations (e.g., "MW" for Monday and Wednesday)
-  const meetingDays = selectedCourse.dayMap
-    ? Object.entries(selectedCourse.dayMap)
+  // Build a string from dayMap using abbreviations
+  const getMeetingDays = (section) => {
+    if (section.dayMap) {
+      const days = Object.entries(section.dayMap)
         .filter(([_, active]) => active)
         .map(([day]) => dayAbbrev[day])
-        .join('')
-    : 'Not specified';
+        .join('');
+      return days || 'TBA';
+    }
+    return 'TBA';
+  };
 
-  // Format the meeting time range using your existing formatTime function
-  const timeRange =
-    selectedCourse.start_time && selectedCourse.end_time
-      ? `${formatTime(selectedCourse.start_time)}-${formatTime(selectedCourse.end_time)}`
-      : 'n/a';
+  // Format the meeting time range
+  const getTimeRange = (section) => {
+    if (section.start_time && section.end_time) {
+      return `${formatTime(section.start_time)}-${formatTime(section.end_time)}`;
+    }
+    return 'TBA';
+  };
+
+  const handleSectionChange = (section) => {
+    setSelectedSection(section);
+    setShowSectionDropdown(false);
+    
+    // If course is already added, update its section in myCourses
+    if (isAdded) {
+      updateCourseSection(selectedCourse.course_id, section);
+    }
+  };
 
   return (
     <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -40,68 +80,144 @@ const CourseDetails = () => {
         {selectedCourse.subject_catalog}: {selectedCourse.course_title}
       </h2>
 
-      <div className="text-sm">
-      <div className="grid grid-cols-2 gap-2">
-        {/* Instructor - always show */}
-        <div className="flex items-center text-gray-600 mb-1 col-span-2">
-          <User size={14} className="mr-1" /> 
-          <span className="font-medium mr-1">Instructor:</span> {selectedCourse.instructors || 'TBA'}
-        </div>
-
-        {/* Capacity - only show if not n/a */}
-        {selectedCourse.capacity && selectedCourse.capacity !== 'n/a' && (
-          <div className="flex items-center text-gray-600 mb-1">
-            <GraduationCap size={14} className="mr-1" /> 
-            <span className="font-medium mr-1">Capacity:</span> {selectedCourse.capacity}
+      {/* Section Selector - show if multiple sections exist */}
+      {hasMultipleSections && (
+        <div className="mb-3 p-3 bg-white rounded-md border border-gray-200">
+          <div className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+            <Users size={14} className="mr-1" />
+            Section Selection
           </div>
-        )}
-
-        {/* Units - only show if not null or N/A */}
-        {selectedCourse.units && selectedCourse.units !== 'n/a' && (
-          <div className="flex items-center text-gray-600 mb-1">
-            <Book size={14} className="mr-1" /> 
-            <span className="font-medium mr-1">Units:</span> {selectedCourse.units}
+          
+          <div className="relative">
+            <button
+              onClick={() => setShowSectionDropdown(!showSectionDropdown)}
+              className="w-full px-3 py-2 text-left bg-gray-50 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors duration-150 flex items-center justify-between text-sm"
+            >
+              <div>
+                <span className="font-medium">Section {displaySection.section}</span>
+                {displaySection.instructors && (
+                  <span className="text-gray-600 ml-2">• {displaySection.instructors}</span>
+                )}
+                {displaySection.start_time && (
+                  <span className="text-gray-600 ml-2">
+                    • {getMeetingDays(displaySection)} {getTimeRange(displaySection)}
+                  </span>
+                )}
+              </div>
+              <ChevronDown 
+                size={16} 
+                className={`transition-transform duration-200 ${showSectionDropdown ? 'rotate-180' : ''}`}
+              />
+            </button>
+            
+            {showSectionDropdown && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                {selectedCourse.sections.map((section) => (
+                  <button
+                    key={section.section}
+                    onClick={() => handleSectionChange(section)}
+                    className={`w-full px-3 py-2 text-left hover:bg-gray-50 text-sm border-b border-gray-100 last:border-b-0 
+                      ${selectedSection && selectedSection.section === section.section ? 'bg-teal-50' : ''}`}
+                  >
+                    <div className="font-medium">Section {section.section}</div>
+                    <div className="text-gray-600 text-xs mt-1">
+                      {section.instructors && <div>Instructor: {section.instructors}</div>}
+                      {section.start_time && (
+                        <div>Time: {getMeetingDays(section)} {getTimeRange(section)}</div>
+                      )}
+                      {section.enrollment && <div>Enrollment: {section.enrollment}</div>}
+                      {section.instruction_mode && <div>Mode: {section.instruction_mode}</div>}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Rating - only show if exists */}
-        {selectedCourse.evalData?.course_score_mean && (
-          <div className="flex items-center text-gray-600 mb-1">
-            <Star size={14} className="mr-1" /> 
-            <span className="font-medium mr-1">Rating:</span>{" "}
-            {Math.round(selectedCourse.evalData.course_score_mean * 10) / 10 + '/5'}
-          </div>
-        )}
-
-        {/* Hours - only show if exists */}
-        {selectedCourse.hours && (
-          <div className="flex items-center text-gray-600 mb-1">
-            <Clock size={14} className="mr-1" /> 
-            <span className="font-medium mr-1">Hours:</span>{" "}
-            {`${selectedCourse.hours} hrs`}
-          </div>
-        )}
-
-        {/* Meeting Time - only show if we have meeting days */}
-        {meetingDays && meetingDays !== 'Not specified' && (
-          <div className="flex items-center text-gray-600 mb-1">
-            <Calendar size={14} className="mr-1 mt-1 flex-shrink-0" /> 
-            <span className="font-medium mr-1">Time:</span>{" "}
-            {meetingDays} {timeRange}
-          </div>
-        )}
-      </div>
-
-      {selectedCourse.course_component && (
-        <div className="flex items-center text-gray-600 mb-1">
-          <BookOpen size={14} className="mr-1" /> 
-          <span className="font-medium mr-1">Format:</span> {selectedCourse.course_component}
+          
+          {/* Show selected section details */}
+          {selectedSection && (
+            <div className="mt-2 text-xs text-gray-600">
+              {selectedSection.enrollment && (
+                <div>Enrollment: {selectedSection.enrollment}</div>
+              )}
+              {selectedSection.instruction_mode && (
+                <div>Mode: {selectedSection.instruction_mode}</div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-        {selectedCourse.evalData?.evalURL && (
+      <div className="text-sm">
+        <div className="grid grid-cols-2 gap-2">
+          {/* Instructor - show selected section's instructor */}
+          <div className="flex items-center text-gray-600 mb-1 col-span-2">
+            <User size={14} className="mr-1" /> 
+            <span className="font-medium mr-1">Instructor:</span> 
+            {displaySection.instructors || selectedCourse.instructors || 'TBA'}
+          </div>
+
+          {/* Capacity */}
+          {displaySection.capacity && displaySection.capacity !== 'n/a' && (
+            <div className="flex items-center text-gray-600 mb-1">
+              <GraduationCap size={14} className="mr-1" /> 
+              <span className="font-medium mr-1">Capacity:</span> {displaySection.capacity}
+            </div>
+          )}
+
+          {/* Units */}
+          {selectedCourse.units && selectedCourse.units !== 'n/a' && (
+            <div className="flex items-center text-gray-600 mb-1">
+              <Book size={14} className="mr-1" /> 
+              <span className="font-medium mr-1">Units:</span> {selectedCourse.units}
+            </div>
+          )}
+
+          {/* Rating */}
+          {selectedCourse.rating && (
+            <div className="flex items-center text-gray-600 mb-1">
+              <Star size={14} className="mr-1" /> 
+              <span className="font-medium mr-1">Rating:</span>{" "}
+              {Math.round(selectedCourse.rating * 10) / 10 + '/5'}
+            </div>
+          )}
+
+          {/* Hours */}
+          {selectedCourse.hours && (
+            <div className="flex items-center text-gray-600 mb-1">
+              <Clock size={14} className="mr-1" /> 
+              <span className="font-medium mr-1">Hours:</span>{" "}
+              {`${selectedCourse.hours} hrs`}
+            </div>
+          )}
+
+          {/* Meeting Time - show selected section's time */}
+          {displaySection.start_time && (
+            <div className="flex items-center text-gray-600 mb-1">
+              <Calendar size={14} className="mr-1 mt-1 flex-shrink-0" /> 
+              <span className="font-medium mr-1">Time:</span>{" "}
+              {getMeetingDays(displaySection)} {getTimeRange(displaySection)}
+            </div>
+          )}
+        </div>
+
+        {selectedCourse.course_component && (
+          <div className="flex items-center text-gray-600 mb-1">
+            <BookOpen size={14} className="mr-1" /> 
+            <span className="font-medium mr-1">Format:</span> {selectedCourse.course_component}
+          </div>
+        )}
+
+        {selectedCourse.exam && selectedCourse.exam !== 'N/A' && selectedCourse.exam !== '' && (
+          <div className="flex items-center text-gray-600 mb-1">
+            <Calendar size={14} className="mr-1" /> 
+            <span className="font-medium mr-1">Final Exam:</span> {selectedCourse.exam}
+          </div>
+        )}
+
+        {selectedCourse.evalURL && (
           <div className="text-blue-600 text-xs mt-2">
-            <a href={selectedCourse.evalData.evalURL} target="_blank" rel="noopener noreferrer">
+            <a href={selectedCourse.evalURL} target="_blank" rel="noopener noreferrer">
               View Evaluations
             </a>
           </div>
@@ -136,7 +252,7 @@ const CourseDetails = () => {
           <button 
             className="cursor-pointer w-full py-3 md:py-2 bg-teal-600 text-white rounded-md flex items-center justify-center hover:bg-teal-700 transition-colors duration-200 text-base"
             onClick={() => {
-              addCourse(selectedCourse);
+              addCourse(selectedCourse, selectedSection);
               if (onAddCourse) onAddCourse(); // Close mobile sidebar after adding
             }}
           >
@@ -146,9 +262,9 @@ const CourseDetails = () => {
       </div>
 
       <div className="mt-3 flex justify-between text-sm">
-        {selectedCourse.evalData?.link ? (
+        {selectedCourse.evalURL ? (
           <a 
-            href={selectedCourse.evalData.link} 
+            href={selectedCourse.evalURL} 
             target="_blank" 
             rel="noopener noreferrer"
             className="cursor-pointer hover:underline text-blue-600 hover:text-blue-700 transition-colors duration-150"

@@ -73,17 +73,27 @@ const Calendar = () => {
       });
       
       // Get courses with valid time data that aren't hidden
-      const validCourses = myCourses.filter(course => 
-        course.start_time && 
-        course.end_time && 
-        days.some(day => course.dayMap[day]) &&
-        !hiddenCourses[course.course_id]
-      );
+      const validCourses = myCourses.filter(course => {
+        // Use selected section data if available, otherwise use course defaults
+        const section = course.selectedSection || {};
+        const startTime = section.start_time || course.start_time;
+        const endTime = section.end_time || course.end_time;
+        const dayMap = section.dayMap || course.dayMap;
+        
+        return startTime && 
+               endTime && 
+               days.some(day => dayMap[day]) &&
+               !hiddenCourses[course.course_id];
+      });
       
       // For each day, find groups of overlapping courses
       days.forEach(day => {
         // Get courses for this day
-        const coursesForDay = validCourses.filter(course => course.dayMap[day]);
+        const coursesForDay = validCourses.filter(course => {
+          const section = course.selectedSection || {};
+          const dayMap = section.dayMap || course.dayMap;
+          return dayMap[day];
+        });
         
         // Skip if no courses for this day
         if (coursesForDay.length === 0) return;
@@ -93,12 +103,17 @@ const Calendar = () => {
         
         // Helper function to check if a course overlaps with any course in a group
         const overlapsWithGroup = (course, group) => {
-          return group.some(groupCourse => 
-            isOverlapping(
-              course.start_time, course.end_time,
-              groupCourse.start_time, groupCourse.end_time
-            )
-          );
+          const section = course.selectedSection || {};
+          const startTime = section.start_time || course.start_time;
+          const endTime = section.end_time || course.end_time;
+          
+          return group.some(groupCourse => {
+            const groupSection = groupCourse.selectedSection || {};
+            const groupStartTime = groupSection.start_time || groupCourse.start_time;
+            const groupEndTime = groupSection.end_time || groupCourse.end_time;
+            
+            return isOverlapping(startTime, endTime, groupStartTime, groupEndTime);
+          });
         };
         
         // Process each course
