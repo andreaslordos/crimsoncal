@@ -17,6 +17,8 @@ export const AppProvider = ({ children }) => {
   const [filters, setFilters] = useState({
     categories: [], 
     search: '',
+    days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+    schools: ['Faculty of Arts & Sciences', 'Faculty of Arts and Sciences']
   });
   
   // Debounce search term for better performance
@@ -324,6 +326,37 @@ export const AppProvider = ({ children }) => {
         }
       }
       
+      // Filter by selected days
+      if (filters.days && filters.days.length > 0) {
+        // Course should ONLY meet on the selected days (no additional days)
+        // First check if course meets on any non-selected days
+        const meetsOnNonSelectedDays = Object.entries(course.dayMap || {})
+          .some(([day, meets]) => {
+            // If course meets on this day AND it's not in our selected days, exclude it
+            return meets === true && !filters.days.includes(day);
+          });
+        
+        if (meetsOnNonSelectedDays) {
+          return false;
+        }
+        
+        // Also need to ensure course meets on at least one selected day
+        const meetsOnSelectedDays = filters.days.some(day => {
+          return course.dayMap && course.dayMap[day] === true;
+        });
+        
+        if (!meetsOnSelectedDays) {
+          return false;
+        }
+      }
+
+      // Filter by selected schools
+      if (filters.schools && filters.schools.length > 0) {
+        if (!course.school || !filters.schools.includes(course.school)) {
+          return false;
+        }
+      }
+
       // Filter by selected categories, if any
       if (filters.categories && filters.categories.length > 0) {
         const categoryMatch = filters.categories.some(categoryId => {
@@ -358,7 +391,7 @@ export const AppProvider = ({ children }) => {
       
       return true;
     });
-  }, [processedCourses, filters.categories, processedSearchTerm]);
+  }, [processedCourses, filters.categories, filters.days, filters.schools, processedSearchTerm]);
 
   // Add a course to My Courses with optional section selection
   const addCourse = (course, selectedSection = null) => {

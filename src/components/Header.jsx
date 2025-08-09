@@ -13,14 +13,6 @@ const Header = () => {
                 </h1>
             </div>
             <div className="flex flex-col md:flex-row md:space-x-4 items-end">
-                <a 
-                    href="https://venmo.com/u/lordos" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-sm md:text-base text-blue-600 hover:underline hover:text-blue-700 transition-colors duration-150"
-                >
-                    buy me a beer
-                </a>
                 <span className="text-sm md:text-base font-bold">
                     Fall 2025
                 </span>

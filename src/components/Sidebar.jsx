@@ -1,5 +1,7 @@
 import { useAppContext } from "../context/AppContext";
 import CategoryFilters from "./CategoryFilters";
+import DayFilter from "./DayFilter";
+import AdvancedFilters from "./AdvancedFilters";
 import CourseList from "./CourseList";
 import CourseDetails from "./CourseDetails";
 import { Search } from "lucide-react";
@@ -16,6 +18,12 @@ const Sidebar = ({ onCloseMobile }) => {
         
         {/* Category filters */}
         <CategoryFilters />
+        
+        {/* Day filter */}
+        <DayFilter />
+        
+        {/* Advanced filters */}
+        <AdvancedFilters />
         
         {/* Search box */}
         <div className="mb-4 relative">
