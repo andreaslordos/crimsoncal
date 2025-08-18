@@ -97,7 +97,35 @@ const AdvancedFilters = () => {
     });
   };
 
-  const hasActiveFilters = filters.schools && filters.schools.length > 0;
+  // Time preset options
+  const timePresets = [
+    { id: 'morning', label: 'Morning', description: '9am-12pm' },
+    { id: 'afternoon', label: 'Afternoon', description: '12pm-5pm' },
+    { id: 'evening', label: 'Evening', description: '5pm-9pm' }
+  ];
+
+  // Generate time options for dropdowns
+  const generateTimeOptions = () => {
+    const options = [];
+    for (let hour = 8; hour <= 20; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        if (hour === 20 && minute > 0) break; // Stop at 8:00pm
+        
+        const hour12 = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+        const period = hour >= 12 ? 'pm' : 'am';
+        const timeStr = `${hour12}:${minute.toString().padStart(2, '0')}${period}`;
+        options.push(timeStr);
+      }
+    }
+    return options;
+  };
+
+  const timeOptions = generateTimeOptions();
+
+  const hasActiveFilters = (filters.schools && filters.schools.length > 0) || 
+                          filters.timePreset || 
+                          filters.customStartTime || 
+                          filters.customEndTime;
 
   return (
     <div className="mb-4">
@@ -117,7 +145,92 @@ const AdvancedFilters = () => {
       </button>
 
       {showAdvanced && (
-        <div className="mt-3 p-3 bg-white border border-gray-200 rounded-md">
+        <div className="p-3 bg-white border border-gray-200 rounded-md space-y-4">
+          {/* Time Filter */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center">
+                <Clock size={14} className="mr-1" />
+                Time of Day
+              </label>
+              {(filters.timePreset || filters.customStartTime || filters.customEndTime) && (
+                <button
+                  onClick={() => setFilters({ 
+                    ...filters, 
+                    timePreset: null,
+                    customStartTime: null,
+                    customEndTime: null
+                  })}
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            
+            {/* Time Preset Pills */}
+            <div className="flex gap-2 mb-2">
+              {timePresets.map(preset => (
+                <button
+                  key={preset.id}
+                  onClick={() => setFilters({ 
+                    ...filters, 
+                    timePreset: filters.timePreset === preset.id ? null : preset.id,
+                    customStartTime: null,
+                    customEndTime: null
+                  })}
+                  className={`px-3 py-1.5 text-xs rounded-full transition-colors duration-150 font-medium ${
+                    filters.timePreset === preset.id
+                      ? 'bg-teal-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  title={preset.description}
+                >
+                  {preset.label}
+                  <span className="ml-1 text-xs opacity-75">({preset.description})</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Custom Time Range */}
+            <div className="flex gap-2 items-center">
+              <div className="flex-1">
+                <label className="text-xs text-gray-600 block mb-1">Start after</label>
+                <select
+                  value={filters.customStartTime || ''}
+                  onChange={(e) => setFilters({ 
+                    ...filters, 
+                    customStartTime: e.target.value || null,
+                    timePreset: null
+                  })}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                >
+                  <option value="">Any time</option>
+                  {timeOptions.slice(0, -4).map(time => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-gray-600 block mb-1">End before</label>
+                <select
+                  value={filters.customEndTime || ''}
+                  onChange={(e) => setFilters({ 
+                    ...filters, 
+                    customEndTime: e.target.value || null,
+                    timePreset: null
+                  })}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+                >
+                  <option value="">Any time</option>
+                  {timeOptions.slice(4).map(time => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
           {/* School Filter with Pills */}
           <div>
             <div className="flex items-center justify-between mb-2">

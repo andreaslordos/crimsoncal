@@ -18,7 +18,10 @@ export const AppProvider = ({ children }) => {
     categories: [], 
     search: '',
     days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-    schools: ['Faculty of Arts & Sciences', 'Faculty of Arts and Sciences']
+    schools: ['Faculty of Arts & Sciences', 'Faculty of Arts and Sciences'],
+    timePreset: null, // 'morning', 'afternoon', 'evening', or null
+    customStartTime: null, // e.g., '9:00am'
+    customEndTime: null // e.g., '5:00pm'
   });
   
   // Debounce search term for better performance
@@ -82,6 +85,33 @@ export const AppProvider = ({ children }) => {
     loadData();
   }, []);
   
+  // Helper to convert time string to minutes for comparison
+  const timeStringToMinutes = (timeStr) => {
+    if (!timeStr) return 0;
+    
+    let hour = 0;
+    let minute = 0;
+    
+    if (timeStr.includes('am') || timeStr.includes('pm')) {
+      const timeParts = timeStr.match(/(\d+):?(\d+)?([ap]m)/);
+      if (timeParts) {
+        hour = parseInt(timeParts[1]);
+        minute = timeParts[2] ? parseInt(timeParts[2]) : 0;
+        if (timeParts[3] === 'pm' && hour < 12) hour += 12;
+        if (timeParts[3] === 'am' && hour === 12) hour = 0;
+      }
+    } else {
+      // Try to parse HH:MM format
+      const timeParts = timeStr.match(/(\d+):(\d+)/);
+      if (timeParts) {
+        hour = parseInt(timeParts[1]);
+        minute = parseInt(timeParts[2]);
+      }
+    }
+    
+    return hour * 60 + minute;
+  };
+
   // Parse weekdays string into day mapping
   const parseWeekdays = (weekdaysStr) => {
     if (!weekdaysStr) return null;
@@ -357,6 +387,73 @@ export const AppProvider = ({ children }) => {
         }
       }
 
+      // Filter by time
+      if (filters.timePreset || filters.customStartTime || filters.customEndTime) {
+        console.log('Time filter active:', { 
+          preset: filters.timePreset, 
+          customStart: filters.customStartTime, 
+          customEnd: filters.customEndTime 
+        });
+        console.log('Course:', course.subject_catalog, 'Times:', course.start_time, '-', course.end_time);
+        
+        // Skip courses without time info
+        if (!course.start_time || !course.end_time) {
+          console.log('  -> Skipping: no time info');
+          return false;
+        }
+        
+        const courseStartMinutes = timeStringToMinutes(course.start_time);
+        const courseEndMinutes = timeStringToMinutes(course.end_time);
+        console.log('  -> Course minutes:', courseStartMinutes, '-', courseEndMinutes);
+        
+        // Apply preset filters
+        if (filters.timePreset) {
+          let presetStart, presetEnd;
+          switch (filters.timePreset) {
+            case 'morning':
+              presetStart = 9 * 60; // 9:00am
+              presetEnd = 12 * 60; // 12:00pm
+              break;
+            case 'afternoon':
+              presetStart = 12 * 60; // 12:00pm
+              presetEnd = 17 * 60; // 5:00pm
+              break;
+            case 'evening':
+              presetStart = 17 * 60; // 5:00pm
+              presetEnd = 21 * 60; // 9:00pm
+              break;
+            default:
+              break;
+          }
+          
+          console.log('  -> Preset range:', presetStart, '-', presetEnd);
+          
+          if (presetStart !== undefined && presetEnd !== undefined) {
+            // Course must start within the preset range
+            if (courseStartMinutes < presetStart || courseStartMinutes >= presetEnd) {
+              console.log('  -> Filtered out: outside preset range');
+              return false;
+            }
+            console.log('  -> Passes preset filter');
+          }
+        }
+
+        // Apply custom time filters
+        if (filters.customStartTime) {
+          const customStartMinutes = timeStringToMinutes(filters.customStartTime);
+          if (courseStartMinutes < customStartMinutes) {
+            return false;
+          }
+        }
+        
+        if (filters.customEndTime) {
+          const customEndMinutes = timeStringToMinutes(filters.customEndTime);
+          if (courseEndMinutes > customEndMinutes) {
+            return false;
+          }
+        }
+      }
+
       // Filter by selected categories, if any
       if (filters.categories && filters.categories.length > 0) {
         const categoryMatch = filters.categories.some(categoryId => {
@@ -391,7 +488,7 @@ export const AppProvider = ({ children }) => {
       
       return true;
     });
-  }, [processedCourses, filters.categories, filters.days, filters.schools, processedSearchTerm]);
+  }, [processedCourses, filters.categories, filters.timePreset, filters.customStartTime, filters.customEndTime, filters.days, filters.schools, processedSearchTerm]);
 
   // Add a course to My Courses with optional section selection
   const addCourse = (course, selectedSection = null) => {
