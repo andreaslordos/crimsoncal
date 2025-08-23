@@ -11,7 +11,7 @@ const AdvancedFilters = () => {
     'Business School MBA': 'HBS',
     'Business School Doctoral': 'HBS',
     'Faculty of Arts & Sciences': 'FAS',
-    'Faculty of Arts and Sciences': 'FAS',
+    'Harvard Law School': 'HLS',
     'Harvard Divinity School': 'HDS',
     'Graduate School of Design': 'GSD',
     'Graduate School of Education': 'GSE',
