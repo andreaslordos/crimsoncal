@@ -304,7 +304,7 @@ const AdvancedFilters = () => {
                   <button
                     key={group.acronym}
                     onClick={() => toggleSchool(group)}
-                    className={`px-3 py-1.5 text-xs rounded-full transition-colors duration-150 font-medium ${
+                    className={`px-2 py-1 text-[10px] rounded-full transition-colors duration-150 font-medium ${
                       isSelected
                         ? 'bg-teal-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
