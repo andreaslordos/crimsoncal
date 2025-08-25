@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider } from './context/AppContext.jsx';
 import Header from './components/Header.jsx';
 import Calendar from './components/Calendar.jsx';
@@ -13,6 +13,20 @@ import './App.css';
 const AppContent = () => {
   const { isLoading } = useAppContext();
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState('');
+  
+  // Fetch the last updated timestamp
+  useEffect(() => {
+    fetch('/data/last_updated.json')
+      .then(res => res.json())
+      .then(data => {
+        setLastUpdated(data.formatted || 'Aug 24, 2025');
+      })
+      .catch(() => {
+        // Fallback if file doesn't exist
+        setLastUpdated('Aug 24, 2025');
+      });
+  }, []);
   
   if (isLoading) {
     return <LoadingScreen />;
@@ -33,7 +47,7 @@ const AppContent = () => {
         </button>
         
         {/* Main content area with calendar and MyCourses */}
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 overflow-auto p-4 relative">
           <Calendar />
           <MyCourses />
           
@@ -47,6 +61,11 @@ const AppContent = () => {
             >
               Report Bug
             </a>
+          </div>
+          
+          {/* Last updated timestamp - bottom left */}
+          <div className="fixed bottom-4 left-4 text-xs text-gray-400">
+            Last updated: {lastUpdated}
           </div>
         </div>
         

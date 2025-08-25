@@ -4,6 +4,7 @@
 import json
 from collections import defaultdict
 from typing import Dict, List, Any
+from datetime import datetime
 
 def load_json(filepath: str) -> Any:
     """Load JSON file safely."""
@@ -236,6 +237,17 @@ def main():
     print(f"\nSaving merged data to {output_file}...")
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(merged_data, f, indent=2, ensure_ascii=False)
+    
+    # Save timestamp for when the data was generated
+    timestamp_file = 'results/last_updated.json'
+    timestamp_data = {
+        'timestamp': datetime.now().isoformat(),
+        'formatted': datetime.now().strftime('%b %d, %Y'),
+        'formatted_with_time': datetime.now().strftime('%b %d, %Y at %I:%M %p')
+    }
+    print(f"Saving timestamp to {timestamp_file}...")
+    with open(timestamp_file, 'w', encoding='utf-8') as f:
+        json.dump(timestamp_data, f, indent=2)
     
     # Print summary
     print("\n" + "="*60)
