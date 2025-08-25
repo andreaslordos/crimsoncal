@@ -65,6 +65,13 @@ fi
 echo "✓ Files copied to public directory"
 echo ""
 
+# Step 5: Push to GitHub, with commit message on todays date.
+echo "----------------------------------------"
+cd ../
+git add .
+git commit -m "Update data on $(date +%Y-%m-%d)"
+git push
+
 echo "=========================================="
 echo "✅ Pipeline completed successfully!"
 echo "=========================================="
