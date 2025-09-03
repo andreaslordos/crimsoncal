@@ -5,6 +5,7 @@ import Calendar from './components/Calendar.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import MyCourses from './components/MyCourses.jsx';
 import LoadingScreen from './components/LoadingScreen.jsx';
+import ResizableDivider from './components/ResizableDivider.jsx';
 import { useAppContext } from './context/AppContext.jsx';
 import { Menu, X } from 'lucide-react';
 import './App.css';
@@ -14,6 +15,7 @@ const AppContent = () => {
   const { isLoading } = useAppContext();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [lastUpdated, setLastUpdated] = useState('');
+  const [leftColumnWidth, setLeftColumnWidth] = useState(60);
   
   // Fetch the last updated timestamp
   useEffect(() => {
@@ -47,7 +49,10 @@ const AppContent = () => {
         </button>
         
         {/* Main content area with calendar and MyCourses */}
-        <div className="flex-1 overflow-auto p-4 relative">
+        <div 
+          className="overflow-auto p-4 relative"
+          style={{ width: `${leftColumnWidth}%` }}
+        >
           <Calendar />
           <MyCourses />
           
@@ -77,11 +82,21 @@ const AppContent = () => {
           ></div>
         )}
         
+        {/* Resizable divider */}
+        <div className="relative">
+          <ResizableDivider 
+            onResize={setLeftColumnWidth}
+            minLeftWidth={30}
+            minRightWidth={25}
+          />
+        </div>
+        
         {/* Sidebar - full height and width on mobile */}
         <div 
-          className={`transition-all duration-300 ease-in-out fixed md:relative md:translate-x-0 inset-y-0 right-0 h-full z-40 md:z-0 w-full md:w-2/5 lg:w-2/5 xl:w-2/5 ${
+          className={`transition-all duration-300 ease-in-out fixed md:relative md:translate-x-0 inset-y-0 right-0 h-full z-40 md:z-0 w-full md:w-auto ${
             sidebarVisible ? 'translate-x-0' : 'translate-x-full'
           }`}
+          style={{ width: window.innerWidth >= 768 ? `${100 - leftColumnWidth}%` : '100%' }}
         >
           {/* Mobile close button */}
           <button 
