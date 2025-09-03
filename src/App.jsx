@@ -185,7 +185,7 @@ END:VEVENT
             {hasVisibleCourses ? (
               <button
                 onClick={handleExportToCalendar}
-                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors duration-150"
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors duration-150 cursor-pointer"
                 title="Export selected courses to calendar file"
               >
                 <CalendarPlus size={16} />
