@@ -548,45 +548,61 @@ export const AppProvider = ({ children }) => {
 
   // Update selected section for a course
   const updateCourseSection = (courseId, selectedSection) => {
-    setMyCourses(prevCourses => prevCourses.map(course => 
-      course.course_id === courseId 
-        ? { ...course, selectedSection: { ...selectedSection } } 
+    setMyCourses(prevCourses => prevCourses.map(course =>
+      course.course_id === courseId
+        ? { ...course, selectedSection: { ...selectedSection } }
         : course
     ));
   };
 
-  // Get total hours for selected courses
+  // Filter myCourses to only show courses for the selected semester
+  const myCoursesForSelectedSemester = useMemo(() => {
+    return myCourses.filter(course => {
+      const termToCheck = course.current_term || course.year_term || '';
+
+      if (selectedSemester === 'Spring 2026') {
+        return termToCheck.includes('Spring') && termToCheck.includes('2026');
+      } else if (selectedSemester === 'Fall 2025') {
+        return termToCheck.includes('Fall') && termToCheck.includes('2025');
+      }
+
+      // Default to showing courses if no clear term match
+      return true;
+    });
+  }, [myCourses, selectedSemester]);
+
+  // Get total hours for selected courses (filtered by semester)
   const totalHours = useMemo(() => {
-    if (!myCourses.length) return 0;
-    
+    if (!myCoursesForSelectedSemester.length) return 0;
+
     // Filter out hidden courses before calculating total
-    const visibleCourses = myCourses.filter(course => !hiddenCourses[course.course_id]);
-    
+    const visibleCourses = myCoursesForSelectedSemester.filter(course => !hiddenCourses[course.course_id]);
+
     const sum = visibleCourses.reduce((total, course) => {
       const courseHours = course.hours || 0;
       return total + courseHours;
     }, 0);
-    
-    return Math.round(sum * 10) / 10; // Rounded to one decimal place
-  }, [myCourses, hiddenCourses]);
 
-  // Get total units for selected courses
+    return Math.round(sum * 10) / 10; // Rounded to one decimal place
+  }, [myCoursesForSelectedSemester, hiddenCourses]);
+
+  // Get total units for selected courses (filtered by semester)
   const totalUnits = useMemo(() => {
-    if (!myCourses.length) return 0;
-    
+    if (!myCoursesForSelectedSemester.length) return 0;
+
     // Filter out hidden courses before calculating total
-    const visibleCourses = myCourses.filter(course => !hiddenCourses[course.course_id]);
-    
+    const visibleCourses = myCoursesForSelectedSemester.filter(course => !hiddenCourses[course.course_id]);
+
     return visibleCourses.reduce((total, course) => {
       const courseUnits = typeof course.units === 'number' ? course.units : 4;
       return total + courseUnits;
     }, 0);
-  }, [myCourses, hiddenCourses]);
+  }, [myCoursesForSelectedSemester, hiddenCourses]);
 
   // Generate a shareable URL for the selected courses
   const generateShareableURL = () => {
-    if (!myCourses.length) return window.location.origin;
-    const courseIds = myCourses.map(course => course.urlId).join(',');
+    if (!myCoursesForSelectedSemester.length) return window.location.origin;
+    const courseIds = myCoursesForSelectedSemester.map(course => course.urlId).join(',');
     return `${window.location.origin}?courses=${courseIds}`;
   };
 
@@ -613,7 +629,8 @@ export const AppProvider = ({ children }) => {
       filteredCourses,
       selectedCourse,
       setSelectedCourse,
-      myCourses,
+      myCourses: myCoursesForSelectedSemester, // Export filtered courses
+      allMyCourses: myCourses, // Keep original for internal use
       addCourse,
       removeCourse,
       updateCourseSection,
