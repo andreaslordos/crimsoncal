@@ -68,14 +68,14 @@ BEGIN:DAYLIGHT
 TZOFFSETFROM:-0500
 TZOFFSETTO:-0400
 TZNAME:EDT
-DTSTART:20250309T020000
+DTSTART:${isSpring ? '20260308' : '20250309'}T020000
 RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
 END:DAYLIGHT
 BEGIN:STANDARD
 TZOFFSETFROM:-0400
 TZOFFSETTO:-0500
 TZNAME:EST
-DTSTART:20251102T020000
+DTSTART:${isSpring ? '20251101' : '20251102'}T020000
 RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
 END:STANDARD
 END:VTIMEZONE
@@ -110,6 +110,9 @@ END:VTIMEZONE
       const uid = `${course.course_id}-${Date.now()}@crimsoncal`;
       const summary = `${course.subject_catalog}: ${course.course_title}`;
       
+      // Set recurrence end date and holidays based on semester
+      const untilDate = isSpring ? '20260515T235959Z' : '20251203T235959Z';
+
       icsContent += `BEGIN:VEVENT
 UID:${uid}
 DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}
@@ -117,10 +120,26 @@ DTSTART;TZID=America/New_York:${dtstart}
 DTEND;TZID=America/New_York:${dtend}
 SUMMARY:${summary}
 CATEGORIES:Harvard Courses
-RRULE:FREQ=WEEKLY;BYDAY=${days.join(',')};UNTIL=20251203T235959Z
-EXDATE;TZID=America/New_York:20251127T${dtstart.substring(9)}
+RRULE:FREQ=WEEKLY;BYDAY=${days.join(',')};UNTIL=${untilDate}
+`;
+
+      // Add holiday exclusions based on semester
+      if (isSpring) {
+        // Spring break dates (typically March)
+        icsContent += `EXDATE;TZID=America/New_York:20260316T${dtstart.substring(9)}
+EXDATE;TZID=America/New_York:20260317T${dtstart.substring(9)}
+EXDATE;TZID=America/New_York:20260318T${dtstart.substring(9)}
+EXDATE;TZID=America/New_York:20260319T${dtstart.substring(9)}
+EXDATE;TZID=America/New_York:20260320T${dtstart.substring(9)}
+`;
+      } else {
+        // Thanksgiving dates for Fall
+        icsContent += `EXDATE;TZID=America/New_York:20251127T${dtstart.substring(9)}
 EXDATE;TZID=America/New_York:20251128T${dtstart.substring(9)}
-END:VEVENT
+`;
+      }
+
+      icsContent += `END:VEVENT
 `;
     });
     
@@ -137,7 +156,8 @@ END:VEVENT
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'harvard-courses-fall-2025.ics';
+    const filename = isSpring ? 'harvard-courses-spring-2026.ics' : 'harvard-courses-fall-2025.ics';
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

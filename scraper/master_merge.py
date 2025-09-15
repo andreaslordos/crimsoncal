@@ -206,16 +206,21 @@ def generate_summary_stats(merged_data: List[Dict]) -> Dict:
     
     return stats
 
-def main():
-    """Main merge function."""
+def main(term=None, year=None):
+    """Main merge function.
+
+    Args:
+        term: Optional term (Fall/Spring) for output filename
+        year: Optional year for output filename
+    """
     print("Loading data files...")
-    
+
     # Load all courses (current offerings)
     all_courses = load_json('results/all_courses_cleaned.json')
     if not all_courses:
         print("Failed to load all_courses_cleaned.json")
         return
-    
+
     # Load analytics (historical Q guide data)
     analytics = load_json('qguide/results/course_analytics.json')
     if not analytics:
@@ -233,7 +238,14 @@ def main():
     stats = generate_summary_stats(merged_data)
     
     # Save merged data
-    output_file = 'results/master_courses.json'
+    if term and year:
+        # Create term-specific filename
+        term_lower = term.lower()
+        output_file = f'results/master_courses_{term_lower}{year}.json'
+    else:
+        # Default filename
+        output_file = 'results/master_courses.json'
+
     print(f"\nSaving merged data to {output_file}...")
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(merged_data, f, indent=2, ensure_ascii=False)
@@ -313,4 +325,13 @@ def main():
     print(f"   Only currently offered courses were included in the merge.")
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Merge course data with analytics')
+    parser.add_argument('--term', choices=['Fall', 'Spring'],
+                       help='Term for output filename (e.g., Fall or Spring)')
+    parser.add_argument('--year', help='Year for output filename (e.g., 2025 or 2026)')
+
+    args = parser.parse_args()
+
+    main(term=args.term, year=args.year)

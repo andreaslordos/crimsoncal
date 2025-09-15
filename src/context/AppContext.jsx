@@ -54,7 +54,7 @@ export const AppProvider = ({ children }) => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        
+
         // Use requestIdleCallback for non-blocking load if available
         const processData = (data) => {
           if ('requestIdleCallback' in window) {
@@ -70,20 +70,55 @@ export const AppProvider = ({ children }) => {
             }, 0);
           }
         };
-        
-        // Load master courses JSON file
-        const response = await fetch('/data/master_courses.json');
+
+        // Try to load semester-specific file first, then fall back to default
+        let dataFile = '/data/master_courses.json'; // default
+        let response;
+
+        if (selectedSemester === 'Fall 2025') {
+          // Try Fall 2025 specific file first
+          try {
+            response = await fetch('/data/master_courses_fall2025.json');
+            if (response.ok) {
+              dataFile = '/data/master_courses_fall2025.json';
+            } else {
+              throw new Error('Fall 2025 file not found');
+            }
+          } catch {
+            // Fall back to default file
+            console.log('Fall 2025 specific file not found, using default');
+            response = await fetch('/data/master_courses.json');
+          }
+        } else if (selectedSemester === 'Spring 2026') {
+          // Try Spring 2026 specific file first
+          try {
+            response = await fetch('/data/master_courses_spring2026.json');
+            if (response.ok) {
+              dataFile = '/data/master_courses_spring2026.json';
+            } else {
+              throw new Error('Spring 2026 file not found');
+            }
+          } catch {
+            // Fall back to default file but we'll filter for Spring 2026 in processing
+            console.log('Spring 2026 specific file not found, using default and filtering');
+            response = await fetch('/data/master_courses.json');
+          }
+        } else {
+          // Default case
+          response = await fetch('/data/master_courses.json');
+        }
+
         const data = await response.json();
-        
+
         processData(data);
       } catch (error) {
         console.error("Error loading data:", error);
         setIsLoading(false);
       }
     };
-    
+
     loadData();
-  }, []);
+  }, [selectedSemester]); // Reload when semester changes
   
   // Helper to convert time string to minutes for comparison
   const timeStringToMinutes = (timeStr) => {
@@ -151,14 +186,27 @@ export const AppProvider = ({ children }) => {
   // Process courses - group sections under each course
   const processedCourses = useMemo(() => {
     if (isLoading || !coursesData.length) return [];
-    
+
     // Pre-allocate array for better performance
     const processedList = new Array(coursesData.length);
     let index = 0;
-    
+
     coursesData.forEach(course => {
       // Skip if not matching selected semester
-      if (course.current_term && !course.current_term.includes(selectedSemester.split(' ')[0])) {
+      // Check both current_term and year_term fields
+      const termToCheck = course.current_term || course.year_term || '';
+      if (selectedSemester === 'Spring 2026') {
+        // For Spring 2026, check if term contains "Spring" and "2026" (format: "2026 Spring")
+        if (!termToCheck.includes('Spring') || !termToCheck.includes('2026')) {
+          return;
+        }
+      } else if (selectedSemester === 'Fall 2025') {
+        // For Fall 2025, check if term contains "Fall" and "2025" (format: "2025 Fall")
+        if (!termToCheck.includes('Fall') || !termToCheck.includes('2025')) {
+          return;
+        }
+      } else if (termToCheck && !termToCheck.includes('2025')) {
+        // If a term is selected but doesn't match any known pattern, skip
         return;
       }
       
