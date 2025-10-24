@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAppContext } from "../context/AppContext";
-import { Clock, Calendar, Book, BookOpen, Star, Plus, User, Minus, GraduationCap, ChevronDown, Users, ChevronUp } from "lucide-react";
+import { Clock, Calendar, Book, BookOpen, Star, Plus, User, Minus, GraduationCap, ChevronDown, Users, ChevronUp, MapPin } from "lucide-react";
 import { formatTime } from "../utils/timeUtils";
 
 const CourseDetails = ({ onAddCourse }) => {
@@ -164,9 +164,18 @@ const CourseDetails = ({ onAddCourse }) => {
           {/* Meeting Time */}
           {displaySection.start_time && (
             <div className="flex items-center text-gray-600">
-              <Calendar size={14} className="mr-1 flex-shrink-0" /> 
+              <Calendar size={14} className="mr-1 flex-shrink-0" />
               <span className="font-medium mr-1">Time:</span>{" "}
               <span className="truncate">{getMeetingDays(displaySection)} {getTimeRange(displaySection)}</span>
+            </div>
+          )}
+
+          {/* Location */}
+          {displaySection.location && (
+            <div className="flex items-center text-gray-600">
+              <MapPin size={14} className="mr-1 flex-shrink-0" />
+              <span className="font-medium mr-1">Location:</span>{" "}
+              <span className="truncate">{displaySection.location}</span>
             </div>
           )}
 

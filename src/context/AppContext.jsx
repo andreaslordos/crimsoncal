@@ -150,17 +150,26 @@ export const AppProvider = ({ children }) => {
   // Parse weekdays string into day mapping
   const parseWeekdays = (weekdaysStr) => {
     if (!weekdaysStr) return null;
-    
+
     const daysMap = {
+      // Abbreviated forms
       'Mon': 'monday',
       'Tue': 'tuesday',
       'Wed': 'wednesday',
       'Thu': 'thursday',
       'Fri': 'friday',
       'Sat': 'saturday',
-      'Sun': 'sunday'
+      'Sun': 'sunday',
+      // Full forms
+      'Monday': 'monday',
+      'Tuesday': 'tuesday',
+      'Wednesday': 'wednesday',
+      'Thursday': 'thursday',
+      'Friday': 'friday',
+      'Saturday': 'saturday',
+      'Sunday': 'sunday'
     };
-    
+
     const dayMap = {
       monday: false,
       tuesday: false,
@@ -170,16 +179,16 @@ export const AppProvider = ({ children }) => {
       saturday: false,
       sunday: false
     };
-    
+
     // Split by spaces or commas
-    const days = weekdaysStr.split(/[\s,]+/);
+    const days = weekdaysStr.split(/[\s,]+/).filter(d => d); // Filter out empty strings
     days.forEach(day => {
       const normalizedDay = daysMap[day];
       if (normalizedDay) {
         dayMap[normalizedDay] = true;
       }
     });
-    
+
     return dayMap;
   };
   
@@ -254,6 +263,7 @@ export const AppProvider = ({ children }) => {
           start_time: section.start_time || '',
           end_time: section.end_time || '',
           weekdays: section.weekdays || '',
+          location: section.location || '',
           dayMap,
           lecture_monday: section.lecture_monday,
           lecture_tuesday: section.lecture_tuesday,

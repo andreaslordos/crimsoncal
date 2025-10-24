@@ -83,6 +83,7 @@ def merge_data(all_courses: List[Dict], analytics: Dict) -> List[Dict]:
                 'start_time': section.get('start_time', ''),
                 'end_time': section.get('end_time', ''),
                 'weekdays': section.get('weekdays', ''),
+                'location': section.get('location', ''),
                 'grading_basis': section.get('grading_basis', ''),
             }
             
