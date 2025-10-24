@@ -30,8 +30,8 @@ class ParallelHarvardCourseScraper:
                  timeout: int = 30,
                  max_retries: int = 8,
                  retry_delay: float = 1.0,
-                 year: str = "2025",
-                 term: str = "Fall",
+                 year: str = "2026",
+                 term: str = "Spring",
                  school: str = "All"):
         """
         Initialize the parallel course scraper.
@@ -384,8 +384,8 @@ async def main():
     """Main execution function."""
     parser = argparse.ArgumentParser(description='Parallel Harvard Course URL Scraper')
     parser.add_argument('--school', default='All', help='School code (e.g., FAS, HMS, HLS, GSD, HKS, HGSE, HSPH, HDS, All)')
-    parser.add_argument('--year', default='2025', help='Academic year (default: 2025)')
-    parser.add_argument('--term', default='Fall', help='Term: Fall or Spring (default: Fall)')
+    parser.add_argument('--year', default='2026', help='Academic year (default: 2026)')
+    parser.add_argument('--term', default='Spring', help='Term: Fall or Spring (default: Spring)')
     parser.add_argument('--max-concurrent', type=int, default=20,
                        help='Maximum concurrent requests (default: 20)')
     parser.add_argument('--timeout', type=int, default=30,

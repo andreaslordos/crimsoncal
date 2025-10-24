@@ -13,7 +13,7 @@ export const AppProvider = ({ children }) => {
     const savedCourses = localStorage.getItem('myCourses');
     return savedCourses ? JSON.parse(savedCourses) : [];
   });
-  const [selectedSemester, setSelectedSemester] = useState('Fall 2025');
+  const [selectedSemester, setSelectedSemester] = useState('Spring 2026');
   const [filters, setFilters] = useState({
     categories: [], 
     search: '',
