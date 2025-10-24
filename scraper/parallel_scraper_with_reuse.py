@@ -25,14 +25,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class ParallelCourseScraperWithReuse:
-    def __init__(self, 
+    def __init__(self,
                  max_concurrent: int = 50,
                  timeout: int = 30,
                  max_retries: int = 3,
                  retry_delay: float = 1.0):
         """
         Initialize the parallel scraper.
-        
+
         Args:
             max_concurrent: Maximum number of concurrent requests
             timeout: Request timeout in seconds
@@ -48,6 +48,18 @@ class ParallelCourseScraperWithReuse:
         self.session = None
         self.failed_urls = []
         self.course_data = []
+
+        # Load cookies from cookie.txt if it exists
+        self.cookies = None
+        cookie_file = Path(__file__).parent / 'cookie.txt'
+        if cookie_file.exists():
+            with open(cookie_file, 'r') as f:
+                cookie_content = f.read().strip()
+                if cookie_content:
+                    self.cookies = cookie_content
+                    logger.info("Loaded authentication cookies from cookie.txt")
+        else:
+            logger.warning("No cookie.txt found - location data will not be extracted")
         
     async def __aenter__(self):
         """Async context manager entry."""
@@ -102,11 +114,12 @@ class ParallelCourseScraperWithReuse:
                 **scraper._extract_event_data(),
                 **scraper._extract_course_info(),
                 **{f'lecture_{day}': value for day, value in scraper._extract_days().items()},
-                
+                'location': scraper._extract_location(),
+
                 # Additional course information
                 'description': scraper._safe_div_text('course-desc', 'description'),
                 'notes': scraper._safe_div_text('course-notes', 'notes'),
-                'class-notes': scraper._safe_div_text('class-notes', 'class-notes'),
+                'class-notes': scraper._safe_div_class_text('course-page-class-notes'),
                 'school': scraper._safe_label_text('School'),
                 'units': scraper._safe_label_text('Units'),
                 'credits': scraper._safe_label_text('Credits'),
@@ -121,7 +134,7 @@ class ParallelCourseScraperWithReuse:
                 'quantitative_reasoning': scraper._safe_label_text('Quantitative Reasoning with Data'),
                 'divisional_distribution': scraper._safe_label_text('Divisional Distribution'),
                 'course_level': scraper._safe_label_text('Course Level'),
-                
+
                 # Add the URL for reference
                 'course_url': course_url
             }
@@ -154,9 +167,14 @@ class ParallelCourseScraperWithReuse:
             
             try:
                 headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 }
-                
+
+                # Add cookies if available
+                if self.cookies:
+                    headers['Cookie'] = self.cookies
+
                 async with self.session.get(full_url, headers=headers) as response:
                     if response.status == 200:
                         html = await response.text()
