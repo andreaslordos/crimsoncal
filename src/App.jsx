@@ -19,9 +19,6 @@ const AppContent = () => {
 
   const normalizedSemester = selectedSemester || '';
   const lowerSemester = normalizedSemester.toLowerCase();
-  const isSpring = lowerSemester.includes('spring');
-  const semesterYearMatch = normalizedSemester.match(/(\d{4})/);
-  const semesterYear = semesterYearMatch ? parseInt(semesterYearMatch[1], 10) : (isSpring ? 2026 : 2025);
   
   // Fetch the last updated timestamp
   useEffect(() => {
@@ -36,11 +33,14 @@ const AppContent = () => {
       });
   }, []);
   
-  // Function to generate ICS file content for selected courses
-  const generateICSContent = () => {
+  // Function to generate ICS file content for selected courses along with suggested filename slug
+  const generateICSExport = () => {
     const visibleCourses = myCourses.filter(course => !hiddenCourses[course.course_id]);
 
     if (visibleCourses.length === 0) return null;
+
+    const timezoneId = 'America/New_York';
+    const CRLF = '\r\n';
 
     const sanitizeDateString = (dateStr) => (dateStr ? dateStr.replace(/\./g, '') : '');
     const parseDateString = (dateStr) => {
@@ -58,7 +58,7 @@ const AppContent = () => {
       return `${dateObj.getUTCFullYear()}${pad(dateObj.getUTCMonth() + 1)}${pad(dateObj.getUTCDate())}T${pad(dateObj.getUTCHours())}${pad(dateObj.getUTCMinutes())}${pad(dateObj.getUTCSeconds())}Z`;
     };
     const formatICSDateTime = (dateObj, timeParts) => {
-      if (!dateObj || Number.isNaN(dateObj.getTime())) return null;
+      if (!dateObj || Number.isNaN(dateObj.getTime()) || !timeParts) return null;
       const { hour, minute } = timeParts;
       return `${dateObj.getFullYear()}${pad(dateObj.getMonth() + 1)}${pad(dateObj.getDate())}T${pad(hour)}${pad(minute)}00`;
     };
@@ -85,6 +85,14 @@ const AppContent = () => {
 
       return fallback;
     };
+    const escapeICSValue = (value) => {
+      if (!value) return '';
+      return value
+        .replace(/\\/g, '\\\\')
+        .replace(/\n/g, '\\n')
+        .replace(/,/g, '\\,')
+        .replace(/;/g, '\\;');
+    };
     const getNthWeekdayOfMonth = (year, monthIndex, weekday, n) => {
       const firstOfMonth = new Date(year, monthIndex, 1);
       const firstWeekday = firstOfMonth.getDay();
@@ -109,39 +117,98 @@ const AppContent = () => {
       saturday: { code: 'SA', index: 6 }
     };
 
-    const fallbackTermStart = new Date(semesterYear, isSpring ? 0 : 8, isSpring ? 27 : 2);
-    const fallbackTermEnd = new Date(semesterYear, isSpring ? 4 : 11, isSpring ? 15 : 3);
+    const now = new Date();
+    const termMatch = lowerSemester.match(/(spring|summer|fall|winter)/);
+    const termName = termMatch ? termMatch[1] : null;
+    const explicitYearMatch = normalizedSemester.match(/(20\d{2})/);
+
+    const parsedCourseYears = visibleCourses
+      .map(course => parseDateString(course.start_date))
+      .filter(Boolean)
+      .map(date => date.getFullYear());
+
+    let semesterYear = explicitYearMatch ? parseInt(explicitYearMatch[1], 10) : null;
+    if (!semesterYear && parsedCourseYears.length > 0) {
+      semesterYear = Math.min(...parsedCourseYears);
+    }
+    if (!semesterYear) {
+      const currentYear = now.getFullYear();
+      if (termName === 'spring') {
+        semesterYear = now.getMonth() >= 6 ? currentYear + 1 : currentYear;
+      } else if (termName === 'winter') {
+        semesterYear = now.getMonth() >= 8 ? currentYear + 1 : currentYear;
+      } else {
+        semesterYear = currentYear;
+      }
+    }
+
+    const termDefaults = (year) => {
+      switch (termName) {
+        case 'spring':
+          return {
+            start: new Date(year, 0, 22),
+            end: new Date(year, 4, 15)
+          };
+        case 'summer':
+          return {
+            start: new Date(year, 5, 3),
+            end: new Date(year, 7, 15)
+          };
+        case 'winter':
+          return {
+            start: new Date(year - 1, 11, 10),
+            end: new Date(year, 0, 20)
+          };
+        case 'fall':
+        default:
+          return {
+            start: new Date(year, 7, 26),
+            end: new Date(year, 11, 10)
+          };
+      }
+    };
+
+    const termDefaultRange = termDefaults(semesterYear);
+    const fallbackTermStart = new Date(termDefaultRange.start.getTime());
+    const fallbackTermEnd = new Date(termDefaultRange.end.getTime());
+    if (fallbackTermEnd < fallbackTermStart) {
+      fallbackTermEnd.setTime(fallbackTermStart.getTime());
+    }
     const defaultUntilDate = new Date(fallbackTermEnd.getFullYear(), fallbackTermEnd.getMonth(), fallbackTermEnd.getDate(), 23, 59, 59);
 
-    const daylightStart = formatICSDate(getNthWeekdayOfMonth(semesterYear, 2, 0, 2));
-    const standardStart = formatICSDate(getNthWeekdayOfMonth(semesterYear, 10, 0, 1));
-    const calendarName = selectedSemester ? `Harvard ${selectedSemester} Courses` : 'Harvard Courses';
+    const daylightStartDate = getNthWeekdayOfMonth(semesterYear, 2, 0, 2);
+    const standardStartDate = getNthWeekdayOfMonth(semesterYear, 10, 0, 1);
+    const calendarName = selectedSemester ? `Harvard ${selectedSemester} Courses` : `Harvard Courses ${semesterYear}`;
 
-    let icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//CrimsonCal//Harvard Course Schedule//EN
-CALSCALE:GREGORIAN
-METHOD:PUBLISH
-X-WR-CALNAME:${calendarName}
-X-WR-TIMEZONE:America/New_York
-BEGIN:VTIMEZONE
-TZID:America/New_York
-BEGIN:DAYLIGHT
-TZOFFSETFROM:-0500
-TZOFFSETTO:-0400
-TZNAME:EDT
-DTSTART:${daylightStart ?? `${semesterYear}0308`}T020000
-RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
-END:DAYLIGHT
-BEGIN:STANDARD
-TZOFFSETFROM:-0400
-TZOFFSETTO:-0500
-TZNAME:EST
-DTSTART:${standardStart ?? `${semesterYear}1101`}T020000
-RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
-END:STANDARD
-END:VTIMEZONE
-`;
+    const icsLines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//CrimsonCal//Harvard Course Schedule//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      `X-WR-CALNAME:${escapeICSValue(calendarName)}`,
+      `X-WR-TIMEZONE:${timezoneId}`,
+      'BEGIN:VTIMEZONE',
+      `TZID:${timezoneId}`,
+      'BEGIN:DAYLIGHT',
+      'TZOFFSETFROM:-0500',
+      'TZOFFSETTO:-0400',
+      'TZNAME:EDT',
+      `DTSTART:${(formatICSDate(daylightStartDate) || `${semesterYear}0310`)}T020000`,
+      'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU',
+      'END:DAYLIGHT',
+      'BEGIN:STANDARD',
+      'TZOFFSETFROM:-0400',
+      'TZOFFSETTO:-0500',
+      'TZNAME:EST',
+      `DTSTART:${(formatICSDate(standardStartDate) || `${semesterYear}1101`)}T020000`,
+      'RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU',
+      'END:STANDARD',
+      'END:VTIMEZONE'
+    ];
+
+    const dtstamp = formatUTCDateTime(new Date());
+    let eventAdded = false;
 
     visibleCourses.forEach(course => {
       const section = course.selectedSection || course.sections?.[0] || {};
@@ -154,12 +221,16 @@ END:VTIMEZONE
 
       if (scheduledDays.length === 0) return;
 
-      const courseStartDate = parseDateString(course.start_date) || fallbackTermStart;
-      const courseEndDate = parseDateString(course.end_date) || fallbackTermEnd;
+      const courseStartDate = parseDateString(course.start_date) || new Date(fallbackTermStart.getTime());
+      const courseEndDate = parseDateString(course.end_date) || new Date(fallbackTermEnd.getTime());
+      if (courseEndDate < courseStartDate) {
+        courseEndDate.setTime(courseStartDate.getTime());
+      }
 
       const firstOccurrences = scheduledDays.map(day => getFirstOccurrence(courseStartDate, day.index));
       firstOccurrences.sort((a, b) => a.getTime() - b.getTime());
       const firstOccurrenceDate = firstOccurrences[0];
+      if (!firstOccurrenceDate) return;
 
       const meetingDays = scheduledDays.map(day => day.code);
 
@@ -176,55 +247,113 @@ END:VTIMEZONE
       if (!dtstart || !dtend) return;
 
       const courseEndForUntil = new Date(courseEndDate.getFullYear(), courseEndDate.getMonth(), courseEndDate.getDate(), 23, 59, 59);
-      const untilDate = formatUTCDateTime(courseEndForUntil) || formatUTCDateTime(defaultUntilDate) || (isSpring ? '20260515T235959Z' : '20251203T235959Z');
+      const untilDate = formatUTCDateTime(courseEndForUntil) || formatUTCDateTime(defaultUntilDate);
+      if (!untilDate) return;
 
-      const uid = `${course.course_id}-${Date.now()}@crimsoncal`;
-      const summary = `${course.subject_catalog}: ${course.course_title}`;
+      const sectionIdentifier = section.class_number || section.section || 'default';
+      const uidSeed = `${course.course_id || course.subject_catalog || 'course'}-${sectionIdentifier}`;
+      const sanitizedUidSeed = uidSeed.replace(/[^A-Za-z0-9]/g, '').toLowerCase() || `course-${Math.random().toString(36).slice(2, 8)}`;
+      const uid = `${sanitizedUidSeed}-${semesterYear}@crimsoncal`;
+      const summary = `${course.subject_catalog}: ${course.course_title}`.trim();
 
-      icsContent += `BEGIN:VEVENT
-UID:${uid}
-DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}
-DTSTART;TZID=America/New_York:${dtstart}
-DTEND;TZID=America/New_York:${dtend}
-SUMMARY:${summary}
-CATEGORIES:Harvard Courses
-RRULE:FREQ=WEEKLY;BYDAY=${meetingDays.join(',')};UNTIL=${untilDate}
-`;
+      const location = (section.location || course.location || '').trim();
+      const hasLocation = location && !/(to\s*be\s*announced|tbd|tba)/i.test(location);
 
-      if (isSpring) {
-        icsContent += `EXDATE;TZID=America/New_York:20260316T${dtstart.substring(9)}
-EXDATE;TZID=America/New_York:20260317T${dtstart.substring(9)}
-EXDATE;TZID=America/New_York:20260318T${dtstart.substring(9)}
-EXDATE;TZID=America/New_York:20260319T${dtstart.substring(9)}
-EXDATE;TZID=America/New_York:20260320T${dtstart.substring(9)}
-`;
-      } else {
-        icsContent += `EXDATE;TZID=America/New_York:20251127T${dtstart.substring(9)}
-EXDATE;TZID=America/New_York:20251128T${dtstart.substring(9)}
-`;
+      const rruleParts = ['FREQ=WEEKLY'];
+      if (meetingDays.length) {
+        rruleParts.push(`BYDAY=${meetingDays.join(',')}`);
+      }
+      rruleParts.push(`UNTIL=${untilDate}`);
+
+      const eventLines = [
+        'BEGIN:VEVENT',
+        `UID:${uid}`,
+        `DTSTAMP:${dtstamp}`,
+        `DTSTART;TZID=${timezoneId}:${dtstart}`,
+        `DTEND;TZID=${timezoneId}:${dtend}`,
+        `SUMMARY:${escapeICSValue(summary)}`,
+        'CATEGORIES:Harvard Courses',
+        `RRULE:${rruleParts.join(';')}`
+      ];
+
+      if (hasLocation) {
+        eventLines.push(`LOCATION:${escapeICSValue(location)}`);
+        eventLines.push(`DESCRIPTION:${escapeICSValue(`Location: ${location}`)}`);
       }
 
-      icsContent += `END:VEVENT
-`;
+      const exdates = [];
+      if (termName === 'spring') {
+        const springBreakMonday = getNthWeekdayOfMonth(semesterYear, 2, 1, 3);
+        if (springBreakMonday) {
+          for (let i = 0; i < 5; i += 1) {
+            const breakDate = new Date(springBreakMonday);
+            breakDate.setDate(springBreakMonday.getDate() + i);
+            const dayCode = ['MO', 'TU', 'WE', 'TH', 'FR'][i];
+            if (meetingDays.includes(dayCode) && breakDate >= courseStartDate && breakDate <= courseEndDate) {
+              const exdateValue = formatICSDateTime(breakDate, startTimeParts);
+              if (exdateValue) {
+                exdates.push(`EXDATE;TZID=${timezoneId}:${exdateValue}`);
+              }
+            }
+          }
+        }
+      } else if (termName === 'fall') {
+        const thanksgivingThursday = getNthWeekdayOfMonth(semesterYear, 10, 4, 4);
+        if (thanksgivingThursday) {
+          if (meetingDays.includes('TH') && thanksgivingThursday >= courseStartDate && thanksgivingThursday <= courseEndDate) {
+            const exdateValue = formatICSDateTime(thanksgivingThursday, startTimeParts);
+            if (exdateValue) {
+              exdates.push(`EXDATE;TZID=${timezoneId}:${exdateValue}`);
+            }
+          }
+          if (meetingDays.includes('FR')) {
+            const thanksgivingFriday = new Date(thanksgivingThursday);
+            thanksgivingFriday.setDate(thanksgivingThursday.getDate() + 1);
+            const exdateValue = formatICSDateTime(thanksgivingFriday, startTimeParts);
+            if (exdateValue && thanksgivingFriday >= courseStartDate && thanksgivingFriday <= courseEndDate) {
+              exdates.push(`EXDATE;TZID=${timezoneId}:${exdateValue}`);
+            }
+          }
+        }
+      }
+
+      exdates.forEach(exdateLine => eventLines.push(exdateLine));
+
+      eventLines.push('END:VEVENT');
+      icsLines.push(...eventLines);
+      eventAdded = true;
     });
 
-    icsContent += 'END:VCALENDAR';
-    return icsContent;
+    if (!eventAdded) {
+      return null;
+    }
+
+    icsLines.push('END:VCALENDAR');
+
+    const fileSlugBase = termName ? `${termName}-${semesterYear}` : `${semesterYear}`;
+    const rawSlug = (fileSlugBase || 'harvard-courses')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-');
+    const fileSlug = rawSlug.replace(/(^-|-$)/g, '') || 'harvard-courses';
+
+    return {
+      content: `${icsLines.join(CRLF)}${CRLF}`,
+      fileSlug
+    };
   };
   
   // Function to trigger ICS download
   const handleExportToCalendar = () => {
-    const icsContent = generateICSContent();
-    if (!icsContent) return;
-    
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const exportPayload = generateICSExport();
+    if (!exportPayload) return;
+
+    const { content, fileSlug } = exportPayload;
+    const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const sanitizedSemester = lowerSemester
-      ? lowerSemester.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-      : (isSpring ? 'spring-2026' : 'fall-2025');
-    const filename = `harvard-courses-${sanitizedSemester || (isSpring ? 'spring-2026' : 'fall-2025')}.ics`;
+    const sanitizedSemester = fileSlug.replace(/(^-|-$)/g, '') || 'harvard-courses';
+    const filename = `harvard-courses-${sanitizedSemester}.ics`;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
