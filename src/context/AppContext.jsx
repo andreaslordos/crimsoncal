@@ -340,7 +340,9 @@ export const AppProvider = ({ children }) => {
         start_time: firstSection.start_time || '',
         end_time: firstSection.end_time || '',
         weekdays: firstSection.weekdays || '',
-        
+        start_date: course.start_date || '',
+        end_date: course.end_date || '',
+
         // Analytics data (from Q guides)
         rating: course.latest_course_rating || null,
         hours: course.latest_hours_per_week || null,
