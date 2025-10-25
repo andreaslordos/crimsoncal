@@ -12,10 +12,16 @@ import './App.css';
 
 // App.jsx - Make sidebar take full width on mobile
 const AppContent = () => {
-  const { isLoading, myCourses, hiddenCourses } = useAppContext();
+  const { isLoading, myCourses, hiddenCourses, selectedSemester } = useAppContext();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [lastUpdated, setLastUpdated] = useState('');
   const [leftColumnWidth, setLeftColumnWidth] = useState(60);
+
+  const normalizedSemester = selectedSemester || '';
+  const lowerSemester = normalizedSemester.toLowerCase();
+  const isSpring = lowerSemester.includes('spring');
+  const semesterYearMatch = normalizedSemester.match(/(\d{4})/);
+  const semesterYear = semesterYearMatch ? parseInt(semesterYearMatch[1], 10) : (isSpring ? 2026 : 2025);
   
   // Fetch the last updated timestamp
   useEffect(() => {
@@ -33,34 +39,90 @@ const AppContent = () => {
   // Function to generate ICS file content for selected courses
   const generateICSContent = () => {
     const visibleCourses = myCourses.filter(course => !hiddenCourses[course.course_id]);
-    
+
     if (visibleCourses.length === 0) return null;
-    
-    // Helper to format date/time for ICS
-    const formatICSDateTime = (date, timeStr) => {
-      const [month, day] = [date.substring(4, 6), date.substring(6, 8)];
-      let hour = 0, minute = 0;
-      
-      if (timeStr) {
-        const timeParts = timeStr.match(/(\d+):?(\d+)?([ap]m)/i);
-        if (timeParts) {
-          hour = parseInt(timeParts[1]);
-          minute = timeParts[2] ? parseInt(timeParts[2]) : 0;
-          if (timeParts[3].toLowerCase() === 'pm' && hour < 12) hour += 12;
-          if (timeParts[3].toLowerCase() === 'am' && hour === 12) hour = 0;
-        }
-      }
-      
-      return `2025${month}${day}T${hour.toString().padStart(2, '0')}${minute.toString().padStart(2, '0')}00`;
+
+    const sanitizeDateString = (dateStr) => (dateStr ? dateStr.replace(/\./g, '') : '');
+    const parseDateString = (dateStr) => {
+      if (!dateStr) return null;
+      const parsed = new Date(sanitizeDateString(dateStr));
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
     };
-    
-    // Start ICS file
+    const pad = (value) => value.toString().padStart(2, '0');
+    const formatICSDate = (dateObj) => {
+      if (!dateObj || Number.isNaN(dateObj.getTime())) return null;
+      return `${dateObj.getFullYear()}${pad(dateObj.getMonth() + 1)}${pad(dateObj.getDate())}`;
+    };
+    const formatUTCDateTime = (dateObj) => {
+      if (!dateObj || Number.isNaN(dateObj.getTime())) return null;
+      return `${dateObj.getUTCFullYear()}${pad(dateObj.getUTCMonth() + 1)}${pad(dateObj.getUTCDate())}T${pad(dateObj.getUTCHours())}${pad(dateObj.getUTCMinutes())}${pad(dateObj.getUTCSeconds())}Z`;
+    };
+    const formatICSDateTime = (dateObj, timeParts) => {
+      if (!dateObj || Number.isNaN(dateObj.getTime())) return null;
+      const { hour, minute } = timeParts;
+      return `${dateObj.getFullYear()}${pad(dateObj.getMonth() + 1)}${pad(dateObj.getDate())}T${pad(hour)}${pad(minute)}00`;
+    };
+    const parseTimeString = (timeStr, fallback) => {
+      if (!timeStr) return fallback;
+      const trimmed = timeStr.trim();
+      const match = trimmed.match(/(\d+):?(\d+)?\s*([ap]m)/i);
+      if (match) {
+        let hour = parseInt(match[1], 10);
+        const minute = match[2] ? parseInt(match[2], 10) : 0;
+        const meridiem = match[3].toLowerCase();
+        if (meridiem === 'pm' && hour < 12) hour += 12;
+        if (meridiem === 'am' && hour === 12) hour = 0;
+        return { hour, minute };
+      }
+
+      const colonMatch = trimmed.match(/(\d+):(\d+)/);
+      if (colonMatch) {
+        return {
+          hour: parseInt(colonMatch[1], 10),
+          minute: parseInt(colonMatch[2], 10)
+        };
+      }
+
+      return fallback;
+    };
+    const getNthWeekdayOfMonth = (year, monthIndex, weekday, n) => {
+      const firstOfMonth = new Date(year, monthIndex, 1);
+      const firstWeekday = firstOfMonth.getDay();
+      const offset = (weekday - firstWeekday + 7) % 7;
+      const dayOfMonth = 1 + offset + 7 * (n - 1);
+      return new Date(year, monthIndex, dayOfMonth);
+    };
+    const getFirstOccurrence = (startDate, targetDay) => {
+      const base = new Date(startDate);
+      const diff = (targetDay - base.getDay() + 7) % 7;
+      base.setDate(base.getDate() + diff);
+      return base;
+    };
+
+    const dayKeyToICS = {
+      sunday: { code: 'SU', index: 0 },
+      monday: { code: 'MO', index: 1 },
+      tuesday: { code: 'TU', index: 2 },
+      wednesday: { code: 'WE', index: 3 },
+      thursday: { code: 'TH', index: 4 },
+      friday: { code: 'FR', index: 5 },
+      saturday: { code: 'SA', index: 6 }
+    };
+
+    const fallbackTermStart = new Date(semesterYear, isSpring ? 0 : 8, isSpring ? 27 : 2);
+    const fallbackTermEnd = new Date(semesterYear, isSpring ? 4 : 11, isSpring ? 15 : 3);
+    const defaultUntilDate = new Date(fallbackTermEnd.getFullYear(), fallbackTermEnd.getMonth(), fallbackTermEnd.getDate(), 23, 59, 59);
+
+    const daylightStart = formatICSDate(getNthWeekdayOfMonth(semesterYear, 2, 0, 2));
+    const standardStart = formatICSDate(getNthWeekdayOfMonth(semesterYear, 10, 0, 1));
+    const calendarName = selectedSemester ? `Harvard ${selectedSemester} Courses` : 'Harvard Courses';
+
     let icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//CrimsonCal//Harvard Course Schedule//EN
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
-X-WR-CALNAME:Harvard Fall 2025 Courses
+X-WR-CALNAME:${calendarName}
 X-WR-TIMEZONE:America/New_York
 BEGIN:VTIMEZONE
 TZID:America/New_York
@@ -68,50 +130,56 @@ BEGIN:DAYLIGHT
 TZOFFSETFROM:-0500
 TZOFFSETTO:-0400
 TZNAME:EDT
-DTSTART:${isSpring ? '20260308' : '20250309'}T020000
+DTSTART:${daylightStart ?? `${semesterYear}0308`}T020000
 RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
 END:DAYLIGHT
 BEGIN:STANDARD
 TZOFFSETFROM:-0400
 TZOFFSETTO:-0500
 TZNAME:EST
-DTSTART:${isSpring ? '20251101' : '20251102'}T020000
+DTSTART:${standardStart ?? `${semesterYear}1101`}T020000
 RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
 END:STANDARD
 END:VTIMEZONE
 `;
-    
-    // Add each course as a recurring event
+
     visibleCourses.forEach(course => {
       const section = course.selectedSection || course.sections?.[0] || {};
       const dayMap = section.dayMap || course.dayMap || {};
-      
-      // Get days for RRULE
-      const days = [];
-      const firstDates = {}; // Track first occurrence for each day
-      if (dayMap.monday) { days.push('MO'); firstDates.MO = '20250908'; } // First Monday
-      if (dayMap.tuesday) { days.push('TU'); firstDates.TU = '20250902'; } // First Tuesday (Sept 2)
-      if (dayMap.wednesday) { days.push('WE'); firstDates.WE = '20250903'; } // First Wednesday
-      if (dayMap.thursday) { days.push('TH'); firstDates.TH = '20250904'; } // First Thursday
-      if (dayMap.friday) { days.push('FR'); firstDates.FR = '20250905'; } // First Friday
-      
-      if (days.length === 0) return; // Skip courses with no scheduled days
-      
-      // Use the earliest day as start
-      const firstDay = days[0];
-      const startDateBase = firstDates[firstDay];
-      
-      const startTime = section.start_time || course.start_time || '9:00am';
-      const endTime = section.end_time || course.end_time || '10:00am';
-      
-      const dtstart = formatICSDateTime(startDateBase, startTime);
-      const dtend = formatICSDateTime(startDateBase, endTime);
-      
+
+      const scheduledDays = Object.entries(dayMap)
+        .filter(([, active]) => active)
+        .map(([key]) => dayKeyToICS[key])
+        .filter(Boolean);
+
+      if (scheduledDays.length === 0) return;
+
+      const courseStartDate = parseDateString(course.start_date) || fallbackTermStart;
+      const courseEndDate = parseDateString(course.end_date) || fallbackTermEnd;
+
+      const firstOccurrences = scheduledDays.map(day => getFirstOccurrence(courseStartDate, day.index));
+      firstOccurrences.sort((a, b) => a.getTime() - b.getTime());
+      const firstOccurrenceDate = firstOccurrences[0];
+
+      const meetingDays = scheduledDays.map(day => day.code);
+
+      const startFallback = { hour: 9, minute: 0 };
+      const startTimeParts = parseTimeString(section.start_time || course.start_time, startFallback);
+      const endFallback = {
+        hour: Math.min(startTimeParts.hour + 1, 23),
+        minute: startTimeParts.minute
+      };
+      const endTimeParts = parseTimeString(section.end_time || course.end_time, endFallback);
+
+      const dtstart = formatICSDateTime(firstOccurrenceDate, startTimeParts);
+      const dtend = formatICSDateTime(firstOccurrenceDate, endTimeParts);
+      if (!dtstart || !dtend) return;
+
+      const courseEndForUntil = new Date(courseEndDate.getFullYear(), courseEndDate.getMonth(), courseEndDate.getDate(), 23, 59, 59);
+      const untilDate = formatUTCDateTime(courseEndForUntil) || formatUTCDateTime(defaultUntilDate) || (isSpring ? '20260515T235959Z' : '20251203T235959Z');
+
       const uid = `${course.course_id}-${Date.now()}@crimsoncal`;
       const summary = `${course.subject_catalog}: ${course.course_title}`;
-      
-      // Set recurrence end date and holidays based on semester
-      const untilDate = isSpring ? '20260515T235959Z' : '20251203T235959Z';
 
       icsContent += `BEGIN:VEVENT
 UID:${uid}
@@ -120,12 +188,10 @@ DTSTART;TZID=America/New_York:${dtstart}
 DTEND;TZID=America/New_York:${dtend}
 SUMMARY:${summary}
 CATEGORIES:Harvard Courses
-RRULE:FREQ=WEEKLY;BYDAY=${days.join(',')};UNTIL=${untilDate}
+RRULE:FREQ=WEEKLY;BYDAY=${meetingDays.join(',')};UNTIL=${untilDate}
 `;
 
-      // Add holiday exclusions based on semester
       if (isSpring) {
-        // Spring break dates (typically March)
         icsContent += `EXDATE;TZID=America/New_York:20260316T${dtstart.substring(9)}
 EXDATE;TZID=America/New_York:20260317T${dtstart.substring(9)}
 EXDATE;TZID=America/New_York:20260318T${dtstart.substring(9)}
@@ -133,7 +199,6 @@ EXDATE;TZID=America/New_York:20260319T${dtstart.substring(9)}
 EXDATE;TZID=America/New_York:20260320T${dtstart.substring(9)}
 `;
       } else {
-        // Thanksgiving dates for Fall
         icsContent += `EXDATE;TZID=America/New_York:20251127T${dtstart.substring(9)}
 EXDATE;TZID=America/New_York:20251128T${dtstart.substring(9)}
 `;
@@ -142,7 +207,7 @@ EXDATE;TZID=America/New_York:20251128T${dtstart.substring(9)}
       icsContent += `END:VEVENT
 `;
     });
-    
+
     icsContent += 'END:VCALENDAR';
     return icsContent;
   };
@@ -156,7 +221,10 @@ EXDATE;TZID=America/New_York:20251128T${dtstart.substring(9)}
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const filename = isSpring ? 'harvard-courses-spring-2026.ics' : 'harvard-courses-fall-2025.ics';
+    const sanitizedSemester = lowerSemester
+      ? lowerSemester.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+      : (isSpring ? 'spring-2026' : 'fall-2025');
+    const filename = `harvard-courses-${sanitizedSemester || (isSpring ? 'spring-2026' : 'fall-2025')}.ics`;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
