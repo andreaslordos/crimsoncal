@@ -1,0 +1,62 @@
+name: Daily Course Data Scraper
+
+on:
+  # Schedule: Run daily at 7 AM EST/EDT
+  # During EDT (March-November): 7 AM EDT = 11:00 UTC
+  # During EST (November-March): 7 AM EST = 12:00 UTC
+  # Using 11:00 UTC to run at 7 AM EDT, will be 6 AM EST in winter
+  schedule:
+    - cron: '0 11 * * *'  # Runs at 11:00 UTC daily
+
+  # Allow manual triggering for testing
+  workflow_dispatch:
+
+jobs:
+  scrape_and_update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Need full history for git operations
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          cd scraper
+          pip install -r requirements.txt
+
+      - name: Restore cookie authentication
+        run: |
+          cd scraper
+          echo "${{ secrets.MY_HARVARD_COOKIE }}" > cookie.txt
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run pipeline
+        run: |
+          cd scraper
+          bash run_full_pipeline.sh
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Show status
+        if: steps.check_changes.outputs.changes == 'false'
+        run: echo "No changes detected - data is already up to date"
