@@ -1,12 +1,12 @@
 {
-  "total_requested": 7649,
-  "successful": 7639,
+  "total_requested": 7654,
+  "successful": 7644,
   "parse_failed": 10,
   "not_found": 0,
   "failed": 0,
-  "elapsed_time": 480.0595934391022,
-  "courses_per_second": 15.933438482508551,
-  "timestamp": "2025-10-30T18:29:11.097043",
-  "unique_courses": 7578,
+  "elapsed_time": 473.5349500179291,
+  "courses_per_second": 16.16353766434812,
+  "timestamp": "2025-10-31T11:27:45.480863",
+  "unique_courses": 7583,
   "duplicates_removed": 71
 }
