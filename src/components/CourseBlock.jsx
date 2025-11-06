@@ -33,21 +33,21 @@ const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts 
     const widthPercentage = `calc(${(blockWidth * columnWidth)}%)`;
     
     return (
-      <div 
+      <div
         className={`absolute ${colorClass} text-white rounded-md p-1 overflow-hidden cursor-pointer hover:brightness-110 hover:shadow-lg transition-all duration-150 border border-black/10`}
-        style={{ 
-          top: `${startPos}px`, 
-          left: leftPosition, 
+        style={{
+          top: `${startPos}px`,
+          left: leftPosition,
           width: widthPercentage,
           height: `${height}px`,
           zIndex: conflictIndex + 1,
         }}
         onClick={() => setSelectedCourse(course)}
       >
-        <div className="text-xs font-bold truncate">
+        <div className="text-xs font-bold break-words md:truncate">
           {course.subject_catalog}
         </div>
-        <div className="text-xs truncate">
+        <div className="text-xs truncate hidden md:block">
           {formatTime(startTime)}-{formatTime(endTime)}
         </div>
       </div>

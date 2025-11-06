@@ -6,25 +6,25 @@ import CourseList from "./CourseList";
 import CourseDetails from "./CourseDetails";
 import { Search } from "lucide-react";
 
-const Sidebar = ({ onCloseMobile }) => {
+const Sidebar = ({ onCloseMobile, isMobile }) => {
   const { filters, setFilters, selectedCourse, totalHours, totalUnits } = useAppContext();
-  
+
   return (
-    <div className="w-full h-full border-l border-gray-200 bg-white flex flex-col">
-      <div className="p-4 flex-1 overflow-y-auto">
+    <div className={`w-full h-full ${isMobile ? 'bg-gray-50' : 'border-l border-gray-200 bg-white'} flex flex-col`}>
+      <div className={`${isMobile ? 'p-0' : 'p-4'} flex-1 overflow-y-auto`}>
         <div className="text-center text-sm text-gray-600 mb-4 mt-6 md:mt-0">
           <div>{totalHours} hours • {totalUnits} units</div>
         </div>
-        
+
         {/* Category filters */}
         <CategoryFilters />
-        
+
         {/* Day filter */}
         <DayFilter />
-        
+
         {/* Advanced filters */}
         <AdvancedFilters />
-        
+
         {/* Search box */}
         <div className="mb-4 relative">
           <input
@@ -38,12 +38,14 @@ const Sidebar = ({ onCloseMobile }) => {
             <Search size={16} />
           </div>
         </div>
-        
+
         {/* Course list */}
         <CourseList />
-        
-        {/* Selected course details */}
-        {selectedCourse && <CourseDetails onAddCourse={onCloseMobile} />}
+
+        {/* Selected course details - shown only on desktop */}
+        {!isMobile && selectedCourse && (
+          <CourseDetails onAddCourse={onCloseMobile} />
+        )}
       </div>
     </div>
   );
