@@ -4,6 +4,7 @@ import Header from './components/Header.jsx';
 import Calendar from './components/Calendar.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import MyCourses from './components/MyCourses.jsx';
+import CourseDetails from './components/CourseDetails.jsx';
 import LoadingScreen from './components/LoadingScreen.jsx';
 import ResizableDivider from './components/ResizableDivider.jsx';
 import { useAppContext } from './context/AppContext.jsx';
@@ -370,30 +371,39 @@ const AppContent = () => {
   return (
     <div className="flex flex-col h-screen w-full bg-gray-50">
       <Header />
-      
+
       <div className="flex flex-1 overflow-hidden w-full relative">
         {/* Mobile sidebar toggle button */}
-        <button 
+        <button
           className="md:hidden fixed bottom-4 right-4 z-40 bg-teal-600 text-white p-3 rounded-full shadow-lg hover:bg-teal-700 transition-colors duration-150"
           onClick={() => setSidebarVisible(!sidebarVisible)}
           aria-label="Toggle sidebar"
         >
           <Menu size={24} />
         </button>
-        
-        {/* Main content area with calendar and MyCourses */}
-        <div 
-          className="overflow-auto p-4 relative"
-          style={{ width: `${leftColumnWidth}%` }}
+
+        {/* Main content area - full width on mobile, resizable on desktop */}
+        <div
+          className="overflow-auto p-4 relative w-full md:w-auto"
+          style={{ width: window.innerWidth >= 768 ? `${leftColumnWidth}%` : '100%' }}
         >
           <Calendar />
-          <MyCourses />
-          
+
+          {/* MyCourses - hidden on mobile, shown on desktop */}
+          <div className="hidden md:block">
+            <MyCourses />
+          </div>
+
+          {/* CourseDetails - shown on mobile underneath calendar, hidden on desktop */}
+          <div className="md:hidden">
+            <CourseDetails onAddCourse={() => {}} />
+          </div>
+
           {/* Report Bug and Export buttons - centered below calendar */}
           <div className="flex justify-center items-center gap-4 mt-4">
-            <a 
-              href="https://docs.google.com/forms/d/e/1FAIpQLSdPks0Z_z6oamuEs4bMHJznTadvBFjVHmZK4l7vwdERCHWgBg/viewform?usp=header" 
-              target="_blank" 
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSdPks0Z_z6oamuEs4bMHJznTadvBFjVHmZK4l7vwdERCHWgBg/viewform?usp=header"
+              target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-blue-600 hover:underline hover:text-blue-700 transition-colors duration-150"
             >
@@ -418,39 +428,39 @@ const AppContent = () => {
               </span>
             )}
           </div>
-          
+
           {/* Last updated timestamp - bottom left */}
           <div className="fixed bottom-4 left-4 text-xs text-gray-400">
             Last updated: {lastUpdated}
           </div>
         </div>
-        
+
         {/* Mobile overlay */}
         {sidebarVisible && (
-          <div 
+          <div
             className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
             onClick={() => setSidebarVisible(false)}
           ></div>
         )}
-        
-        {/* Resizable divider */}
-        <div className="relative">
-          <ResizableDivider 
+
+        {/* Resizable divider - hidden on mobile */}
+        <div className="relative hidden md:block">
+          <ResizableDivider
             onResize={setLeftColumnWidth}
             minLeftWidth={30}
             minRightWidth={25}
           />
         </div>
-        
-        {/* Sidebar - full height and width on mobile */}
-        <div 
+
+        {/* Sidebar - full height and width on mobile, resizable on desktop */}
+        <div
           className={`transition-all duration-300 ease-in-out fixed md:relative md:translate-x-0 inset-y-0 right-0 h-full z-40 md:z-0 w-full md:w-auto ${
             sidebarVisible ? 'translate-x-0' : 'translate-x-full'
           }`}
           style={{ width: window.innerWidth >= 768 ? `${100 - leftColumnWidth}%` : '100%' }}
         >
           {/* Mobile close button */}
-          <button 
+          <button
             className="md:hidden absolute top-4 left-4 z-50 bg-white p-2 rounded-full shadow hover:bg-gray-100 transition-colors duration-150"
             onClick={() => setSidebarVisible(false)}
             aria-label="Close sidebar"
