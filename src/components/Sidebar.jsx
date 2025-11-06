@@ -10,9 +10,12 @@ const Sidebar = ({ onCloseMobile, isMobile }) => {
   const { filters, setFilters, selectedCourse, totalHours, totalUnits } = useAppContext();
 
   return (
-    <div className={`w-full h-full ${isMobile ? 'bg-gray-50' : 'border-l border-gray-200 bg-white'} flex flex-col`}>
+    <div className="w-full h-full flex flex-col" style={{
+      backgroundColor: isMobile ? 'var(--parchment-100)' : 'var(--parchment-50)',
+      borderLeft: isMobile ? 'none' : '2px solid var(--parchment-400)'
+    }}>
       <div className={`${isMobile ? 'p-0' : 'p-4'} flex-1 overflow-y-auto`}>
-        <div className="text-center text-sm text-gray-600 mb-4 mt-6 md:mt-0">
+        <div className="text-center text-base font-medium mb-4 mt-6 md:mt-0" style={{color: 'var(--leather-brown)'}}>
           <div>{totalHours} hours • {totalUnits} units</div>
         </div>
 
@@ -30,12 +33,19 @@ const Sidebar = ({ onCloseMobile, isMobile }) => {
           <input
             type="text"
             placeholder="Code, course name or instructor.."
-            className="w-full p-2 border rounded text-sm"
+            className="w-full p-3 rounded text-base border-2 transition-all focus:outline-none"
+            style={{
+              backgroundColor: 'var(--parchment-100)',
+              borderColor: 'var(--parchment-300)',
+              color: 'var(--ink-black)'
+            }}
+            onFocus={(e) => e.target.style.borderColor = 'var(--harvard-crimson)'}
+            onBlur={(e) => e.target.style.borderColor = 'var(--parchment-300)'}
             value={filters.search}
             onChange={(e) => setFilters({...filters, search: e.target.value})}
           />
-          <div className="absolute right-3 top-2 text-gray-400">
-            <Search size={16} />
+          <div className="absolute right-3 top-3" style={{color: 'var(--leather-brown)'}}>
+            <Search size={18} />
           </div>
         </div>
 

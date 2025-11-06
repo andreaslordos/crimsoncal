@@ -30,14 +30,17 @@ const DayFilter = () => {
   return (
     <div className="mb-4">
       <div className="flex items-center justify-between mb-2">
-        <label className="text-sm font-medium text-gray-700 flex items-center">
-          <Calendar size={14} className="mr-1" />
+        <label className="text-sm font-medium flex items-center" style={{color: 'var(--ink-black)'}}>
+          <Calendar size={14} className="mr-1" style={{color: 'var(--leather-brown)'}} />
           Days of Week
         </label>
         {filters.days && filters.days.length > 0 && (
           <button
             onClick={() => setFilters({ ...filters, days: [] })}
-            className="text-xs text-gray-500 hover:text-gray-700"
+            className="text-xs transition-colors"
+            style={{color: 'var(--leather-brown)'}}
+            onMouseEnter={(e) => e.target.style.color = 'var(--harvard-crimson)'}
+            onMouseLeave={(e) => e.target.style.color = 'var(--leather-brown)'}
           >
             Clear
           </button>
@@ -48,11 +51,26 @@ const DayFilter = () => {
           <button
             key={day.id}
             onClick={() => toggleDay(day.id)}
-            className={`flex-1 px-2 py-1.5 text-xs rounded transition-colors duration-150 ${
-              filters.days?.includes(day.id)
-                ? 'bg-teal-600 text-white font-medium'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className="flex-1 px-2 py-2 text-xs rounded transition-all duration-150 font-medium"
+            style={filters.days?.includes(day.id)
+              ? {
+                  backgroundColor: 'var(--harvard-crimson)',
+                  color: 'var(--parchment-50)'
+                }
+              : {
+                  backgroundColor: 'var(--parchment-100)',
+                  color: 'var(--leather-brown)'
+                }}
+            onMouseEnter={(e) => {
+              if (!filters.days?.includes(day.id)) {
+                e.target.style.backgroundColor = 'var(--parchment-200)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!filters.days?.includes(day.id)) {
+                e.target.style.backgroundColor = 'var(--parchment-100)';
+              }
+            }}
             title={day.label}
           >
             <span className="md:hidden">{day.shortLabel}</span>

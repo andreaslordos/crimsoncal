@@ -1,1 +1,36 @@
 @import "tailwindcss";
+
+/* Harvard-inspired Design System */
+:root {
+  /* Harvard Crimson & Complementary Colors */
+  --harvard-crimson: #A51C30;
+  --harvard-crimson-dark: #8B1724;
+  --harvard-crimson-light: #C73B4C;
+
+  /* Warm Library Tones */
+  --parchment-50: #FDFBF7;
+  --parchment-100: #F9F6F0;
+  --parchment-200: #F5EFE3;
+  --parchment-300: #EAE2D1;
+  --parchment-400: #D9CAB3;
+
+  /* Book/Library Browns & Golds */
+  --leather-brown: #6B4423;
+  --gold-accent: #B8860B;
+  --ink-black: #1A1614;
+  --aged-paper: #F4ECD8;
+
+  /* Muted Academic Colors */
+  --sage-green: #7C9A76;
+  --dusty-blue: #6B7FA8;
+  --burgundy: #7C2D3F;
+  --navy: #1E3A5F;
+  --olive: #6B6B47;
+}
+
+/* Default Font Family */
+body {
+  font-family: 'EB Garamond', serif;
+  background-color: var(--parchment-50);
+  color: var(--ink-black);
+}

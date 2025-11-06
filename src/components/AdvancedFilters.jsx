@@ -159,12 +159,22 @@ const AdvancedFilters = () => {
     <div className="mb-4">
       <button
         onClick={() => setShowAdvanced(!showAdvanced)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-150 text-sm border border-gray-300"
+        className="w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors duration-150 text-sm border-2"
+        style={{
+          backgroundColor: 'var(--parchment-100)',
+          borderColor: 'var(--parchment-300)',
+          color: 'var(--ink-black)'
+        }}
+        onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--parchment-200)'}
+        onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--parchment-100)'}
       >
         <span className="font-medium flex items-center flex-wrap gap-1">
           <span>Advanced Filters</span>
           {activeFilterPills.map((pill, index) => (
-            <span key={index} className="ml-1 px-2 py-0.5 bg-teal-600 text-white text-xs rounded-full">
+            <span key={index} className="ml-1 px-2 py-0.5 text-xs rounded-full" style={{
+              backgroundColor: 'var(--harvard-crimson)',
+              color: 'var(--parchment-50)'
+            }}>
               {pill}
             </span>
           ))}
@@ -215,11 +225,26 @@ const AdvancedFilters = () => {
                         customEndTime: null
                       });
                     }}
-                    className={`px-3 py-1.5 text-xs rounded-full transition-colors duration-150 font-medium ${
-                      isSelected
-                        ? 'bg-teal-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                    className="px-3 py-1.5 text-xs rounded-full transition-colors duration-150 font-medium"
+                    style={isSelected
+                      ? {
+                          backgroundColor: 'var(--harvard-crimson)',
+                          color: 'var(--parchment-50)'
+                        }
+                      : {
+                          backgroundColor: 'var(--parchment-100)',
+                          color: 'var(--leather-brown)'
+                        }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.target.style.backgroundColor = 'var(--parchment-200)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.target.style.backgroundColor = 'var(--parchment-100)';
+                      }
+                    }}
                     title={preset.description}
                   >
                     {preset.label}
@@ -304,11 +329,26 @@ const AdvancedFilters = () => {
                   <button
                     key={group.acronym}
                     onClick={() => toggleSchool(group)}
-                    className={`px-2 py-1 text-[10px] rounded-full transition-colors duration-150 font-medium ${
-                      isSelected
-                        ? 'bg-teal-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                    className="px-2 py-1 text-[10px] rounded-full transition-colors duration-150 font-medium"
+                    style={isSelected
+                      ? {
+                          backgroundColor: 'var(--harvard-crimson)',
+                          color: 'var(--parchment-50)'
+                        }
+                      : {
+                          backgroundColor: 'var(--parchment-100)',
+                          color: 'var(--leather-brown)'
+                        }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.target.style.backgroundColor = 'var(--parchment-200)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.target.style.backgroundColor = 'var(--parchment-100)';
+                      }
+                    }}
                     title={group.displayName}
                   >
                     {group.acronym}
