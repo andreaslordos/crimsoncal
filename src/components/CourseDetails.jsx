@@ -76,8 +76,15 @@ const CourseDetails = ({ onAddCourse }) => {
   };
 
   return (
-    <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-      <h2 className="text-lg font-semibold mb-2">
+    <div
+      className="mt-4 p-6 rounded-xl"
+      style={{
+        background: 'var(--color-bg-secondary)',
+        border: '1px solid var(--color-border)',
+        boxShadow: 'var(--shadow-sm)'
+      }}
+    >
+      <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--color-text-primary)' }}>
         {selectedCourse.subject_catalog}: {selectedCourse.course_title}
       </h2>
 
@@ -256,8 +263,19 @@ const CourseDetails = ({ onAddCourse }) => {
 
       <div className="mt-4 flex gap-2">
         {isAdded ? (
-          <button 
-            className="cursor-pointer w-full py-3 md:py-2 bg-white text-teal-600 border border-teal-500 rounded-md flex items-center justify-center hover:bg-teal-50 hover:text-teal-700 transition-colors duration-200 text-base"
+          <button
+            className="cursor-pointer w-full py-3 md:py-2 rounded-lg flex items-center justify-center transition-all duration-200 text-base font-medium"
+            style={{
+              background: 'var(--color-bg-secondary)',
+              color: 'var(--color-primary)',
+              border: '1px solid var(--color-primary)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#eff6ff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--color-bg-secondary)';
+            }}
             onClick={() => {
               removeCourse(selectedCourse.course_id);
             }}
@@ -265,8 +283,20 @@ const CourseDetails = ({ onAddCourse }) => {
             <Minus size={16} className="mr-2" /> Remove course
           </button>
         ) : (
-          <button 
-            className="cursor-pointer w-full py-3 md:py-2 bg-teal-600 text-white rounded-md flex items-center justify-center hover:bg-teal-700 transition-colors duration-200 text-base"
+          <button
+            className="cursor-pointer w-full py-3 md:py-2 rounded-lg flex items-center justify-center transition-all duration-200 text-base font-medium text-white"
+            style={{
+              background: 'var(--color-primary)',
+              boxShadow: 'var(--shadow-sm)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--color-primary-hover)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--color-primary)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+            }}
             onClick={() => {
               addCourse(selectedCourse, selectedSection);
               if (onAddCourse) onAddCourse(); // Close mobile sidebar after adding

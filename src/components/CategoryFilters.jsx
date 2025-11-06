@@ -45,15 +45,28 @@ const CategoryFilters = () => {
   return (
     <div className="mb-4">
       {filterGroups.map((group, groupIndex) => (
-        <div key={`group-${groupIndex}`} className="flex mb-2 w-full space-x-1">
+        <div key={`group-${groupIndex}`} className="flex mb-2 w-full gap-2">
           {group.map(category => (
-            <button 
+            <button
               key={category.id}
-              className={`px-1 py-1 rounded-md border flex-1 text-center mx-1 overflow-hidden transition-all duration-200 ${
-                isCategorySelected(category.id) 
-                  ? 'bg-teal-600 border-teal-600 text-white font-medium shadow-sm' 
-                  : 'bg-white border-gray-300 text-gray-700 hover:border-teal-500 hover:text-teal-600'
+              className={`px-3 py-2 rounded-lg flex-1 text-center overflow-hidden transition-all duration-200 font-medium ${
+                isCategorySelected(category.id)
+                  ? 'text-white'
+                  : 'hover:bg-gray-100'
               }`}
+              style={
+                isCategorySelected(category.id)
+                  ? {
+                      background: 'var(--color-primary)',
+                      border: '1px solid var(--color-primary)',
+                      boxShadow: 'var(--shadow-sm)'
+                    }
+                  : {
+                      background: 'var(--color-bg-secondary)',
+                      border: '1px solid var(--color-border)',
+                      color: 'var(--color-text-secondary)'
+                    }
+              }
               onClick={() => toggleCategory(category.id)}
             >
               <span className="text-xs md:hidden">{category.shortName}</span>

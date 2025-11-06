@@ -185,13 +185,28 @@ const Calendar = () => {
     ];
     
     return (
-      <div className="bg-white rounded-lg shadow w-full overflow-hidden">
+      <div
+        className="rounded-xl w-full overflow-hidden"
+        style={{
+          background: 'var(--color-bg-secondary)',
+          boxShadow: 'var(--shadow-md)',
+          border: '1px solid var(--color-border)'
+        }}
+      >
         {/* Calendar header with responsive day names */}
-        <div className="grid grid-cols-11 text-center py-2 border-b">
-          <div className="col-span-1 text-xs font-semibold text-gray-500 hidden md:block">Eastern</div>
-          <div className="col-span-1 text-xs font-semibold text-gray-500 md:hidden"></div>
+        <div
+          className="grid grid-cols-11 text-center py-3"
+          style={{
+            borderBottom: '1px solid var(--color-border)',
+            background: '#f9fafb'
+          }}
+        >
+          <div className="col-span-1 text-xs font-medium hidden md:block" style={{ color: 'var(--color-text-secondary)' }}>
+            Eastern
+          </div>
+          <div className="col-span-1 text-xs font-medium md:hidden"></div>
           {dayNames.map(day => (
-            <div key={day.full} className="col-span-2 text-xs md:text-sm font-semibold">
+            <div key={day.full} className="col-span-2 text-xs md:text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
               <span className="hidden md:inline">{day.full}</span>
               <span className="md:hidden">{day.short}</span>
             </div>
@@ -200,17 +215,24 @@ const Calendar = () => {
         
         {/* Calendar time slots - fit to screen width on mobile */}
         <div className="relative">
-          {timeSlots.map((slot) => (
-            <div key={`${slot.hour}${slot.meridiem}`} className="grid grid-cols-11 border-b" style={{ height: '42px' }}>
-              <div className="col-span-1 text-xs text-right pr-1">
+          {timeSlots.map((slot, index) => (
+            <div
+              key={`${slot.hour}${slot.meridiem}`}
+              className="grid grid-cols-11"
+              style={{
+                height: '42px',
+                borderBottom: index < timeSlots.length - 1 ? '1px solid var(--color-border)' : 'none'
+              }}
+            >
+              <div className="col-span-1 text-xs text-right pr-1 font-medium" style={{ color: 'var(--color-text-secondary)', paddingTop: '2px' }}>
                 {slot.hour}{slot.meridiem}
               </div>
               {/* Day columns */}
-              <div className="col-span-2 border-l"></div>
-              <div className="col-span-2 border-l"></div>
-              <div className="col-span-2 border-l"></div>
-              <div className="col-span-2 border-l"></div>
-              <div className="col-span-2 border-l"></div>
+              <div className="col-span-2" style={{ borderLeft: '1px solid var(--color-border)' }}></div>
+              <div className="col-span-2" style={{ borderLeft: '1px solid var(--color-border)' }}></div>
+              <div className="col-span-2" style={{ borderLeft: '1px solid var(--color-border)' }}></div>
+              <div className="col-span-2" style={{ borderLeft: '1px solid var(--color-border)' }}></div>
+              <div className="col-span-2" style={{ borderLeft: '1px solid var(--color-border)' }}></div>
             </div>
           ))}
           

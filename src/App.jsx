@@ -369,7 +369,7 @@ const AppContent = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen w-full bg-gray-50">
+    <div className="flex flex-col h-screen w-full" style={{ background: 'var(--color-bg-primary)' }}>
       <Header />
 
       {/* Mobile: Single page layout with everything stacked */}

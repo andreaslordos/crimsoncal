@@ -97,10 +97,10 @@ const CourseList = () => {
   
   return (
     <div className="mb-4">
-      <div className="grid grid-cols-8 md:grid-cols-16 font-semibold text-xs sm:text-sm mb-2 px-2">
+      <div className="grid grid-cols-8 md:grid-cols-16 font-semibold text-xs sm:text-sm mb-3 px-3" style={{ color: 'var(--color-text-secondary)' }}>
         <div className="col-span-1"></div>
-        <div 
-          className="col-span-3 flex items-center underline hover:text-blue-600 cursor-pointer truncate pr-1"
+        <div
+          className="col-span-3 flex items-center cursor-pointer truncate pr-1 hover:opacity-70 transition-opacity"
           onClick={() => handleSortClick("subject_catalog")}
         >
           Course
@@ -112,8 +112,8 @@ const CourseList = () => {
             <SortableIcon />
           )}
         </div>
-        <div 
-          className="col-span-2 text-center underline flex items-center justify-center hover:text-blue-600 cursor-pointer truncate"
+        <div
+          className="col-span-2 text-center flex items-center justify-center cursor-pointer truncate hover:opacity-70 transition-opacity"
           onClick={() => handleSortClick("rating")}
         >
           Rating
@@ -125,8 +125,8 @@ const CourseList = () => {
             <SortableIcon />
           )}
         </div>
-        <div 
-          className="col-span-2 text-center underline flex items-center justify-center hover:text-blue-600 cursor-pointer truncate"
+        <div
+          className="col-span-2 text-center flex items-center justify-center cursor-pointer truncate hover:opacity-70 transition-opacity"
           onClick={() => handleSortClick("hours")}
         >
           Hours
@@ -138,8 +138,8 @@ const CourseList = () => {
             <SortableIcon />
           )}
         </div>
-        <div 
-          className="col-span-0 md:col-span-8 text-right underline hidden md:flex items-center justify-start hover:text-blue-600 cursor-pointer"
+        <div
+          className="col-span-0 md:col-span-8 text-right hidden md:flex items-center justify-start cursor-pointer hover:opacity-70 transition-opacity"
           onClick={() => handleSortClick("course_title")}
         >
           Name
@@ -152,9 +152,17 @@ const CourseList = () => {
           )}
         </div>
       </div>
-      <div className="border rounded bg-white">
+      <div
+        className="rounded-lg overflow-hidden"
+        style={{
+          background: 'var(--color-bg-secondary)',
+          border: '1px solid var(--color-border)'
+        }}
+      >
         {sortedCourses.length === 0 ? (
-          <div className="py-4 text-center text-gray-500">No courses match your filter criteria</div>
+          <div className="py-4 text-center" style={{ color: 'var(--color-text-secondary)' }}>
+            No courses match your filter criteria
+          </div>
         ) : (
           <List
             height={320}

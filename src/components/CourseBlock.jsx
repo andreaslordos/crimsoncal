@@ -34,20 +34,30 @@ const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts 
     
     return (
       <div
-        className={`absolute ${colorClass} text-white rounded-md p-1 overflow-hidden cursor-pointer hover:brightness-110 hover:shadow-lg transition-all duration-150 border border-black/10`}
+        className={`absolute ${colorClass} text-white p-2 overflow-hidden cursor-pointer transition-all duration-200 border border-black/10`}
         style={{
           top: `${startPos}px`,
           left: leftPosition,
           width: widthPercentage,
           height: `${height}px`,
           zIndex: conflictIndex + 1,
+          borderRadius: 'var(--radius-md)',
+          boxShadow: 'var(--shadow-sm)'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+          e.currentTarget.style.transform = 'scale(1.02)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+          e.currentTarget.style.transform = 'scale(1)';
         }}
         onClick={() => setSelectedCourse(course)}
       >
-        <div className="text-xs font-bold break-words md:truncate">
+        <div className="text-xs font-semibold break-words md:truncate">
           {course.subject_catalog}
         </div>
-        <div className="text-xs truncate hidden md:block">
+        <div className="text-xs truncate hidden md:block opacity-90">
           {formatTime(startTime)}-{formatTime(endTime)}
         </div>
       </div>
