@@ -6,14 +6,13 @@ const MyCourses = () => {
     const { myCourses, removeCourse, setSelectedCourse, hiddenCourses, toggleCourseVisibility } = useAppContext();
     
     return (
-      <div className="rounded-lg shadow-lg mt-4 p-4 border-2" style={{
-        backgroundColor: 'var(--parchment-100)',
-        borderColor: 'var(--parchment-400)'
+      <div className="bg-white rounded-lg shadow-sm mt-4 p-4 border" style={{
+        borderColor: '#e5e5e5'
       }}>
-        <h2 className="text-xl font-bold mb-3" style={{color: 'var(--harvard-crimson)'}}>My courses</h2>
+        <h2 className="text-lg font-semibold mb-2 text-gray-900">My courses</h2>
         <div className="flex flex-wrap gap-2">
           {myCourses.length === 0 ? (
-            <div className="text-sm" style={{color: 'var(--leather-brown)'}}>No courses selected</div>
+            <div className="text-sm text-gray-500">No courses selected</div>
           ) : (
             myCourses.map(course => {
               const colorClass = getCourseColor(course.course_id);

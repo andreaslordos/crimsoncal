@@ -76,11 +76,10 @@ const CourseDetails = ({ onAddCourse }) => {
   };
 
   return (
-    <div className="mt-4 p-4 rounded-lg border-2" style={{
-      backgroundColor: 'var(--parchment-100)',
-      borderColor: 'var(--parchment-400)'
+    <div className="mt-4 p-4 rounded-lg border bg-gray-50" style={{
+      borderColor: '#e5e5e5'
     }}>
-      <h2 className="text-xl font-bold mb-3" style={{color: 'var(--harvard-crimson)'}}>
+      <h2 className="text-lg font-semibold mb-2 text-gray-900">
         {selectedCourse.subject_catalog}: {selectedCourse.course_title}
       </h2>
 
@@ -260,20 +259,7 @@ const CourseDetails = ({ onAddCourse }) => {
       <div className="mt-4 flex gap-2">
         {isAdded ? (
           <button
-            className="cursor-pointer w-full py-3 md:py-2 border-2 rounded-md flex items-center justify-center transition-all duration-200 text-base font-semibold"
-            style={{
-              backgroundColor: 'var(--parchment-50)',
-              color: 'var(--harvard-crimson)',
-              borderColor: 'var(--harvard-crimson)'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = 'var(--harvard-crimson-light)';
-              e.target.style.color = 'var(--parchment-50)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = 'var(--parchment-50)';
-              e.target.style.color = 'var(--harvard-crimson)';
-            }}
+            className="cursor-pointer w-full py-3 md:py-2 bg-white border border-gray-300 rounded-md flex items-center justify-center hover:bg-gray-50 transition-colors duration-200 text-sm font-medium text-gray-700"
             onClick={() => {
               removeCourse(selectedCourse.course_id);
             }}
@@ -282,10 +268,9 @@ const CourseDetails = ({ onAddCourse }) => {
           </button>
         ) : (
           <button
-            className="cursor-pointer w-full py-3 md:py-2 rounded-md flex items-center justify-center transition-all duration-200 text-base font-semibold"
+            className="cursor-pointer w-full py-3 md:py-2 rounded-md flex items-center justify-center transition-colors duration-200 text-sm font-medium text-white shadow-sm"
             style={{
-              backgroundColor: 'var(--harvard-crimson)',
-              color: 'var(--parchment-50)'
+              backgroundColor: 'var(--harvard-crimson)'
             }}
             onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--harvard-crimson-dark)'}
             onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--harvard-crimson)'}
@@ -303,10 +288,7 @@ const CourseDetails = ({ onAddCourse }) => {
         {selectedCourse.historical_semesters && Object.keys(selectedCourse.historical_semesters).length > 0 ? (
           <button
             onClick={() => setShowEvaluations(!showEvaluations)}
-            className="cursor-pointer hover:underline transition-colors duration-150 flex items-center font-medium"
-            style={{color: 'var(--harvard-crimson)'}}
-            onMouseEnter={(e) => e.target.style.color = 'var(--harvard-crimson-dark)'}
-            onMouseLeave={(e) => e.target.style.color = 'var(--harvard-crimson)'}
+            className="cursor-pointer text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150 flex items-center"
           >
             {showEvaluations ? (
               <>Hide evaluations <ChevronUp size={14} className="ml-1" /></>
@@ -315,17 +297,14 @@ const CourseDetails = ({ onAddCourse }) => {
             )}
           </button>
         ) : (
-          <span style={{color: 'var(--parchment-400)'}} className="cursor-not-allowed">No evaluations available</span>
+          <span className="text-gray-400 cursor-not-allowed">No evaluations available</span>
         )}
 
         <a
           href={`https://portal.my.harvard.edu/psp/hrvihprd/EMPLOYEE/EMPL/h/?tab=HU_CLASS_SEARCH&SearchReqJSON=%7B%22ExcludeBracketed%22:true,%22SaveRecent%22:true,%22Facets%22:%5B%5D,%22PageNumber%22:1,%22SortOrder%22:%5B%22SCORE%22%5D,%22TopN%22:%22%22,%22PageSize%22:%22%22,%22SearchText%22:%22${selectedCourse.course_id}%22%7D`}
           target="_blank"
           rel="noopener noreferrer"
-          className="cursor-pointer hover:underline transition-colors duration-150 font-medium"
-          style={{color: 'var(--harvard-crimson)'}}
-          onMouseEnter={(e) => e.target.style.color = 'var(--harvard-crimson-dark)'}
-          onMouseLeave={(e) => e.target.style.color = 'var(--harvard-crimson)'}
+          className="cursor-pointer text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150"
         >
           View in my.harvard
         </a>

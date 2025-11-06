@@ -185,19 +185,17 @@ const Calendar = () => {
     ];
     
     return (
-      <div className="rounded-lg shadow-lg w-full overflow-hidden border-2" style={{
-        backgroundColor: 'var(--aged-paper)',
-        borderColor: 'var(--parchment-400)'
+      <div className="rounded-lg shadow-sm w-full overflow-hidden border bg-white" style={{
+        borderColor: '#e5e5e5'
       }}>
         {/* Calendar header with responsive day names */}
-        <div className="grid grid-cols-11 text-center py-3 border-b-2" style={{
-          borderBottomColor: 'var(--parchment-400)',
-          backgroundColor: 'var(--parchment-100)'
+        <div className="grid grid-cols-11 text-center py-2.5 border-b bg-gray-50" style={{
+          borderBottomColor: '#e5e5e5'
         }}>
-          <div className="col-span-1 text-xs font-semibold hidden md:block" style={{color: 'var(--leather-brown)'}}>Eastern</div>
-          <div className="col-span-1 text-xs font-semibold md:hidden"></div>
+          <div className="col-span-1 text-xs font-medium text-gray-500 hidden md:block">Eastern</div>
+          <div className="col-span-1 text-xs font-medium md:hidden"></div>
           {dayNames.map(day => (
-            <div key={day.full} className="col-span-2 text-sm md:text-base font-bold" style={{color: 'var(--ink-black)'}}>
+            <div key={day.full} className="col-span-2 text-sm md:text-sm font-semibold text-gray-700">
               <span className="hidden md:inline">{day.full}</span>
               <span className="md:hidden">{day.short}</span>
             </div>
@@ -207,19 +205,18 @@ const Calendar = () => {
         {/* Calendar time slots - fit to screen width on mobile */}
         <div className="relative">
           {timeSlots.map((slot) => (
-            <div key={`${slot.hour}${slot.meridiem}`} className="grid grid-cols-11" style={{
-              height: '42px',
-              borderBottom: '1px solid var(--parchment-300)'
+            <div key={`${slot.hour}${slot.meridiem}`} className="grid grid-cols-11 border-b border-gray-100" style={{
+              height: '42px'
             }}>
-              <div className="col-span-1 text-xs text-right pr-1 font-medium" style={{color: 'var(--leather-brown)'}}>
+              <div className="col-span-1 text-xs text-right pr-1 text-gray-500">
                 {slot.hour}{slot.meridiem}
               </div>
               {/* Day columns */}
-              <div className="col-span-2" style={{borderLeft: '1px solid var(--parchment-300)'}}></div>
-              <div className="col-span-2" style={{borderLeft: '1px solid var(--parchment-300)'}}></div>
-              <div className="col-span-2" style={{borderLeft: '1px solid var(--parchment-300)'}}></div>
-              <div className="col-span-2" style={{borderLeft: '1px solid var(--parchment-300)'}}></div>
-              <div className="col-span-2" style={{borderLeft: '1px solid var(--parchment-300)'}}></div>
+              <div className="col-span-2 border-l border-gray-100"></div>
+              <div className="col-span-2 border-l border-gray-100"></div>
+              <div className="col-span-2 border-l border-gray-100"></div>
+              <div className="col-span-2 border-l border-gray-100"></div>
+              <div className="col-span-2 border-l border-gray-100"></div>
             </div>
           ))}
           

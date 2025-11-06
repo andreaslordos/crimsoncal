@@ -49,35 +49,15 @@ const CategoryFilters = () => {
           {group.map(category => (
             <button
               key={category.id}
-              className="px-1 py-1 rounded-md border-2 flex-1 text-center mx-1 overflow-hidden transition-all duration-200 font-medium"
-              style={isCategorySelected(category.id)
-                ? {
-                    backgroundColor: 'var(--harvard-crimson)',
-                    borderColor: 'var(--harvard-crimson)',
-                    color: 'var(--parchment-50)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }
-                : {
-                    backgroundColor: 'var(--parchment-100)',
-                    borderColor: 'var(--parchment-300)',
-                    color: 'var(--leather-brown)'
-                  }}
-              onMouseEnter={(e) => {
-                if (!isCategorySelected(category.id)) {
-                  e.target.style.borderColor = 'var(--harvard-crimson)';
-                  e.target.style.color = 'var(--harvard-crimson-dark)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isCategorySelected(category.id)) {
-                  e.target.style.borderColor = 'var(--parchment-300)';
-                  e.target.style.color = 'var(--leather-brown)';
-                }
-              }}
+              className={`px-1 py-1.5 rounded border flex-1 text-center mx-1 overflow-hidden transition-all duration-200 text-xs font-medium ${
+                isCategorySelected(category.id)
+                  ? 'bg-gray-900 border-gray-900 text-white shadow-sm'
+                  : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
               onClick={() => toggleCategory(category.id)}
             >
-              <span className="text-xs md:hidden">{category.shortName}</span>
-              <span className="text-xs hidden md:inline">{category.name}</span>
+              <span className="md:hidden">{category.shortName}</span>
+              <span className="hidden md:inline">{category.name}</span>
             </button>
           ))}
         </div>

@@ -64,24 +64,20 @@ export const formatTime = (timeStr) => {
   
   // Generate consistent color for course
   export const getCourseColor = (courseId) => {
-    // Warm, muted library-inspired colors
+    // Simplified, professional color palette
     const colors = [
-      'bg-[#A51C30]', // Harvard Crimson
-      'bg-[#6B4423]', // Leather Brown
-      'bg-[#7C9A76]', // Sage Green
-      'bg-[#6B7FA8]', // Dusty Blue
-      'bg-[#7C2D3F]', // Burgundy
-      'bg-[#1E3A5F]', // Navy
-      'bg-[#6B6B47]', // Olive
-      'bg-[#8B7355]', // Tan
-      'bg-[#5C6B5C]', // Forest
-      'bg-[#8B5A3C]', // Rust
-      'bg-[#556B2F]', // Moss
-      'bg-[#704241]', // Terracotta
-      'bg-[#4A5D5E]', // Slate Teal
-      'bg-[#7B6B8E]', // Dusty Purple
-      'bg-[#8B6F47]', // Caramel
-      'bg-[#5A5A4A]', // Warm Gray
+      'bg-slate-600',
+      'bg-blue-600',
+      'bg-indigo-600',
+      'bg-purple-600',
+      'bg-pink-600',
+      'bg-rose-600',
+      'bg-orange-600',
+      'bg-amber-600',
+      'bg-emerald-600',
+      'bg-teal-600',
+      'bg-cyan-600',
+      'bg-sky-600',
     ];
 
     // Use a static map to track assigned colors for each course ID

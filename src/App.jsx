@@ -369,7 +369,7 @@ const AppContent = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen w-full" style={{backgroundColor: 'var(--parchment-50)'}}>
+    <div className="flex flex-col h-screen w-full bg-gray-50">
       <Header />
 
       {/* Mobile: Single page layout with everything stacked */}
@@ -389,20 +389,14 @@ const AppContent = () => {
               href="https://docs.google.com/forms/d/e/1FAIpQLSdPks0Z_z6oamuEs4bMHJznTadvBFjVHmZK4l7vwdERCHWgBg/viewform?usp=header"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm hover:underline transition-colors duration-150 font-medium"
-              style={{color: 'var(--harvard-crimson)'}}
-              onMouseEnter={(e) => e.target.style.color = 'var(--harvard-crimson-dark)'}
-              onMouseLeave={(e) => e.target.style.color = 'var(--harvard-crimson)'}
+              className="text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150"
             >
               Report Bug
             </a>
             {hasVisibleCourses ? (
               <button
                 onClick={handleExportToCalendar}
-                className="flex items-center gap-1 text-sm hover:underline transition-colors duration-150 cursor-pointer font-medium"
-                style={{color: 'var(--harvard-crimson)'}}
-                onMouseEnter={(e) => e.target.style.color = 'var(--harvard-crimson-dark)'}
-                onMouseLeave={(e) => e.target.style.color = 'var(--harvard-crimson)'}
+                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150 cursor-pointer"
                 title="Export selected courses to calendar file"
               >
                 <CalendarPlus size={16} />
@@ -410,8 +404,7 @@ const AppContent = () => {
               </button>
             ) : (
               <span
-                className="flex items-center gap-1 text-sm cursor-not-allowed"
-                style={{color: 'var(--parchment-400)'}}
+                className="flex items-center gap-1 text-sm text-gray-400 cursor-not-allowed"
                 title="No courses selected to export"
               >
                 <CalendarPlus size={16} />
@@ -421,7 +414,7 @@ const AppContent = () => {
           </div>
 
           {/* Last updated timestamp */}
-          <div className="text-xs mt-4" style={{color: 'var(--leather-brown)'}}>
+          <div className="text-xs text-gray-500 mt-4">
             Last updated: {lastUpdated}
           </div>
         </div>
@@ -443,20 +436,14 @@ const AppContent = () => {
               href="https://docs.google.com/forms/d/e/1FAIpQLSdPks0Z_z6oamuEs4bMHJznTadvBFjVHmZK4l7vwdERCHWgBg/viewform?usp=header"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm hover:underline transition-colors duration-150 font-medium"
-              style={{color: 'var(--harvard-crimson)'}}
-              onMouseEnter={(e) => e.target.style.color = 'var(--harvard-crimson-dark)'}
-              onMouseLeave={(e) => e.target.style.color = 'var(--harvard-crimson)'}
+              className="text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150"
             >
               Report Bug
             </a>
             {hasVisibleCourses ? (
               <button
                 onClick={handleExportToCalendar}
-                className="flex items-center gap-1 text-sm hover:underline transition-colors duration-150 cursor-pointer font-medium"
-                style={{color: 'var(--harvard-crimson)'}}
-                onMouseEnter={(e) => e.target.style.color = 'var(--harvard-crimson-dark)'}
-                onMouseLeave={(e) => e.target.style.color = 'var(--harvard-crimson)'}
+                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150 cursor-pointer"
                 title="Export selected courses to calendar file"
               >
                 <CalendarPlus size={16} />
@@ -464,8 +451,7 @@ const AppContent = () => {
               </button>
             ) : (
               <span
-                className="flex items-center gap-1 text-sm cursor-not-allowed"
-                style={{color: 'var(--parchment-400)'}}
+                className="flex items-center gap-1 text-sm text-gray-400 cursor-not-allowed"
                 title="No courses selected to export"
               >
                 <CalendarPlus size={16} />
@@ -475,7 +461,7 @@ const AppContent = () => {
           </div>
 
           {/* Last updated timestamp - bottom left */}
-          <div className="fixed bottom-4 left-4 text-xs" style={{color: 'var(--leather-brown)'}}>
+          <div className="fixed bottom-4 left-4 text-xs text-gray-500">
             Last updated: {lastUpdated}
           </div>
         </div>
