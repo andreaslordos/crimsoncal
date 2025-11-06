@@ -377,11 +377,11 @@ const AppContent = () => {
         <div className="p-4">
           <Calendar />
 
-          {/* CourseDetails - shown when a course is selected */}
-          <CourseDetails onAddCourse={() => {}} />
-
           {/* Sidebar content (filters, search, course list) */}
           <Sidebar onCloseMobile={() => {}} isMobile={true} />
+
+          {/* CourseDetails - shown at bottom when a course is selected */}
+          <CourseDetails onAddCourse={() => {}} />
 
           {/* Report Bug and Export buttons */}
           <div className="flex justify-center items-center gap-4 mt-4">
