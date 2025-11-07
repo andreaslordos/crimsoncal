@@ -6,8 +6,10 @@ const MyCourses = () => {
     const { myCourses, removeCourse, setSelectedCourse, hiddenCourses, toggleCourseVisibility } = useAppContext();
     
     return (
-      <div className="bg-white rounded-lg shadow mt-4 p-4">
-        <h2 className="text-lg font-semibold mb-2">My courses</h2>
+      <div className="bg-white rounded-lg shadow-sm mt-4 p-4 border" style={{
+        borderColor: '#e5e5e5'
+      }}>
+        <h2 className="text-lg font-semibold mb-2 text-gray-900">My courses</h2>
         <div className="flex flex-wrap gap-2">
           {myCourses.length === 0 ? (
             <div className="text-sm text-gray-500">No courses selected</div>

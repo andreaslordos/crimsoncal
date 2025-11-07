@@ -389,14 +389,14 @@ const AppContent = () => {
               href="https://docs.google.com/forms/d/e/1FAIpQLSdPks0Z_z6oamuEs4bMHJznTadvBFjVHmZK4l7vwdERCHWgBg/viewform?usp=header"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:underline hover:text-blue-700 transition-colors duration-150"
+              className="text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150"
             >
               Report Bug
             </a>
             {hasVisibleCourses ? (
               <button
                 onClick={handleExportToCalendar}
-                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors duration-150 cursor-pointer"
+                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150 cursor-pointer"
                 title="Export selected courses to calendar file"
               >
                 <CalendarPlus size={16} />
@@ -414,7 +414,7 @@ const AppContent = () => {
           </div>
 
           {/* Last updated timestamp */}
-          <div className="text-xs text-gray-400 mt-4">
+          <div className="text-xs text-gray-500 mt-4">
             Last updated: {lastUpdated}
           </div>
         </div>
@@ -436,14 +436,14 @@ const AppContent = () => {
               href="https://docs.google.com/forms/d/e/1FAIpQLSdPks0Z_z6oamuEs4bMHJznTadvBFjVHmZK4l7vwdERCHWgBg/viewform?usp=header"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:underline hover:text-blue-700 transition-colors duration-150"
+              className="text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150"
             >
               Report Bug
             </a>
             {hasVisibleCourses ? (
               <button
                 onClick={handleExportToCalendar}
-                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors duration-150 cursor-pointer"
+                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150 cursor-pointer"
                 title="Export selected courses to calendar file"
               >
                 <CalendarPlus size={16} />
@@ -461,7 +461,7 @@ const AppContent = () => {
           </div>
 
           {/* Last updated timestamp - bottom left */}
-          <div className="fixed bottom-4 left-4 text-xs text-gray-400">
+          <div className="fixed bottom-4 left-4 text-xs text-gray-500">
             Last updated: {lastUpdated}
           </div>
         </div>

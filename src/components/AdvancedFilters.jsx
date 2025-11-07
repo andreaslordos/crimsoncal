@@ -159,12 +159,12 @@ const AdvancedFilters = () => {
     <div className="mb-4">
       <button
         onClick={() => setShowAdvanced(!showAdvanced)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-150 text-sm border border-gray-300"
+        className="w-full flex items-center justify-between px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded transition-colors duration-150 text-sm border border-gray-300"
       >
-        <span className="font-medium flex items-center flex-wrap gap-1">
+        <span className="font-medium flex items-center flex-wrap gap-1 text-gray-700">
           <span>Advanced Filters</span>
           {activeFilterPills.map((pill, index) => (
-            <span key={index} className="ml-1 px-2 py-0.5 bg-teal-600 text-white text-xs rounded-full">
+            <span key={index} className="ml-1 px-2 py-0.5 bg-gray-900 text-white text-xs rounded-full">
               {pill}
             </span>
           ))}
@@ -217,7 +217,7 @@ const AdvancedFilters = () => {
                     }}
                     className={`px-3 py-1.5 text-xs rounded-full transition-colors duration-150 font-medium ${
                       isSelected
-                        ? 'bg-teal-600 text-white'
+                        ? 'bg-gray-900 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                     title={preset.description}
@@ -306,7 +306,7 @@ const AdvancedFilters = () => {
                     onClick={() => toggleSchool(group)}
                     className={`px-2 py-1 text-[10px] rounded-full transition-colors duration-150 font-medium ${
                       isSelected
-                        ? 'bg-teal-600 text-white'
+                        ? 'bg-gray-900 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                     title={group.displayName}

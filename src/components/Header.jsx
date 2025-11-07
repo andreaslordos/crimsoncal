@@ -5,33 +5,41 @@ const Header = () => {
     const { selectedSemester, setSelectedSemester } = useAppContext();
 
     return (
-        <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex items-center justify-between">
+        <header className="border-b px-4 md:px-6 py-4 flex items-center justify-between bg-white" style={{
+            borderBottomColor: '#e5e5e5'
+        }}>
             <div className="flex items-center">
-                <h1 className="text-xl md:text-2xl font-semibold">
-                    <span className="text-gray-800">Crimson</span>
-                    <span className="text-pink-500">Cal</span>
+                <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
+                    <span className="text-gray-900">Crimson</span>
+                    <span style={{color: 'var(--harvard-crimson)'}}>Cal</span>
                 </h1>
             </div>
             <div className="flex flex-col md:flex-row md:space-x-4 items-end">
-                <div className="flex space-x-3 text-sm md:text-base">
+                <div className="flex space-x-3 text-base md:text-base">
                     <button
                         onClick={() => setSelectedSemester('Fall 2025')}
-                        className={`px-2 py-1 rounded transition-colors ${
+                        className={`px-3 py-1.5 rounded transition-all text-sm font-medium ${
                             selectedSemester === 'Fall 2025'
-                                ? 'font-bold text-pink-500 bg-pink-50'
-                                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                                ? 'shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900'
                         }`}
+                        style={selectedSemester === 'Fall 2025'
+                            ? {color: 'white', backgroundColor: 'var(--harvard-crimson)'}
+                            : {}}
                     >
                         Fall 2025
                     </button>
-                    <span className="text-gray-400">|</span>
+                    <span className="text-gray-300">|</span>
                     <button
                         onClick={() => setSelectedSemester('Spring 2026')}
-                        className={`px-2 py-1 rounded transition-colors ${
+                        className={`px-3 py-1.5 rounded transition-all text-sm font-medium ${
                             selectedSemester === 'Spring 2026'
-                                ? 'font-bold text-pink-500 bg-pink-50'
-                                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                                ? 'shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900'
                         }`}
+                        style={selectedSemester === 'Spring 2026'
+                            ? {color: 'white', backgroundColor: 'var(--harvard-crimson)'}
+                            : {}}
                     >
                         Spring 2026
                     </button>

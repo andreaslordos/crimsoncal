@@ -48,9 +48,9 @@ const DayFilter = () => {
           <button
             key={day.id}
             onClick={() => toggleDay(day.id)}
-            className={`flex-1 px-2 py-1.5 text-xs rounded transition-colors duration-150 ${
+            className={`flex-1 px-2 py-1.5 text-xs rounded transition-colors duration-150 font-medium ${
               filters.days?.includes(day.id)
-                ? 'bg-teal-600 text-white font-medium'
+                ? 'bg-gray-900 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
             title={day.label}

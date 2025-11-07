@@ -185,13 +185,17 @@ const Calendar = () => {
     ];
     
     return (
-      <div className="bg-white rounded-lg shadow w-full overflow-hidden">
+      <div className="rounded-lg shadow-sm w-full overflow-hidden border bg-white" style={{
+        borderColor: '#e5e5e5'
+      }}>
         {/* Calendar header with responsive day names */}
-        <div className="grid grid-cols-11 text-center py-2 border-b">
-          <div className="col-span-1 text-xs font-semibold text-gray-500 hidden md:block">Eastern</div>
-          <div className="col-span-1 text-xs font-semibold text-gray-500 md:hidden"></div>
+        <div className="grid grid-cols-11 text-center py-2.5 border-b bg-gray-50" style={{
+          borderBottomColor: '#e5e5e5'
+        }}>
+          <div className="col-span-1 text-xs font-medium text-gray-500 hidden md:block">Eastern</div>
+          <div className="col-span-1 text-xs font-medium md:hidden"></div>
           {dayNames.map(day => (
-            <div key={day.full} className="col-span-2 text-xs md:text-sm font-semibold">
+            <div key={day.full} className="col-span-2 text-sm md:text-sm font-semibold text-gray-700">
               <span className="hidden md:inline">{day.full}</span>
               <span className="md:hidden">{day.short}</span>
             </div>
@@ -201,16 +205,18 @@ const Calendar = () => {
         {/* Calendar time slots - fit to screen width on mobile */}
         <div className="relative">
           {timeSlots.map((slot) => (
-            <div key={`${slot.hour}${slot.meridiem}`} className="grid grid-cols-11 border-b" style={{ height: '42px' }}>
-              <div className="col-span-1 text-xs text-right pr-1">
+            <div key={`${slot.hour}${slot.meridiem}`} className="grid grid-cols-11 border-b border-gray-100" style={{
+              height: '42px'
+            }}>
+              <div className="col-span-1 text-xs text-right pr-1 text-gray-500">
                 {slot.hour}{slot.meridiem}
               </div>
               {/* Day columns */}
-              <div className="col-span-2 border-l"></div>
-              <div className="col-span-2 border-l"></div>
-              <div className="col-span-2 border-l"></div>
-              <div className="col-span-2 border-l"></div>
-              <div className="col-span-2 border-l"></div>
+              <div className="col-span-2 border-l border-gray-100"></div>
+              <div className="col-span-2 border-l border-gray-100"></div>
+              <div className="col-span-2 border-l border-gray-100"></div>
+              <div className="col-span-2 border-l border-gray-100"></div>
+              <div className="col-span-2 border-l border-gray-100"></div>
             </div>
           ))}
           

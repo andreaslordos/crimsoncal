@@ -87,8 +87,8 @@ const CourseList = () => {
   const Row = useCallback(({ index, style }) => {
     const course = sortedCourses[index];
     return (
-      <div style={style} className={index % 2 === 0 ? '' : 'bg-gray-50'}>
-        <CourseListItem 
+      <div style={style} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+        <CourseListItem
           course={course}
         />
       </div>
@@ -97,62 +97,64 @@ const CourseList = () => {
   
   return (
     <div className="mb-4">
-      <div className="grid grid-cols-8 md:grid-cols-16 font-semibold text-xs sm:text-sm mb-2 px-2">
+      <div className="grid grid-cols-8 md:grid-cols-16 font-semibold text-xs sm:text-sm mb-2 px-2 text-gray-700">
         <div className="col-span-1"></div>
-        <div 
-          className="col-span-3 flex items-center underline hover:text-blue-600 cursor-pointer truncate pr-1"
+        <div
+          className="col-span-3 flex items-center underline cursor-pointer truncate pr-1 hover:text-gray-900"
           onClick={() => handleSortClick("subject_catalog")}
         >
           Course
           {sortField === "subject_catalog" ? (
-            sortDirection === "asc" ? 
-              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> : 
+            sortDirection === "asc" ?
+              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> :
               <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
           ) : (
             <SortableIcon />
           )}
         </div>
-        <div 
-          className="col-span-2 text-center underline flex items-center justify-center hover:text-blue-600 cursor-pointer truncate"
+        <div
+          className="col-span-2 text-center underline flex items-center justify-center cursor-pointer truncate hover:text-gray-900"
           onClick={() => handleSortClick("rating")}
         >
           Rating
           {sortField === "rating" ? (
-            sortDirection === "asc" ? 
-              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> : 
+            sortDirection === "asc" ?
+              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> :
               <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
           ) : (
             <SortableIcon />
           )}
         </div>
-        <div 
-          className="col-span-2 text-center underline flex items-center justify-center hover:text-blue-600 cursor-pointer truncate"
+        <div
+          className="col-span-2 text-center underline flex items-center justify-center cursor-pointer truncate hover:text-gray-900"
           onClick={() => handleSortClick("hours")}
         >
           Hours
           {sortField === "hours" ? (
-            sortDirection === "asc" ? 
-              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> : 
+            sortDirection === "asc" ?
+              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> :
               <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
           ) : (
             <SortableIcon />
           )}
         </div>
-        <div 
-          className="col-span-0 md:col-span-8 text-right underline hidden md:flex items-center justify-start hover:text-blue-600 cursor-pointer"
+        <div
+          className="col-span-0 md:col-span-8 text-right underline hidden md:flex items-center justify-start cursor-pointer hover:text-gray-900"
           onClick={() => handleSortClick("course_title")}
         >
           Name
           {sortField === "course_title" ? (
-            sortDirection === "asc" ? 
-              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> : 
+            sortDirection === "asc" ?
+              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> :
               <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
           ) : (
             <SortableIcon />
           )}
         </div>
       </div>
-      <div className="border rounded bg-white">
+      <div className="border rounded bg-white" style={{
+        borderColor: '#e5e5e5'
+      }}>
         {sortedCourses.length === 0 ? (
           <div className="py-4 text-center text-gray-500">No courses match your filter criteria</div>
         ) : (

@@ -76,8 +76,10 @@ const CourseDetails = ({ onAddCourse }) => {
   };
 
   return (
-    <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-      <h2 className="text-lg font-semibold mb-2">
+    <div className="mt-4 p-4 rounded-lg border bg-gray-50" style={{
+      borderColor: '#e5e5e5'
+    }}>
+      <h2 className="text-lg font-semibold mb-2 text-gray-900">
         {selectedCourse.subject_catalog}: {selectedCourse.course_title}
       </h2>
 
@@ -256,8 +258,8 @@ const CourseDetails = ({ onAddCourse }) => {
 
       <div className="mt-4 flex gap-2">
         {isAdded ? (
-          <button 
-            className="cursor-pointer w-full py-3 md:py-2 bg-white text-teal-600 border border-teal-500 rounded-md flex items-center justify-center hover:bg-teal-50 hover:text-teal-700 transition-colors duration-200 text-base"
+          <button
+            className="cursor-pointer w-full py-3 md:py-2 bg-white border border-gray-300 rounded-md flex items-center justify-center hover:bg-gray-50 transition-colors duration-200 text-sm font-medium text-gray-700"
             onClick={() => {
               removeCourse(selectedCourse.course_id);
             }}
@@ -265,8 +267,13 @@ const CourseDetails = ({ onAddCourse }) => {
             <Minus size={16} className="mr-2" /> Remove course
           </button>
         ) : (
-          <button 
-            className="cursor-pointer w-full py-3 md:py-2 bg-teal-600 text-white rounded-md flex items-center justify-center hover:bg-teal-700 transition-colors duration-200 text-base"
+          <button
+            className="cursor-pointer w-full py-3 md:py-2 rounded-md flex items-center justify-center transition-colors duration-200 text-sm font-medium text-white shadow-sm"
+            style={{
+              backgroundColor: 'var(--harvard-crimson)'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--harvard-crimson-dark)'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--harvard-crimson)'}
             onClick={() => {
               addCourse(selectedCourse, selectedSection);
               if (onAddCourse) onAddCourse(); // Close mobile sidebar after adding
@@ -281,7 +288,7 @@ const CourseDetails = ({ onAddCourse }) => {
         {selectedCourse.historical_semesters && Object.keys(selectedCourse.historical_semesters).length > 0 ? (
           <button
             onClick={() => setShowEvaluations(!showEvaluations)}
-            className="cursor-pointer hover:underline text-blue-600 hover:text-blue-700 transition-colors duration-150 flex items-center"
+            className="cursor-pointer text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150 flex items-center"
           >
             {showEvaluations ? (
               <>Hide evaluations <ChevronUp size={14} className="ml-1" /></>
@@ -292,12 +299,12 @@ const CourseDetails = ({ onAddCourse }) => {
         ) : (
           <span className="text-gray-400 cursor-not-allowed">No evaluations available</span>
         )}
-        
-        <a 
-          href={`https://portal.my.harvard.edu/psp/hrvihprd/EMPLOYEE/EMPL/h/?tab=HU_CLASS_SEARCH&SearchReqJSON=%7B%22ExcludeBracketed%22:true,%22SaveRecent%22:true,%22Facets%22:%5B%5D,%22PageNumber%22:1,%22SortOrder%22:%5B%22SCORE%22%5D,%22TopN%22:%22%22,%22PageSize%22:%22%22,%22SearchText%22:%22${selectedCourse.course_id}%22%7D`} 
-          target="_blank" 
+
+        <a
+          href={`https://portal.my.harvard.edu/psp/hrvihprd/EMPLOYEE/EMPL/h/?tab=HU_CLASS_SEARCH&SearchReqJSON=%7B%22ExcludeBracketed%22:true,%22SaveRecent%22:true,%22Facets%22:%5B%5D,%22PageNumber%22:1,%22SortOrder%22:%5B%22SCORE%22%5D,%22TopN%22:%22%22,%22PageSize%22:%22%22,%22SearchText%22:%22${selectedCourse.course_id}%22%7D`}
+          target="_blank"
           rel="noopener noreferrer"
-          className="cursor-pointer hover:underline text-blue-600 hover:text-blue-700 transition-colors duration-150"
+          className="cursor-pointer text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150"
         >
           View in my.harvard
         </a>
