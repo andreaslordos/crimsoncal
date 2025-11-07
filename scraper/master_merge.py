@@ -103,6 +103,7 @@ def merge_data(all_courses: List[Dict], analytics: Dict) -> List[Dict]:
         entry['credits'] = first_section.get('credits', '')
         entry['course_requirements'] = first_section.get('course_requirements', '')
         entry['course_url'] = first_section.get('course_url', '')
+        entry['course_website'] = first_section.get('course_website', '')
         entry['general_education'] = first_section.get('general_education', '')
         entry['divisional_distribution'] = first_section.get('divisional_distribution', '')
         entry['quantitative_reasoning'] = first_section.get('quantitative_reasoning', '')

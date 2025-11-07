@@ -3,6 +3,16 @@
 # Full data pipeline script for CrimsonCal
 # This script runs all the necessary steps to generate fresh course data
 
+# Parse command line arguments
+NO_PUSH=false
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --no-push) NO_PUSH=true ;;
+        *) echo "Unknown parameter: $1"; exit 1 ;;
+    esac
+    shift
+done
+
 echo "=========================================="
 echo "CrimsonCal Data Pipeline"
 echo "=========================================="
@@ -66,11 +76,22 @@ echo "✓ Files copied to public directory"
 echo ""
 
 # Step 5: Push to GitHub, with commit message on todays date.
-echo "----------------------------------------"
-cd ../
-git add .
-git commit -m "Update data on $(date +%Y-%m-%d)"
-git push
+if [ "$NO_PUSH" = false ]; then
+    echo "----------------------------------------"
+    echo "Step 5: Committing and pushing to GitHub..."
+    echo "----------------------------------------"
+    cd ../
+    git add .
+    git commit -m "Update data on $(date +%Y-%m-%d)"
+    git push
+    echo ""
+else
+    echo "----------------------------------------"
+    echo "Step 5: Skipping GitHub push (--no-push flag set)"
+    echo "----------------------------------------"
+    cd ../
+    echo ""
+fi
 
 echo "=========================================="
 echo "✅ Pipeline completed successfully!"

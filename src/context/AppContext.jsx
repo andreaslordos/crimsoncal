@@ -15,13 +15,15 @@ export const AppProvider = ({ children }) => {
   });
   const [selectedSemester, setSelectedSemester] = useState('Spring 2026');
   const [filters, setFilters] = useState({
-    categories: [], 
+    categories: [],
     search: '',
     days: [],
     schools: ['Faculty of Arts & Sciences'], // FAS preselected by default
     timePresets: [], // array of 'morning', 'afternoon', 'evening'
     customStartTime: null, // e.g., '9:00am'
-    customEndTime: null // e.g., '5:00pm'
+    customEndTime: null, // e.g., '5:00pm'
+    formats: [], // course formats/components
+    consents: [] // consent requirements
   });
   
   // Debounce search term for better performance
@@ -323,7 +325,8 @@ export const AppProvider = ({ children }) => {
         quantitative_reasoning: course.quantitative_reasoning || '',
         course_level: course.course_level || '',
         exam: course.exam || '',
-        
+        course_website: course.course_website || '',
+
         // All sections for this course
         sections: sections,
         
@@ -509,25 +512,25 @@ export const AppProvider = ({ children }) => {
         const categoryMatch = filters.categories.some(categoryId => {
           switch(categoryId) {
             case 'arts':
-              return course.divisional_distribution && 
+              return course.divisional_distribution &&
                     course.divisional_distribution.includes('Arts and Humanities');
             case 'social':
-              return course.divisional_distribution && 
+              return course.divisional_distribution &&
                     course.divisional_distribution.includes('Social Sciences');
             case 'science-engineering':
-              return course.divisional_distribution && 
+              return course.divisional_distribution &&
                     course.divisional_distribution.includes('Science & Engineering & Applied Science');
             case 'aesthetics':
-              return course.general_education && 
+              return course.general_education &&
                     course.general_education.includes('Aesthetics and Culture');
             case 'ethics':
-              return course.general_education && 
+              return course.general_education &&
                     course.general_education.includes('Ethics and Civics');
             case 'histories':
-              return course.general_education && 
+              return course.general_education &&
                     course.general_education.includes('Histories, Societies, Individuals');
             case 'science-society':
-              return course.general_education && 
+              return course.general_education &&
                     course.general_education.includes('Science and Technology in Society');
             default:
               return false;
@@ -535,10 +538,24 @@ export const AppProvider = ({ children }) => {
         });
         if (!categoryMatch) return false;
       }
-      
+
+      // Filter by format (course component)
+      if (filters.formats && filters.formats.length > 0) {
+        if (!course.course_component || !filters.formats.includes(course.course_component)) {
+          return false;
+        }
+      }
+
+      // Filter by consent requirement
+      if (filters.consents && filters.consents.length > 0) {
+        if (!course.consent || !filters.consents.includes(course.consent)) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [processedCourses, filters.categories, filters.timePresets, filters.customStartTime, filters.customEndTime, filters.days, filters.schools, processedSearchTerm]);
+  }, [processedCourses, filters.categories, filters.timePresets, filters.customStartTime, filters.customEndTime, filters.days, filters.schools, filters.formats, filters.consents, processedSearchTerm]);
 
   // Add a course to My Courses with optional section selection
   const addCourse = (course, selectedSection = null) => {
