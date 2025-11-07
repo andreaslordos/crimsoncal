@@ -115,6 +115,7 @@ class ParallelCourseScraperWithReuse:
                 **scraper._extract_course_info(),
                 **{f'lecture_{day}': value for day, value in scraper._extract_days().items()},
                 'location': scraper._extract_location(),
+                'course_website': scraper._extract_course_website(),
 
                 # Additional course information
                 'description': scraper._safe_div_text('course-desc', 'description'),

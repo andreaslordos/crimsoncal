@@ -180,6 +180,36 @@ class CourseScraper:
 
         return location_text
 
+    def _extract_course_website(self) -> str:
+        """Extract course website URL from the links section."""
+        if not self.soup:
+            return ""
+
+        # Find the course-links section
+        links_div = self.soup.find('div', id='course-links')
+        if not links_div or not isinstance(links_div, Tag):
+            return ""
+
+        # Find all links in this section
+        for link in links_div.find_all('a', href=True):
+            if not isinstance(link, Tag):
+                continue
+            href = link.get('href', '')
+            if not isinstance(href, str):
+                continue
+
+            # Check if this is the course website link
+            # It should contain "locator.tlt.harvard.edu"
+            if 'locator.tlt.harvard.edu' in href:
+                return href
+
+            # Alternative: check if the link contains a div with text "Website"
+            div = link.find('div')
+            if div and isinstance(div, Tag) and div.text.strip().lower() == 'website':
+                return href
+
+        return ""
+
     def _extract_course_info(self) -> Dict[str, str]:
         """Extract basic course information."""
         if not self.soup:
@@ -393,6 +423,7 @@ class CourseScraper:
                 **self._extract_course_info(),
                 **{f'lecture_{day}': value for day, value in self._extract_days().items()},
                 'location': self._extract_location(),
+                'course_website': self._extract_course_website(),
 
                 # Additional course information
                 'description': self._safe_div_text('course-desc', 'description'),

@@ -27,13 +27,13 @@ const AdvancedFilters = () => {
   const schoolGroups = useMemo(() => {
     const schoolSet = new Set();
     const groups = {};
-    
+
     processedCourses.forEach(course => {
       if (course.school && course.school !== '') {
         schoolSet.add(course.school);
       }
     });
-    
+
     // Group schools by acronym
     Array.from(schoolSet).forEach(school => {
       const acronym = schoolAcronyms[school] || school;
@@ -42,7 +42,7 @@ const AdvancedFilters = () => {
       }
       groups[acronym].push(school);
     });
-    
+
     // Sort acronyms alphabetically
     return Object.entries(groups)
       .sort(([a], [b]) => a.localeCompare(b))
@@ -51,6 +51,27 @@ const AdvancedFilters = () => {
         schools,
         displayName: schools[0] // Use first school name for tooltip
       }));
+  }, [processedCourses]);
+
+  // Extract unique formats and consents
+  const formatOptions = useMemo(() => {
+    const formats = new Set();
+    processedCourses.forEach(course => {
+      if (course.course_component && course.course_component !== '') {
+        formats.add(course.course_component);
+      }
+    });
+    return Array.from(formats).sort();
+  }, [processedCourses]);
+
+  const consentOptions = useMemo(() => {
+    const consents = new Set();
+    processedCourses.forEach(course => {
+      if (course.consent && course.consent !== '') {
+        consents.add(course.consent);
+      }
+    });
+    return Array.from(consents).sort();
   }, [processedCourses]);
 
   const toggleSchool = (schoolGroup) => {
@@ -84,7 +105,9 @@ const AdvancedFilters = () => {
       schools: [],
       timePresets: [],
       customStartTime: null,
-      customEndTime: null
+      customEndTime: null,
+      formats: [],
+      consents: []
     });
   };
 
@@ -122,10 +145,12 @@ const AdvancedFilters = () => {
 
   const timeOptions = generateTimeOptions();
 
-  const hasActiveFilters = (filters.schools && filters.schools.length > 0) || 
-                          (filters.timePresets && filters.timePresets.length > 0) || 
-                          filters.customStartTime || 
-                          filters.customEndTime;
+  const hasActiveFilters = (filters.schools && filters.schools.length > 0) ||
+                          (filters.timePresets && filters.timePresets.length > 0) ||
+                          filters.customStartTime ||
+                          filters.customEndTime ||
+                          (filters.formats && filters.formats.length > 0) ||
+                          (filters.consents && filters.consents.length > 0);
 
   // Build array of active filter descriptions
   const activeFilterPills = [];
@@ -153,6 +178,18 @@ const AdvancedFilters = () => {
       .filter(group => group.schools.some(s => filters.schools.includes(s)))
       .map(group => group.acronym);
     activeFilterPills.push(...activeSchoolAcronyms);
+  }
+
+  // Add format filter pill (single selection)
+  if (filters.formats && filters.formats.length > 0 && filters.formats[0]) {
+    activeFilterPills.push(filters.formats[0]);
+  }
+
+  // Add consent filter pills
+  if (filters.consents && filters.consents.length > 0) {
+    filters.consents.forEach(consent => {
+      activeFilterPills.push(consent);
+    });
   }
 
   return (
@@ -321,6 +358,73 @@ const AdvancedFilters = () => {
                 {schoolGroups.filter(g => g.schools.some(s => filters.schools.includes(s))).length} school{schoolGroups.filter(g => g.schools.some(s => filters.schools.includes(s))).length !== 1 ? 's' : ''} selected
               </p>
             )}
+          </div>
+
+          {/* Format Filter */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-gray-700">Format</label>
+              {filters.formats && filters.formats.length > 0 && (
+                <button
+                  onClick={() => setFilters({ ...filters, formats: [] })}
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <select
+              value={filters.formats?.[0] || ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFilters({ ...filters, formats: value ? [value] : [] });
+              }}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 bg-white"
+            >
+              <option value="">All formats</option>
+              {formatOptions.map(format => (
+                <option key={format} value={format}>{format}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Consent Filter */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-gray-700">Consent</label>
+              {filters.consents && filters.consents.length > 0 && (
+                <button
+                  onClick={() => setFilters({ ...filters, consents: [] })}
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {consentOptions.map(consent => {
+                const isSelected = filters.consents?.includes(consent);
+                return (
+                  <button
+                    key={consent}
+                    onClick={() => {
+                      const currentConsents = filters.consents || [];
+                      const newConsents = isSelected
+                        ? currentConsents.filter(c => c !== consent)
+                        : [...currentConsents, consent];
+                      setFilters({ ...filters, consents: newConsents });
+                    }}
+                    className={`px-2 py-1 text-[10px] rounded-full transition-colors duration-150 font-medium ${
+                      isSelected
+                        ? 'bg-gray-900 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {consent}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Clear All Button */}
