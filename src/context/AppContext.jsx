@@ -24,7 +24,7 @@ export const AppProvider = ({ children }) => {
     customEndTime: null, // e.g., '5:00pm'
     formats: [], // course formats/components
     consents: [], // consent requirements
-    courseCodePrefix: null // e.g., 'ECON' to filter only ECON courses
+    courseCodePrefixes: [] // e.g., ['ECON', 'CS'] to filter multiple course prefixes
   });
   
   // Debounce search term for better performance
@@ -404,12 +404,16 @@ export const AppProvider = ({ children }) => {
     if (!processedCourses.length) return [];
 
     return processedCourses.filter(course => {
-      // Filter by course code prefix first (if active)
-      if (filters.courseCodePrefix) {
+      // Filter by course code prefixes first (if active)
+      if (filters.courseCodePrefixes && filters.courseCodePrefixes.length > 0) {
         const courseCodeUpper = (course.subject_catalog || '').toUpperCase();
-        const prefix = filters.courseCodePrefix.toUpperCase();
-        // Check if course code starts with the prefix followed by a space or number
-        if (!courseCodeUpper.startsWith(prefix + ' ') && !courseCodeUpper.startsWith(prefix)) {
+        // Check if course code starts with ANY of the prefixes (OR logic)
+        const matchesAnyPrefix = filters.courseCodePrefixes.some(prefix => {
+          const prefixUpper = prefix.toUpperCase();
+          // Check if course code starts with the prefix followed by a space or number
+          return courseCodeUpper.startsWith(prefixUpper + ' ') || courseCodeUpper.startsWith(prefixUpper);
+        });
+        if (!matchesAnyPrefix) {
           return false;
         }
       }
@@ -566,7 +570,7 @@ export const AppProvider = ({ children }) => {
 
       return true;
     });
-  }, [processedCourses, filters.categories, filters.timePresets, filters.customStartTime, filters.customEndTime, filters.days, filters.schools, filters.formats, filters.consents, filters.courseCodePrefix, processedSearchTerm]);
+  }, [processedCourses, filters.categories, filters.timePresets, filters.customStartTime, filters.customEndTime, filters.days, filters.schools, filters.formats, filters.consents, filters.courseCodePrefixes, processedSearchTerm]);
 
   // Add a course to My Courses with optional section selection
   const addCourse = (course, selectedSection = null) => {

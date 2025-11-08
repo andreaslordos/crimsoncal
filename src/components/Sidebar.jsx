@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAppContext } from "../context/AppContext";
 import CategoryFilters from "./CategoryFilters";
 import DayFilter from "./DayFilter";
@@ -8,38 +9,91 @@ import { Search } from "lucide-react";
 
 const Sidebar = ({ onCloseMobile, isMobile }) => {
   const { filters, setFilters, selectedCourse, totalHours, totalUnits } = useAppContext();
+  const [selectedPillIndex, setSelectedPillIndex] = useState(null);
 
   const handleSearchKeyDown = (e) => {
-    // Handle Tab key to activate course code prefix filter
-    if (e.key === 'Tab' && filters.search && !filters.courseCodePrefix) {
+    // Handle Tab key to add course code prefix filter
+    if (e.key === 'Tab' && filters.search) {
       const searchTrimmed = filters.search.trim();
       // Check if the search term is all letters (potential course code prefix)
       if (/^[a-zA-Z]+$/.test(searchTrimmed)) {
         e.preventDefault();
-        // Set the course code prefix filter (keep the search text as-is)
-        setFilters({
-          ...filters,
-          courseCodePrefix: searchTrimmed.toUpperCase()
-        });
+        const prefixUpper = searchTrimmed.toUpperCase();
+
+        // Only add if not already in the array
+        if (!filters.courseCodePrefixes.includes(prefixUpper)) {
+          setFilters({
+            ...filters,
+            courseCodePrefixes: [...filters.courseCodePrefixes, prefixUpper],
+            search: ''
+          });
+          setSelectedPillIndex(null); // Reset selection when adding new pill
+        } else {
+          // If already exists, just clear the search
+          setFilters({
+            ...filters,
+            search: ''
+          });
+        }
       }
     }
-    // Handle Backspace key to deactivate course code prefix filter
-    else if (e.key === 'Backspace' && filters.courseCodePrefix && filters.search === '') {
+    // Handle Arrow keys for pill navigation
+    else if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && filters.courseCodePrefixes.length > 0) {
       e.preventDefault();
-      // Clear the course code prefix filter
-      setFilters({
-        ...filters,
-        courseCodePrefix: null
-      });
+
+      if (e.key === 'ArrowLeft') {
+        // Move selection left
+        if (selectedPillIndex === null) {
+          // Select the last pill
+          setSelectedPillIndex(filters.courseCodePrefixes.length - 1);
+        } else if (selectedPillIndex > 0) {
+          // Move to previous pill
+          setSelectedPillIndex(selectedPillIndex - 1);
+        }
+      } else if (e.key === 'ArrowRight') {
+        // Move selection right
+        if (selectedPillIndex === null) {
+          // Select the first pill
+          setSelectedPillIndex(0);
+        } else if (selectedPillIndex < filters.courseCodePrefixes.length - 1) {
+          // Move to next pill
+          setSelectedPillIndex(selectedPillIndex + 1);
+        } else {
+          // Deselect if at the end
+          setSelectedPillIndex(null);
+        }
+      }
+    }
+    // Handle Backspace key
+    else if (e.key === 'Backspace') {
+      if (selectedPillIndex !== null) {
+        // Remove the selected pill
+        e.preventDefault();
+        const newPrefixes = filters.courseCodePrefixes.filter((_, index) => index !== selectedPillIndex);
+        setFilters({
+          ...filters,
+          courseCodePrefixes: newPrefixes
+        });
+
+        // Adjust selection after deletion
+        if (newPrefixes.length === 0) {
+          setSelectedPillIndex(null);
+        } else if (selectedPillIndex >= newPrefixes.length) {
+          setSelectedPillIndex(newPrefixes.length - 1);
+        }
+      } else if (filters.search === '' && filters.courseCodePrefixes.length > 0) {
+        // Select the last pill if search is empty
+        e.preventDefault();
+        setSelectedPillIndex(filters.courseCodePrefixes.length - 1);
+      }
+    }
+    // Handle Escape key to clear selection
+    else if (e.key === 'Escape' && selectedPillIndex !== null) {
+      e.preventDefault();
+      setSelectedPillIndex(null);
     }
   };
 
-  const removePrefixFilter = () => {
-    setFilters({
-      ...filters,
-      courseCodePrefix: null
-    });
-  };
 
   return (
     <div className="w-full h-full flex flex-col bg-white" style={{
@@ -62,26 +116,35 @@ const Sidebar = ({ onCloseMobile, isMobile }) => {
         {/* Search box */}
         <div className="mb-4 relative">
           <div className="relative flex items-center">
-            {filters.courseCodePrefix && (
-              <div className="absolute left-2.5 flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">
-                <span>{filters.courseCodePrefix}</span>
-                <button
-                  onClick={removePrefixFilter}
-                  className="hover:bg-blue-200 rounded-full w-4 h-4 flex items-center justify-center transition-colors"
-                  aria-label="Remove filter"
-                >
-                  ×
-                </button>
+            {filters.courseCodePrefixes && filters.courseCodePrefixes.length > 0 && (
+              <div className="absolute left-2.5 flex items-center gap-1.5">
+                {filters.courseCodePrefixes.map((prefix, index) => (
+                  <div
+                    key={prefix}
+                    className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                      selectedPillIndex === index
+                        ? 'bg-blue-600 text-white ring-2 ring-blue-400'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}
+                  >
+                    <span>{prefix}</span>
+                  </div>
+                ))}
               </div>
             )}
             <input
               type="text"
-              placeholder={filters.courseCodePrefix ? "Search within prefix..." : "Code, course name or instructor.."}
+              placeholder={filters.courseCodePrefixes.length > 0 ? "Search within prefixes..." : "Code, course name or instructor.."}
               className="w-full p-2.5 rounded border border-gray-300 text-sm transition-colors focus:outline-none focus:border-gray-400 bg-white"
-              style={filters.courseCodePrefix ? { paddingLeft: `${filters.courseCodePrefix.length * 8 + 50}px` } : {}}
+              style={filters.courseCodePrefixes.length > 0 ? {
+                paddingLeft: `${filters.courseCodePrefixes.reduce((total, prefix) =>
+                  total + prefix.length * 8 + 30, 15
+                )}px`
+              } : {}}
               value={filters.search}
               onChange={(e) => setFilters({...filters, search: e.target.value})}
               onKeyDown={handleSearchKeyDown}
+              onClick={() => setSelectedPillIndex(null)}
             />
             <div className="absolute right-3 top-2.5 text-gray-400">
               <Search size={16} />
