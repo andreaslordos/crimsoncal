@@ -16,11 +16,10 @@ const Sidebar = ({ onCloseMobile, isMobile }) => {
       // Check if the search term is all letters (potential course code prefix)
       if (/^[a-zA-Z]+$/.test(searchTrimmed)) {
         e.preventDefault();
-        // Set the course code prefix filter and clear the search
+        // Set the course code prefix filter (keep the search text as-is)
         setFilters({
           ...filters,
-          courseCodePrefix: searchTrimmed.toUpperCase(),
-          search: ''
+          courseCodePrefix: searchTrimmed.toUpperCase()
         });
       }
     }
@@ -33,6 +32,13 @@ const Sidebar = ({ onCloseMobile, isMobile }) => {
         courseCodePrefix: null
       });
     }
+  };
+
+  const removePrefixFilter = () => {
+    setFilters({
+      ...filters,
+      courseCodePrefix: null
+    });
   };
 
   return (
@@ -55,16 +61,31 @@ const Sidebar = ({ onCloseMobile, isMobile }) => {
 
         {/* Search box */}
         <div className="mb-4 relative">
-          <input
-            type="text"
-            placeholder={filters.courseCodePrefix ? `Search within ${filters.courseCodePrefix}...` : "Code, course name or instructor.."}
-            className="w-full p-2.5 rounded border border-gray-300 text-sm transition-colors focus:outline-none focus:border-gray-400 bg-white"
-            value={filters.search}
-            onChange={(e) => setFilters({...filters, search: e.target.value})}
-            onKeyDown={handleSearchKeyDown}
-          />
-          <div className="absolute right-3 top-2.5 text-gray-400">
-            <Search size={16} />
+          <div className="relative flex items-center">
+            {filters.courseCodePrefix && (
+              <div className="absolute left-2.5 flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-medium">
+                <span>{filters.courseCodePrefix}</span>
+                <button
+                  onClick={removePrefixFilter}
+                  className="hover:bg-blue-200 rounded-full w-4 h-4 flex items-center justify-center transition-colors"
+                  aria-label="Remove filter"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+            <input
+              type="text"
+              placeholder={filters.courseCodePrefix ? "Search within prefix..." : "Code, course name or instructor.."}
+              className="w-full p-2.5 rounded border border-gray-300 text-sm transition-colors focus:outline-none focus:border-gray-400 bg-white"
+              style={filters.courseCodePrefix ? { paddingLeft: `${filters.courseCodePrefix.length * 8 + 50}px` } : {}}
+              value={filters.search}
+              onChange={(e) => setFilters({...filters, search: e.target.value})}
+              onKeyDown={handleSearchKeyDown}
+            />
+            <div className="absolute right-3 top-2.5 text-gray-400">
+              <Search size={16} />
+            </div>
           </div>
         </div>
 
