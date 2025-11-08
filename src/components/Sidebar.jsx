@@ -9,6 +9,32 @@ import { Search } from "lucide-react";
 const Sidebar = ({ onCloseMobile, isMobile }) => {
   const { filters, setFilters, selectedCourse, totalHours, totalUnits } = useAppContext();
 
+  const handleSearchKeyDown = (e) => {
+    // Handle Tab key to activate course code prefix filter
+    if (e.key === 'Tab' && filters.search && !filters.courseCodePrefix) {
+      const searchTrimmed = filters.search.trim();
+      // Check if the search term is all letters (potential course code prefix)
+      if (/^[a-zA-Z]+$/.test(searchTrimmed)) {
+        e.preventDefault();
+        // Set the course code prefix filter and clear the search
+        setFilters({
+          ...filters,
+          courseCodePrefix: searchTrimmed.toUpperCase(),
+          search: ''
+        });
+      }
+    }
+    // Handle Backspace key to deactivate course code prefix filter
+    else if (e.key === 'Backspace' && filters.courseCodePrefix && filters.search === '') {
+      e.preventDefault();
+      // Clear the course code prefix filter
+      setFilters({
+        ...filters,
+        courseCodePrefix: null
+      });
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col bg-white" style={{
       borderLeft: isMobile ? 'none' : '1px solid #e5e5e5'
@@ -31,10 +57,11 @@ const Sidebar = ({ onCloseMobile, isMobile }) => {
         <div className="mb-4 relative">
           <input
             type="text"
-            placeholder="Code, course name or instructor.."
+            placeholder={filters.courseCodePrefix ? `Search within ${filters.courseCodePrefix}...` : "Code, course name or instructor.."}
             className="w-full p-2.5 rounded border border-gray-300 text-sm transition-colors focus:outline-none focus:border-gray-400 bg-white"
             value={filters.search}
             onChange={(e) => setFilters({...filters, search: e.target.value})}
+            onKeyDown={handleSearchKeyDown}
           />
           <div className="absolute right-3 top-2.5 text-gray-400">
             <Search size={16} />

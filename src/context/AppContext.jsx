@@ -23,7 +23,8 @@ export const AppProvider = ({ children }) => {
     customStartTime: null, // e.g., '9:00am'
     customEndTime: null, // e.g., '5:00pm'
     formats: [], // course formats/components
-    consents: [] // consent requirements
+    consents: [], // consent requirements
+    courseCodePrefix: null // e.g., 'ECON' to filter only ECON courses
   });
   
   // Debounce search term for better performance
@@ -401,19 +402,29 @@ export const AppProvider = ({ children }) => {
   // Filter courses based on search and category filters
   const filteredCourses = useMemo(() => {
     if (!processedCourses.length) return [];
-    
+
     return processedCourses.filter(course => {
+      // Filter by course code prefix first (if active)
+      if (filters.courseCodePrefix) {
+        const courseCodeUpper = (course.subject_catalog || '').toUpperCase();
+        const prefix = filters.courseCodePrefix.toUpperCase();
+        // Check if course code starts with the prefix followed by a space or number
+        if (!courseCodeUpper.startsWith(prefix + ' ') && !courseCodeUpper.startsWith(prefix)) {
+          return false;
+        }
+      }
+
       // Filter by search term - use pre-computed lowercase fields
       if (processedSearchTerm) {
         const searchLower = processedSearchTerm;
-        
-        const matchesSubjectCatalog = course.subject_catalog_lower && 
+
+        const matchesSubjectCatalog = course.subject_catalog_lower &&
                                     course.subject_catalog_lower.includes(searchLower);
-        const matchesTitle = course.course_title_lower && 
+        const matchesTitle = course.course_title_lower &&
                             course.course_title_lower.includes(searchLower);
-        const matchesInstructor = course.instructors_lower && 
+        const matchesInstructor = course.instructors_lower &&
                                 course.instructors_lower.includes(searchLower);
-                                    
+
         if (!(matchesSubjectCatalog || matchesTitle || matchesInstructor)) {
           return false;
         }
@@ -555,7 +566,7 @@ export const AppProvider = ({ children }) => {
 
       return true;
     });
-  }, [processedCourses, filters.categories, filters.timePresets, filters.customStartTime, filters.customEndTime, filters.days, filters.schools, filters.formats, filters.consents, processedSearchTerm]);
+  }, [processedCourses, filters.categories, filters.timePresets, filters.customStartTime, filters.customEndTime, filters.days, filters.schools, filters.formats, filters.consents, filters.courseCodePrefix, processedSearchTerm]);
 
   // Add a course to My Courses with optional section selection
   const addCourse = (course, selectedSection = null) => {
