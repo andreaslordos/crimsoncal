@@ -60,8 +60,12 @@ export const AppProvider = ({ children }) => {
     customEndTime: null, // e.g., '5:00pm'
     formats: [], // course formats/components
     consents: [], // consent requirements
-    courseCodePrefixes: [] // e.g., ['ECON', 'CS'] to filter multiple course prefixes
+    courseCodePrefixes: [], // e.g., ['ECON', 'CS'] to filter multiple course prefixes
+    meetsOnceAWeek: false // filter for courses that meet once a week
   });
+
+  // State for "Fits schedule" checkbox
+  const [fitsScheduleEnabled, setFitsScheduleEnabled] = useState(false);
   
   // Debounce search term for better performance
   const debouncedSearch = useDebounce(filters.search, 300);
@@ -461,6 +465,17 @@ export const AppProvider = ({ children }) => {
   const filteredCourses = useMemo(() => {
     if (!processedCourses.length) return [];
 
+    // Get courses for selected semester for conflict checking
+    const myCoursesForSemester = myCourses.filter(course => {
+      const termToCheck = course.current_term || course.year_term || '';
+      if (selectedSemester === 'Spring 2026') {
+        return termToCheck.includes('Spring') && termToCheck.includes('2026');
+      } else if (selectedSemester === 'Fall 2025') {
+        return termToCheck.includes('Fall') && termToCheck.includes('2025');
+      }
+      return true;
+    });
+
     return processedCourses.filter(course => {
       // Filter by course code prefixes first (if active)
       if (filters.courseCodePrefixes && filters.courseCodePrefixes.length > 0) {
@@ -626,9 +641,96 @@ export const AppProvider = ({ children }) => {
         }
       }
 
+      // Filter by "meets once a week"
+      if (filters.meetsOnceAWeek) {
+        const dayCount = Object.values(course.dayMap || {}).filter(meets => meets === true).length;
+        if (dayCount !== 1) {
+          return false;
+        }
+      }
+
+      // Filter by schedule conflicts if "Fits schedule" is enabled
+      if (fitsScheduleEnabled) {
+        // Get courses that are both added and visible (not hidden) for this semester
+        const visibleSelectedCourses = myCoursesForSemester.filter(myCourse => !hiddenCourses[myCourse.course_id]);
+
+        // Skip if no courses are selected
+        if (visibleSelectedCourses.length === 0) {
+          return true; // No courses to conflict with
+        }
+
+        // Don't filter out courses that are already selected
+        if (myCoursesForSemester.some(myCourse => myCourse.course_id === course.course_id)) {
+          return true; // Always show courses that are already in the user's calendar
+        }
+
+        // Check if this course conflicts with any visible selected course
+        const hasConflict = visibleSelectedCourses.some(selectedCourse => {
+          // Get time and day information for both courses
+          const section = selectedCourse.selectedSection || {};
+          const selectedStartTime = section.start_time || selectedCourse.start_time;
+          const selectedEndTime = section.end_time || selectedCourse.end_time;
+
+          // Parse dayMap for selected course if not already parsed
+          let selectedDayMap = section.dayMap || selectedCourse.dayMap;
+          if (!selectedDayMap && selectedCourse.weekdays) {
+            selectedDayMap = parseWeekdays(selectedCourse.weekdays);
+          }
+          // If still no dayMap, check for individual day fields
+          if (!selectedDayMap) {
+            selectedDayMap = {
+              monday: selectedCourse.lecture_monday === true,
+              tuesday: selectedCourse.lecture_tuesday === true,
+              wednesday: selectedCourse.lecture_wednesday === true,
+              thursday: selectedCourse.lecture_thursday === true,
+              friday: selectedCourse.lecture_friday === true,
+              saturday: selectedCourse.lecture_saturday === true,
+              sunday: selectedCourse.lecture_sunday === true
+            };
+          }
+
+          const courseStartTime = course.start_time;
+          const courseEndTime = course.end_time;
+          const courseDayMap = course.dayMap;
+
+          // Skip if either course lacks time information
+          if (!selectedStartTime || !selectedEndTime || !courseStartTime || !courseEndTime) {
+            return false;
+          }
+
+          // Skip if either course lacks day information
+          if (!selectedDayMap || !courseDayMap) {
+            return false;
+          }
+
+          // Check if courses meet on any of the same days
+          const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+          const hasCommonDay = days.some(day =>
+            selectedDayMap[day] === true && courseDayMap[day] === true
+          );
+
+          if (!hasCommonDay) {
+            return false; // No conflict if they don't meet on the same day
+          }
+
+          // Check for time overlap
+          const selectedStartMinutes = timeStringToMinutes(selectedStartTime);
+          const selectedEndMinutes = timeStringToMinutes(selectedEndTime);
+          const courseStartMinutes = timeStringToMinutes(courseStartTime);
+          const courseEndMinutes = timeStringToMinutes(courseEndTime);
+
+          // Times overlap if: max(startA, startB) < min(endA, endB)
+          return Math.max(selectedStartMinutes, courseStartMinutes) < Math.min(selectedEndMinutes, courseEndMinutes);
+        });
+
+        if (hasConflict) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [processedCourses, filters.categories, filters.timePresets, filters.customStartTime, filters.customEndTime, filters.days, filters.schools, filters.formats, filters.consents, filters.courseCodePrefixes, processedSearchTerm]);
+  }, [processedCourses, filters.categories, filters.timePresets, filters.customStartTime, filters.customEndTime, filters.days, filters.schools, filters.formats, filters.consents, filters.courseCodePrefixes, filters.meetsOnceAWeek, processedSearchTerm, fitsScheduleEnabled, myCourses, hiddenCourses, selectedSemester]);
 
   // Add a course to My Courses with optional section selection
   const addCourse = (course, selectedSection = null) => {
@@ -824,6 +926,9 @@ export const AppProvider = ({ children }) => {
       totalUnits,
       generateShareableURL,
       clearAllCourses,
+      // Schedule conflict filtering
+      fitsScheduleEnabled,
+      setFitsScheduleEnabled,
       // Calendar management
       userCalendars,
       activeCalendarId,

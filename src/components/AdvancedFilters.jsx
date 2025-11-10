@@ -107,7 +107,8 @@ const AdvancedFilters = () => {
       customStartTime: null,
       customEndTime: null,
       formats: [],
-      consents: []
+      consents: [],
+      meetsOnceAWeek: false
     });
   };
 
@@ -150,7 +151,8 @@ const AdvancedFilters = () => {
                           filters.customStartTime ||
                           filters.customEndTime ||
                           (filters.formats && filters.formats.length > 0) ||
-                          (filters.consents && filters.consents.length > 0);
+                          (filters.consents && filters.consents.length > 0) ||
+                          filters.meetsOnceAWeek;
 
   // Build array of active filter descriptions
   const activeFilterPills = [];
@@ -190,6 +192,11 @@ const AdvancedFilters = () => {
     filters.consents.forEach(consent => {
       activeFilterPills.push(consent);
     });
+  }
+
+  // Add "meets once a week" filter pill
+  if (filters.meetsOnceAWeek) {
+    activeFilterPills.push('Once a week');
   }
 
   return (
@@ -425,6 +432,21 @@ const AdvancedFilters = () => {
                 );
               })}
             </div>
+          </div>
+
+          {/* Meets Once a Week Filter */}
+          <div>
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filters.meetsOnceAWeek || false}
+                onChange={(e) => setFilters({ ...filters, meetsOnceAWeek: e.target.checked })}
+                className="mr-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Meets once a week
+              </span>
+            </label>
           </div>
 
           {/* Clear All Button */}

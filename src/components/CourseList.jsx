@@ -5,7 +5,7 @@ import { ChevronUp, ChevronDown } from "lucide-react";
 import { FixedSizeList as List } from 'react-window';
 
 const CourseList = () => {
-  const { filteredCourses } = useAppContext();
+  const { filteredCourses, fitsScheduleEnabled, setFitsScheduleEnabled } = useAppContext();
   const [sortField, setSortField] = useState("subject_catalog");
   const [sortDirection, setSortDirection] = useState("asc");
   
@@ -97,59 +97,74 @@ const CourseList = () => {
   
   return (
     <div className="mb-4">
-      <div className="grid grid-cols-8 md:grid-cols-16 font-semibold text-xs sm:text-sm mb-2 px-2 text-gray-700">
-        <div className="col-span-1"></div>
-        <div
-          className="col-span-3 flex items-center underline cursor-pointer truncate pr-1 hover:text-gray-900"
-          onClick={() => handleSortClick("subject_catalog")}
-        >
-          Course
-          {sortField === "subject_catalog" ? (
-            sortDirection === "asc" ?
-              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> :
-              <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
-          ) : (
-            <SortableIcon />
-          )}
+      <div className="flex items-center justify-between mb-2 px-2">
+        <div className="grid grid-cols-8 md:grid-cols-16 font-semibold text-xs sm:text-sm text-gray-700 flex-1">
+          <div className="col-span-1"></div>
+          <div
+            className="col-span-3 flex items-center underline cursor-pointer truncate pr-1 hover:text-gray-900"
+            onClick={() => handleSortClick("subject_catalog")}
+          >
+            Course
+            {sortField === "subject_catalog" ? (
+              sortDirection === "asc" ?
+                <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> :
+                <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
+            ) : (
+              <SortableIcon />
+            )}
+          </div>
+          <div
+            className="col-span-2 text-center underline flex items-center justify-center cursor-pointer truncate hover:text-gray-900"
+            onClick={() => handleSortClick("rating")}
+          >
+            Rating
+            {sortField === "rating" ? (
+              sortDirection === "asc" ?
+                <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> :
+                <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
+            ) : (
+              <SortableIcon />
+            )}
+          </div>
+          <div
+            className="col-span-2 text-center underline flex items-center justify-center cursor-pointer truncate hover:text-gray-900"
+            onClick={() => handleSortClick("hours")}
+          >
+            Hours
+            {sortField === "hours" ? (
+              sortDirection === "asc" ?
+                <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> :
+                <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
+            ) : (
+              <SortableIcon />
+            )}
+          </div>
+          <div
+            className="col-span-0 md:col-span-8 text-right underline hidden md:flex items-center justify-start cursor-pointer hover:text-gray-900"
+            onClick={() => handleSortClick("course_title")}
+          >
+            Name
+            {sortField === "course_title" ? (
+              sortDirection === "asc" ?
+                <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> :
+                <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
+            ) : (
+              <SortableIcon />
+            )}
+          </div>
         </div>
-        <div
-          className="col-span-2 text-center underline flex items-center justify-center cursor-pointer truncate hover:text-gray-900"
-          onClick={() => handleSortClick("rating")}
-        >
-          Rating
-          {sortField === "rating" ? (
-            sortDirection === "asc" ?
-              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> :
-              <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
-          ) : (
-            <SortableIcon />
-          )}
-        </div>
-        <div
-          className="col-span-2 text-center underline flex items-center justify-center cursor-pointer truncate hover:text-gray-900"
-          onClick={() => handleSortClick("hours")}
-        >
-          Hours
-          {sortField === "hours" ? (
-            sortDirection === "asc" ?
-              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> :
-              <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
-          ) : (
-            <SortableIcon />
-          )}
-        </div>
-        <div
-          className="col-span-0 md:col-span-8 text-right underline hidden md:flex items-center justify-start cursor-pointer hover:text-gray-900"
-          onClick={() => handleSortClick("course_title")}
-        >
-          Name
-          {sortField === "course_title" ? (
-            sortDirection === "asc" ?
-              <ChevronUp size={14} className="ml-0.5 flex-shrink-0" /> :
-              <ChevronDown size={14} className="ml-0.5 flex-shrink-0" />
-          ) : (
-            <SortableIcon />
-          )}
+        <div className="flex items-center ml-2">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={fitsScheduleEnabled || false}
+              onChange={(e) => setFitsScheduleEnabled(e.target.checked)}
+              className="mr-1.5 h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span className="text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">
+              Fits schedule
+            </span>
+          </label>
         </div>
       </div>
       <div className="border rounded bg-white" style={{
