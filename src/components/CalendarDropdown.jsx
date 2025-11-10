@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Plus, Edit2, Trash2 } from 'lucide-react';
+import { ChevronDown, Plus, Edit2, Trash2, Copy } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
 const CalendarDropdown = () => {
@@ -9,7 +9,8 @@ const CalendarDropdown = () => {
     switchCalendar,
     createNewCalendar,
     deleteCalendar,
-    renameCalendar
+    renameCalendar,
+    duplicateCalendar
   } = useAppContext();
 
   const [showDropdown, setShowDropdown] = useState(false);
@@ -70,6 +71,12 @@ const CalendarDropdown = () => {
     if (userCalendars.length > 1 && window.confirm('Are you sure you want to delete this calendar? This action cannot be undone.')) {
       deleteCalendar(calendarId);
     }
+  };
+
+  const handleDuplicate = (e, calendarId) => {
+    e.stopPropagation();
+    duplicateCalendar(calendarId);
+    setShowDropdown(false); // Close the dropdown after duplicating
   };
 
   // Only render on desktop
@@ -134,9 +141,19 @@ const CalendarDropdown = () => {
                         )}
                       </div>
                       <div className="flex items-center space-x-1">
+                        {userCalendars.length < 10 && (
+                          <button
+                            onClick={(e) => handleDuplicate(e, calendar.id)}
+                            className="p-1 text-gray-500 hover:text-blue-600"
+                            title="Duplicate calendar"
+                          >
+                            <Copy size={14} />
+                          </button>
+                        )}
                         <button
                           onClick={(e) => handleStartEdit(e, calendar)}
                           className="p-1 text-gray-500 hover:text-gray-700"
+                          title="Rename calendar"
                         >
                           <Edit2 size={14} />
                         </button>
@@ -144,6 +161,7 @@ const CalendarDropdown = () => {
                           <button
                             onClick={(e) => handleDelete(e, calendar.id)}
                             className="p-1 text-gray-500 hover:text-red-600"
+                            title="Delete calendar"
                           >
                             <Trash2 size={14} />
                           </button>

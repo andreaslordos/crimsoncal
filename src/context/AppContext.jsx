@@ -769,6 +769,36 @@ export const AppProvider = ({ children }) => {
     });
   };
 
+  // Duplicate a calendar
+  const duplicateCalendar = (calendarId) => {
+    const calendarToDuplicate = userCalendars.find(cal => cal.id === calendarId);
+    if (!calendarToDuplicate) return;
+
+    // Find the next available number for the duplicated calendar name
+    const baseName = calendarToDuplicate.name.replace(/ \(copy\)| \(copy \d+\)$/, '');
+    let copyNumber = 1;
+    let newName = `${baseName} (copy)`;
+
+    // Check if name exists and increment copy number if needed
+    while (userCalendars.some(cal => cal.name === newName)) {
+      copyNumber++;
+      newName = `${baseName} (copy ${copyNumber})`;
+    }
+
+    const duplicatedCalendar = {
+      ...calendarToDuplicate,
+      id: `calendar-${Date.now()}`,
+      name: newName,
+      courses: [...(calendarToDuplicate.courses || [])],
+      hiddenCourses: { ...(calendarToDuplicate.hiddenCourses || {}) }
+    };
+
+    setUserCalendars(prevCalendars => [...prevCalendars, duplicatedCalendar]);
+    setActiveCalendarId(duplicatedCalendar.id);
+
+    return duplicatedCalendar;
+  };
+
   return (
     <AppContext.Provider value={{
       courseEvals,
@@ -801,7 +831,8 @@ export const AppProvider = ({ children }) => {
       switchCalendar,
       createNewCalendar,
       deleteCalendar,
-      renameCalendar
+      renameCalendar,
+      duplicateCalendar
     }}>
       {children}
     </AppContext.Provider>
