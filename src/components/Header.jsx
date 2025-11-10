@@ -1,4 +1,5 @@
 import { useAppContext } from "../context/AppContext";
+import CalendarDropdown from "./CalendarDropdown";
 
 // ===== Header Component =====
 const Header = () => {
@@ -15,7 +16,8 @@ const Header = () => {
                 </h1>
             </div>
             <div className="flex flex-col md:flex-row md:space-x-4 items-end">
-                <div className="flex space-x-3 text-base md:text-base">
+                <div className="flex items-center space-x-3 text-base md:text-base">
+                    <CalendarDropdown />
                     <button
                         onClick={() => setSelectedSemester('Fall 2025')}
                         className={`px-3 py-1.5 rounded transition-all text-sm font-medium ${

@@ -8,12 +8,48 @@ export const AppProvider = ({ children }) => {
   const [coursesData, setCoursesData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState(null);
+
+  // Initialize multiple calendars support
+  const [userCalendars, setUserCalendars] = useState(() => {
+    const savedCalendars = localStorage.getItem('userCalendars');
+    if (savedCalendars) {
+      return JSON.parse(savedCalendars);
+    }
+
+    // Migrate from old myCourses format if it exists
+    const savedCourses = localStorage.getItem('myCourses');
+    const savedHiddenCourses = localStorage.getItem('hiddenCourses');
+    const courses = savedCourses ? JSON.parse(savedCourses) : [];
+    const hidden = savedHiddenCourses ? JSON.parse(savedHiddenCourses) : {};
+
+    // Create initial calendar with migrated data
+    return [{
+      id: 'calendar-1',
+      name: 'Calendar 1',
+      semester: 'Spring 2026',
+      courses: courses,
+      hiddenCourses: hidden
+    }];
+  });
+
+  const [activeCalendarId, setActiveCalendarId] = useState(() => {
+    return userCalendars[0]?.id || 'calendar-1';
+  });
+
+  // Get active calendar
+  const activeCalendar = useMemo(() => {
+    return userCalendars.find(cal => cal.id === activeCalendarId) || userCalendars[0];
+  }, [userCalendars, activeCalendarId]);
+
   // Load saved courses from localStorage or use empty array if nothing is saved
   const [myCourses, setMyCourses] = useState(() => {
-    const savedCourses = localStorage.getItem('myCourses');
-    return savedCourses ? JSON.parse(savedCourses) : [];
+    return activeCalendar?.courses || [];
   });
-  const [selectedSemester, setSelectedSemester] = useState('Spring 2026');
+
+  const [selectedSemester, setSelectedSemester] = useState(() => {
+    return activeCalendar?.semester || 'Spring 2026';
+  });
+
   const [filters, setFilters] = useState({
     categories: [],
     search: '',
@@ -29,21 +65,43 @@ export const AppProvider = ({ children }) => {
   
   // Debounce search term for better performance
   const debouncedSearch = useDebounce(filters.search, 300);
-  // Load hidden courses from localStorage or use empty object if nothing is saved
+
+  // Load hidden courses from active calendar
   const [hiddenCourses, setHiddenCourses] = useState(() => {
-    const savedHiddenCourses = localStorage.getItem('hiddenCourses');
-    return savedHiddenCourses ? JSON.parse(savedHiddenCourses) : {};
+    return activeCalendar?.hiddenCourses || {};
   });
-  
-  // Save myCourses to localStorage whenever it changes
+
+  // Save userCalendars to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('myCourses', JSON.stringify(myCourses));
-  }, [myCourses]);
-  
-  // Save hiddenCourses to localStorage whenever it changes
+    localStorage.setItem('userCalendars', JSON.stringify(userCalendars));
+  }, [userCalendars]);
+
+  // Update active calendar when myCourses or hiddenCourses change
   useEffect(() => {
-    localStorage.setItem('hiddenCourses', JSON.stringify(hiddenCourses));
-  }, [hiddenCourses]);
+    setUserCalendars(prevCalendars => {
+      return prevCalendars.map(cal => {
+        if (cal.id === activeCalendarId) {
+          return {
+            ...cal,
+            courses: myCourses,
+            hiddenCourses: hiddenCourses,
+            semester: selectedSemester
+          };
+        }
+        return cal;
+      });
+    });
+  }, [myCourses, hiddenCourses, activeCalendarId, selectedSemester]);
+
+  // Load active calendar's data when calendar changes
+  useEffect(() => {
+    const calendar = userCalendars.find(cal => cal.id === activeCalendarId);
+    if (calendar) {
+      setMyCourses(calendar.courses || []);
+      setHiddenCourses(calendar.hiddenCourses || {});
+      setSelectedSemester(calendar.semester || 'Spring 2026');
+    }
+  }, [activeCalendarId]);
   
   // Normalize course code (make consistent format and normalize spaces)
   const normalizeCode = (code) => {
@@ -663,6 +721,54 @@ export const AppProvider = ({ children }) => {
     }));
   };
 
+  // Switch to a different calendar
+  const switchCalendar = (calendarId) => {
+    setActiveCalendarId(calendarId);
+  };
+
+  // Create a new calendar
+  const createNewCalendar = (name) => {
+    const newCalendar = {
+      id: `calendar-${Date.now()}`,
+      name: name || `Calendar ${userCalendars.length + 1}`,
+      semester: selectedSemester,
+      courses: [],
+      hiddenCourses: {}
+    };
+
+    setUserCalendars(prevCalendars => [...prevCalendars, newCalendar]);
+    setActiveCalendarId(newCalendar.id);
+
+    return newCalendar;
+  };
+
+  // Delete a calendar
+  const deleteCalendar = (calendarId) => {
+    // Don't delete if it's the only calendar
+    if (userCalendars.length <= 1) return;
+
+    setUserCalendars(prevCalendars => {
+      const filtered = prevCalendars.filter(cal => cal.id !== calendarId);
+      // If we deleted the active calendar, switch to the first one
+      if (calendarId === activeCalendarId && filtered.length > 0) {
+        setActiveCalendarId(filtered[0].id);
+      }
+      return filtered;
+    });
+  };
+
+  // Rename a calendar
+  const renameCalendar = (calendarId, newName) => {
+    setUserCalendars(prevCalendars => {
+      return prevCalendars.map(cal => {
+        if (cal.id === calendarId) {
+          return { ...cal, name: newName };
+        }
+        return cal;
+      });
+    });
+  };
+
   return (
     <AppContext.Provider value={{
       courseEvals,
@@ -679,7 +785,7 @@ export const AppProvider = ({ children }) => {
       removeCourse,
       updateCourseSection,
       hiddenCourses,
-      toggleCourseVisibility,  
+      toggleCourseVisibility,
       filters,
       setFilters,
       selectedSemester,
@@ -687,7 +793,15 @@ export const AppProvider = ({ children }) => {
       totalHours,
       totalUnits,
       generateShareableURL,
-      clearAllCourses
+      clearAllCourses,
+      // Calendar management
+      userCalendars,
+      activeCalendarId,
+      activeCalendar,
+      switchCalendar,
+      createNewCalendar,
+      deleteCalendar,
+      renameCalendar
     }}>
       {children}
     </AppContext.Provider>
