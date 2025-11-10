@@ -97,11 +97,11 @@ const CourseList = () => {
   
   return (
     <div className="mb-4">
-      <div className="flex items-center justify-between mb-2 px-2">
-        <div className="grid grid-cols-8 md:grid-cols-16 font-semibold text-xs sm:text-sm text-gray-700 flex-1">
+      <div className="relative mb-2">
+        <div className="grid grid-cols-8 md:grid-cols-16 font-semibold text-xs sm:text-sm px-2 text-gray-700">
           <div className="col-span-1"></div>
           <div
-            className="col-span-3 flex items-center underline cursor-pointer truncate pr-1 hover:text-gray-900"
+            className="col-span-3 text-left flex items-center underline cursor-pointer truncate hover:text-gray-900"
             onClick={() => handleSortClick("subject_catalog")}
           >
             Course
@@ -114,7 +114,7 @@ const CourseList = () => {
             )}
           </div>
           <div
-            className="col-span-2 text-center underline flex items-center justify-center cursor-pointer truncate hover:text-gray-900"
+            className="col-span-2 flex items-center justify-center underline cursor-pointer truncate hover:text-gray-900"
             onClick={() => handleSortClick("rating")}
           >
             Rating
@@ -127,7 +127,7 @@ const CourseList = () => {
             )}
           </div>
           <div
-            className="col-span-2 text-center underline flex items-center justify-center cursor-pointer truncate hover:text-gray-900"
+            className="col-span-2 flex items-center justify-center underline cursor-pointer truncate hover:text-gray-900"
             onClick={() => handleSortClick("hours")}
           >
             Hours
@@ -140,7 +140,7 @@ const CourseList = () => {
             )}
           </div>
           <div
-            className="col-span-0 md:col-span-8 text-right underline hidden md:flex items-center justify-start cursor-pointer hover:text-gray-900"
+            className="col-span-0 md:col-span-8 text-left underline hidden md:flex items-center cursor-pointer hover:text-gray-900"
             onClick={() => handleSortClick("course_title")}
           >
             Name
@@ -153,8 +153,8 @@ const CourseList = () => {
             )}
           </div>
         </div>
-        <div className="flex items-center ml-2">
-          <label className="flex items-center cursor-pointer">
+        <div className="absolute top-0 right-2 bottom-0 flex items-center">
+          <label className="flex items-center cursor-pointer h-fit">
             <input
               type="checkbox"
               checked={fitsScheduleEnabled || false}
