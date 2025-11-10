@@ -4,7 +4,7 @@ import { useAppContext } from "../context/AppContext";
 import { Plus, Minus } from "lucide-react";
 
 // CourseListItem.jsx - Optimized with React.memo
-const CourseListItem = React.memo(({ course }) => {
+const CourseListItem = React.memo(({ course, onBeforeAdd, onBeforeRemove }) => {
   const { selectedCourse, setSelectedCourse, myCourses, addCourse, removeCourse } = useAppContext();
   const isSelected = selectedCourse?.course_id === course.course_id;
   const isAdded = myCourses.some(c => c.course_id === course.course_id);
@@ -16,25 +16,27 @@ const CourseListItem = React.memo(({ course }) => {
     >
       <div className="col-span-1 flex items-center justify-center">
         {isAdded ? (
-          <button 
-            className="w-7 h-7 flex items-center cursor-pointer justify-center text-white bg-red-500 rounded hover:bg-red-600 transition-colors duration-150"
+          <button
+            className="w-5 h-5 flex items-center cursor-pointer justify-center text-white bg-red-500 rounded hover:bg-red-600 transition-colors duration-150"
             onClick={(e) => {
               e.stopPropagation();
+              if (onBeforeRemove) onBeforeRemove(course);
               removeCourse(course.course_id);
             }}
           >
-            <Minus size={14} />
+            <Minus size={12} />
           </button>
         ) : (
-          <button 
-            className="w-7 h-7 flex items-center cursor-pointer justify-center text-teal-500 border border-teal-500 rounded hover:bg-teal-50 hover:text-teal-600 transition-colors duration-150"
+          <button
+            className="w-5 h-5 flex items-center cursor-pointer justify-center text-teal-500 border border-teal-500 rounded hover:bg-teal-50 hover:text-teal-600 transition-colors duration-150"
             onClick={(e) => {
               e.stopPropagation();
+              if (onBeforeAdd) onBeforeAdd(course);
               addCourse(course);
               setSelectedCourse(course);
             }}
           >
-            <Plus size={14} />
+            <Plus size={12} />
           </button>
         )}
       </div>

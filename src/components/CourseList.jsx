@@ -1,13 +1,15 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useAppContext } from "../context/AppContext";
 import CourseListItem from "./CourseListItem";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { FixedSizeList as List } from 'react-window';
 
 const CourseList = () => {
-  const { filteredCourses, fitsScheduleEnabled, setFitsScheduleEnabled } = useAppContext();
+  const { filteredCourses, fitsScheduleEnabled, setFitsScheduleEnabled, selectedCourse } = useAppContext();
   const [sortField, setSortField] = useState("subject_catalog");
   const [sortDirection, setSortDirection] = useState("asc");
+  const listRef = useRef(null);
+  const maintainPositionRef = useRef(null);
   
   // Handle header click for sorting
   const handleSortClick = (field) => {
@@ -83,6 +85,42 @@ const CourseList = () => {
     </span>
   );
 
+  // Handler for before adding a course - capture position if fits schedule is enabled
+  const handleBeforeAddCourse = useCallback((course) => {
+    // Only maintain position if fits schedule is enabled
+    if (fitsScheduleEnabled && listRef.current) {
+      const courseIndex = sortedCourses.findIndex(c => c.course_id === course.course_id);
+      if (courseIndex !== -1) {
+        const scrollTop = listRef.current.state?.scrollOffset || 0;
+        const itemTop = courseIndex * 56;
+        const offsetFromTop = itemTop - scrollTop;
+
+        maintainPositionRef.current = {
+          courseId: course.course_id,
+          offsetFromTop: offsetFromTop
+        };
+      }
+    }
+  }, [fitsScheduleEnabled, sortedCourses]);
+
+  // Handler for before removing a course - capture position if fits schedule is enabled
+  const handleBeforeRemoveCourse = useCallback((course) => {
+    // Only maintain position if fits schedule is enabled
+    if (fitsScheduleEnabled && listRef.current) {
+      const courseIndex = sortedCourses.findIndex(c => c.course_id === course.course_id);
+      if (courseIndex !== -1) {
+        const scrollTop = listRef.current.state?.scrollOffset || 0;
+        const itemTop = courseIndex * 56;
+        const offsetFromTop = itemTop - scrollTop;
+
+        maintainPositionRef.current = {
+          courseId: course.course_id,
+          offsetFromTop: offsetFromTop
+        };
+      }
+    }
+  }, [fitsScheduleEnabled, sortedCourses]);
+
   // Row renderer for virtual list
   const Row = useCallback(({ index, style }) => {
     const course = sortedCourses[index];
@@ -90,11 +128,61 @@ const CourseList = () => {
       <div style={style} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
         <CourseListItem
           course={course}
+          onBeforeAdd={handleBeforeAddCourse}
+          onBeforeRemove={handleBeforeRemoveCourse}
         />
       </div>
     );
+  }, [sortedCourses, handleBeforeAddCourse, handleBeforeRemoveCourse]);
+
+  // Handler for fits schedule checkbox
+  const handleFitsScheduleChange = (e) => {
+    const newValue = e.target.checked;
+
+    // Before changing, capture the exact position
+    if (selectedCourse && listRef.current) {
+      const oldIndex = sortedCourses.findIndex(c => c.course_id === selectedCourse.course_id);
+      if (oldIndex !== -1) {
+        const scrollTop = listRef.current.state?.scrollOffset || 0;
+        const itemTop = oldIndex * 56; // item height
+        const offsetFromTop = itemTop - scrollTop;
+
+        maintainPositionRef.current = {
+          courseId: selectedCourse.course_id,
+          offsetFromTop: offsetFromTop
+        };
+      }
+    }
+
+    setFitsScheduleEnabled(newValue);
+  };
+
+  // Restore position after filter change
+  useEffect(() => {
+    if (!maintainPositionRef.current || !listRef.current) return;
+
+    const { courseId, offsetFromTop } = maintainPositionRef.current;
+    const newIndex = sortedCourses.findIndex(c => c.course_id === courseId);
+
+    if (newIndex !== -1) {
+      // Calculate new scroll position to maintain the same offset from top
+      const newItemTop = newIndex * 56;
+      const newScrollTop = newItemTop - offsetFromTop;
+
+      // Use RAF to ensure DOM has updated
+      requestAnimationFrame(() => {
+        if (listRef.current) {
+          const maxScroll = Math.max(0, sortedCourses.length * 56 - 320);
+          const clampedScroll = Math.max(0, Math.min(newScrollTop, maxScroll));
+          listRef.current.scrollTo(clampedScroll);
+        }
+        maintainPositionRef.current = null;
+      });
+    } else {
+      maintainPositionRef.current = null;
+    }
   }, [sortedCourses]);
-  
+
   return (
     <div className="mb-4">
       <div className="relative mb-2">
@@ -158,7 +246,7 @@ const CourseList = () => {
             <input
               type="checkbox"
               checked={fitsScheduleEnabled || false}
-              onChange={(e) => setFitsScheduleEnabled(e.target.checked)}
+              onChange={handleFitsScheduleChange}
               className="mr-1.5 h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
             />
             <span className="text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">
@@ -174,6 +262,7 @@ const CourseList = () => {
           <div className="py-4 text-center text-gray-500">No courses match your filter criteria</div>
         ) : (
           <List
+            ref={listRef}
             height={320}
             itemCount={sortedCourses.length}
             itemSize={56}
