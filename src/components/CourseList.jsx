@@ -185,6 +185,20 @@ const CourseList = () => {
 
   return (
     <div className="mb-4">
+      {/* Mobile-only: Checkbox centered above headers */}
+      <div className="flex justify-center mb-2 md:hidden">
+        <label className="flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={fitsScheduleEnabled || false}
+            onChange={handleFitsScheduleChange}
+            className="mr-1.5 h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          />
+          <span className="text-xs sm:text-sm font-semibold text-gray-700">
+            Fits schedule
+          </span>
+        </label>
+      </div>
       <div className="relative mb-2">
         <div className="grid grid-cols-8 md:grid-cols-16 font-semibold text-xs sm:text-sm px-2 text-gray-700">
           <div className="col-span-1"></div>
@@ -241,7 +255,8 @@ const CourseList = () => {
             )}
           </div>
         </div>
-        <div className="absolute top-0 right-2 bottom-0 flex items-center">
+        {/* Desktop-only: Checkbox on the right side */}
+        <div className="hidden md:flex absolute top-0 right-2 bottom-0 items-center">
           <label className="flex items-center cursor-pointer h-fit">
             <input
               type="checkbox"
