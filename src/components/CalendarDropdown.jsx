@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, Plus, Edit2, Trash2, Copy } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
@@ -10,8 +10,16 @@ const CalendarDropdown = () => {
     createNewCalendar,
     deleteCalendar,
     renameCalendar,
-    duplicateCalendar
+    duplicateCalendar,
+    selectedSemester
   } = useAppContext();
+
+  const calendarsForSemester = useMemo(() => {
+    const filtered = userCalendars.filter(
+      (calendar) => calendar.semester === selectedSemester
+    );
+    return filtered.length ? filtered : userCalendars;
+  }, [userCalendars, selectedSemester]);
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [editingCalendarId, setEditingCalendarId] = useState(null);
@@ -33,10 +41,7 @@ const CalendarDropdown = () => {
   }, []);
 
   const handleCreateNew = () => {
-    // Auto-generate the next calendar name
-    const nextNumber = userCalendars.length + 1;
-    const newCalendarName = `Calendar ${nextNumber}`;
-    createNewCalendar(newCalendarName);
+    createNewCalendar();
     setShowDropdown(false);
   };
 
@@ -96,7 +101,7 @@ const CalendarDropdown = () => {
         {showDropdown && (
           <div className="absolute right-0 z-50 mt-1 w-64 bg-white border border-gray-200 rounded-md shadow-lg">
             <div className="py-1 max-h-96 overflow-y-auto">
-              {userCalendars.map((calendar) => (
+              {calendarsForSemester.map((calendar) => (
                 <div
                   key={calendar.id}
                   className={`px-3 py-2 hover:bg-gray-50 cursor-pointer ${

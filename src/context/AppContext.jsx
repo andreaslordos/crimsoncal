@@ -1,5 +1,137 @@
-import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useMemo, useRef } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
+
+const DEFAULT_SEMESTER = 'Spring 2026';
+const SUPPORTED_SEMESTERS = ['Fall 2025', 'Spring 2026'];
+const DEFAULT_CALENDAR_PREFIX = 'Calendar';
+
+const normalizeSemester = (semester) => (
+  SUPPORTED_SEMESTERS.includes(semester) ? semester : DEFAULT_SEMESTER
+);
+
+const detectCourseSemester = (course, fallbackSemester = DEFAULT_SEMESTER) => {
+  if (!course) return fallbackSemester;
+  const rawTerm = `${course.current_term || course.year_term || ''}`.toLowerCase();
+  if (rawTerm.includes('spring') && rawTerm.includes('2026')) return 'Spring 2026';
+  if (rawTerm.includes('fall') && rawTerm.includes('2025')) return 'Fall 2025';
+  return fallbackSemester;
+};
+
+const generateCalendarId = () => `calendar-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+const stripSemesterSuffix = (name = '') => {
+  return name.replace(/\s+\((Spring|Fall)\s+20\d{2}\)$/i, '').trim();
+};
+
+const getSemesterKey = (semester) => normalizeSemester(semester || DEFAULT_SEMESTER);
+
+const ensureUniqueName = (desiredName, usedNamesBySemester, semester) => {
+  const key = getSemesterKey(semester);
+  if (!usedNamesBySemester.has(key)) {
+    usedNamesBySemester.set(key, new Set());
+  }
+
+  const nameSet = usedNamesBySemester.get(key);
+  if (!nameSet.has(desiredName)) {
+    nameSet.add(desiredName);
+    return desiredName;
+  }
+
+  let counter = 2;
+  let candidate = `${desiredName} (${counter})`;
+  while (nameSet.has(candidate)) {
+    counter += 1;
+    candidate = `${desiredName} (${counter})`;
+  }
+  nameSet.add(candidate);
+  return candidate;
+};
+
+const getDefaultCalendarName = (calendars, semester) => {
+  const key = getSemesterKey(semester);
+  const takenNames = new Set(
+    calendars
+      .filter(cal => getSemesterKey(cal.semester) === key)
+      .map(cal => cal.name)
+  );
+
+  let index = 1;
+  while (takenNames.has(`${DEFAULT_CALENDAR_PREFIX} ${index}`)) {
+    index += 1;
+  }
+
+  return `${DEFAULT_CALENDAR_PREFIX} ${index}`;
+};
+
+const migrateCalendars = (calendars = []) => {
+  if (!Array.isArray(calendars) || calendars.length === 0) {
+    return [];
+  }
+
+  const usedNames = new Map();
+  const migrated = [];
+
+  calendars.forEach((calendar) => {
+    const fallbackSemester = normalizeSemester(calendar?.semester);
+    const courses = Array.isArray(calendar?.courses) ? calendar.courses : [];
+    const hidden = (calendar && typeof calendar.hiddenCourses === 'object' && calendar.hiddenCourses) ? calendar.hiddenCourses : {};
+
+    const normalizedBaseName = stripSemesterSuffix(calendar?.name || DEFAULT_CALENDAR_PREFIX);
+
+    const groupedCourses = courses.reduce((acc, course) => {
+      const term = detectCourseSemester(course, fallbackSemester);
+      if (!acc[term]) {
+        acc[term] = [];
+      }
+      acc[term].push(course);
+      return acc;
+    }, {});
+
+    const groupKeys = Object.keys(groupedCourses);
+
+    const buildHiddenForCourses = (courseList) => {
+      if (!courseList || courseList.length === 0) return {};
+      return courseList.reduce((acc, currentCourse) => {
+        if (currentCourse && hidden[currentCourse.course_id]) {
+          acc[currentCourse.course_id] = hidden[currentCourse.course_id];
+        }
+        return acc;
+      }, {});
+    };
+
+    if (groupKeys.length <= 1) {
+      const term = groupKeys[0] || fallbackSemester;
+      const coursesForTerm = groupedCourses[term] || [];
+      const name = ensureUniqueName(normalizedBaseName || DEFAULT_CALENDAR_PREFIX, usedNames, term);
+      migrated.push({
+        ...calendar,
+        id: calendar?.id || generateCalendarId(),
+        name,
+        semester: term,
+        courses: coursesForTerm,
+        hiddenCourses: coursesForTerm.length ? buildHiddenForCourses(coursesForTerm) : {}
+      });
+      return;
+    }
+
+    groupKeys.forEach((term, index) => {
+      const termCourses = groupedCourses[term];
+      const desiredName = normalizedBaseName || DEFAULT_CALENDAR_PREFIX;
+      const name = ensureUniqueName(desiredName, usedNames, term);
+
+      migrated.push({
+        ...calendar,
+        id: index === 0 && calendar?.id ? calendar.id : generateCalendarId(),
+        name,
+        semester: term,
+        courses: termCourses,
+        hiddenCourses: buildHiddenForCourses(termCourses)
+      });
+    });
+  });
+
+  return migrated;
+};
 
 // Create context
 export const AppContext = createContext();
@@ -13,7 +145,17 @@ export const AppProvider = ({ children }) => {
   const [userCalendars, setUserCalendars] = useState(() => {
     const savedCalendars = localStorage.getItem('userCalendars');
     if (savedCalendars) {
-      return JSON.parse(savedCalendars);
+      try {
+        const parsedCalendars = JSON.parse(savedCalendars);
+        const migratedCalendars = migrateCalendars(parsedCalendars);
+
+        if (migratedCalendars.length) {
+          localStorage.setItem('userCalendars', JSON.stringify(migratedCalendars));
+          return migratedCalendars;
+        }
+      } catch (error) {
+        console.error('Failed to parse saved calendars, recreating defaults', error);
+      }
     }
 
     // Migrate from old myCourses format if it exists
@@ -24,17 +166,22 @@ export const AppProvider = ({ children }) => {
 
     // Create initial calendar with migrated data
     return [{
-      id: 'calendar-1',
+      id: generateCalendarId(),
       name: 'Calendar 1',
-      semester: 'Spring 2026',
+      semester: DEFAULT_SEMESTER,
       courses: courses,
       hiddenCourses: hidden
     }];
   });
 
   const [activeCalendarId, setActiveCalendarId] = useState(() => {
-    return userCalendars[0]?.id || 'calendar-1';
+    return userCalendars[0]?.id || null;
   });
+  const activeCalendarIdRef = useRef(activeCalendarId);
+
+  useEffect(() => {
+    activeCalendarIdRef.current = activeCalendarId;
+  }, [activeCalendarId]);
 
   // Get active calendar
   const activeCalendar = useMemo(() => {
@@ -47,7 +194,7 @@ export const AppProvider = ({ children }) => {
   });
 
   const [selectedSemester, setSelectedSemester] = useState(() => {
-    return activeCalendar?.semester || 'Spring 2026';
+    return activeCalendar?.semester || DEFAULT_SEMESTER;
   });
 
   const [filters, setFilters] = useState({
@@ -82,20 +229,21 @@ export const AppProvider = ({ children }) => {
 
   // Update active calendar when myCourses or hiddenCourses change
   useEffect(() => {
-    setUserCalendars(prevCalendars => {
-      return prevCalendars.map(cal => {
-        if (cal.id === activeCalendarId) {
-          return {
-            ...cal,
-            courses: myCourses,
-            hiddenCourses: hiddenCourses,
-            semester: selectedSemester
-          };
-        }
-        return cal;
-      });
-    });
-  }, [myCourses, hiddenCourses, activeCalendarId, selectedSemester]);
+    const currentCalendarId = activeCalendarIdRef.current;
+    if (!currentCalendarId) return;
+
+    setUserCalendars(prevCalendars => (
+      prevCalendars.map(cal => (
+        cal.id === currentCalendarId
+          ? {
+              ...cal,
+              courses: myCourses,
+              hiddenCourses: hiddenCourses
+            }
+          : cal
+      ))
+    ));
+  }, [myCourses, hiddenCourses]);
 
   // Load active calendar's data when calendar changes
   useEffect(() => {
@@ -103,7 +251,7 @@ export const AppProvider = ({ children }) => {
     if (calendar) {
       setMyCourses(calendar.courses || []);
       setHiddenCourses(calendar.hiddenCourses || {});
-      setSelectedSemester(calendar.semester || 'Spring 2026');
+      setSelectedSemester(calendar.semester || DEFAULT_SEMESTER);
     }
   }, [activeCalendarId]);
   
@@ -823,17 +971,23 @@ export const AppProvider = ({ children }) => {
     }));
   };
 
+
   // Switch to a different calendar
   const switchCalendar = (calendarId) => {
     setActiveCalendarId(calendarId);
   };
 
   // Create a new calendar
-  const createNewCalendar = (name) => {
+  const createNewCalendar = (name, semesterOverride) => {
+    const calendarSemester = normalizeSemester(semesterOverride || selectedSemester);
+    const sanitizedName = name?.trim();
+    const assignedName = sanitizedName && sanitizedName.length
+      ? sanitizedName
+      : getDefaultCalendarName(userCalendars, calendarSemester);
     const newCalendar = {
-      id: `calendar-${Date.now()}`,
-      name: name || `Calendar ${userCalendars.length + 1}`,
-      semester: selectedSemester,
+      id: generateCalendarId(),
+      name: assignedName,
+      semester: calendarSemester,
       courses: [],
       hiddenCourses: {}
     };
@@ -842,6 +996,25 @@ export const AppProvider = ({ children }) => {
     setActiveCalendarId(newCalendar.id);
 
     return newCalendar;
+  };
+
+  const changeSemester = (semester) => {
+    const targetSemester = normalizeSemester(semester);
+
+    if (activeCalendar?.semester === targetSemester) {
+      return;
+    }
+
+    const matchingCalendar = userCalendars.find(cal => cal.semester === targetSemester);
+
+    if (matchingCalendar) {
+      setActiveCalendarId(matchingCalendar.id);
+      setSelectedSemester(targetSemester);
+      return;
+    }
+
+    createNewCalendar(undefined, targetSemester);
+    setSelectedSemester(targetSemester);
   };
 
   // Delete a calendar
@@ -880,16 +1053,20 @@ export const AppProvider = ({ children }) => {
     const baseName = calendarToDuplicate.name.replace(/ \(copy\)| \(copy \d+\)$/, '');
     let copyNumber = 1;
     let newName = `${baseName} (copy)`;
+    const semesterKey = getSemesterKey(calendarToDuplicate.semester);
+    const semesterCalendars = userCalendars.filter(cal => getSemesterKey(cal.semester) === semesterKey);
 
     // Check if name exists and increment copy number if needed
-    while (userCalendars.some(cal => cal.name === newName)) {
+    const nameExists = (candidate) => semesterCalendars.some(cal => cal.name === candidate);
+
+    while (nameExists(newName)) {
       copyNumber++;
       newName = `${baseName} (copy ${copyNumber})`;
     }
 
     const duplicatedCalendar = {
       ...calendarToDuplicate,
-      id: `calendar-${Date.now()}`,
+      id: generateCalendarId(),
       name: newName,
       courses: [...(calendarToDuplicate.courses || [])],
       hiddenCourses: { ...(calendarToDuplicate.hiddenCourses || {}) }
@@ -921,7 +1098,7 @@ export const AppProvider = ({ children }) => {
       filters,
       setFilters,
       selectedSemester,
-      setSelectedSemester,
+      changeSemester,
       totalHours,
       totalUnits,
       generateShareableURL,
