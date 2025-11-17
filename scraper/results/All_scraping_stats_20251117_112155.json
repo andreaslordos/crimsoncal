@@ -1,0 +1,10 @@
+{
+  "total_courses": 5001,
+  "total_urls": 7900,
+  "total_pages": 334,
+  "successful_pages": 334,
+  "failed_pages": 0,
+  "elapsed_time": 30.584190368652344,
+  "pages_per_second": 10.92067489686886,
+  "timestamp": "2025-11-17T11:21:55.179705"
+}
