@@ -3,7 +3,7 @@
 
 import json
 from collections import defaultdict
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 from datetime import datetime
 
 def load_json(filepath: str) -> Any:
@@ -21,27 +21,61 @@ def load_json(filepath: str) -> Any:
 def group_current_courses(courses: List[Dict]) -> Dict[str, List[Dict]]:
     """Group current courses by course_id."""
     courses_by_id = defaultdict(list)
-    
+
     for course in courses:
         course_id = course.get('course_id')
         if not course_id:
             continue
         courses_by_id[course_id].append(course)
-    
+
     return courses_by_id
 
-def merge_data(all_courses: List[Dict], analytics: Dict) -> List[Dict]:
+
+def build_old_locations(old_master: List[Dict]) -> Dict[tuple, str]:
+    """Build a lookup of (course_id, section) -> location from existing data.
+
+    This allows preserving location data when new scrapes have empty locations
+    (e.g., due to expired authentication cookies).
+    """
+    old_locations = {}
+    if not old_master:
+        return old_locations
+
+    for course in old_master:
+        course_id = course.get('course_id')
+        if not course_id:
+            continue
+        for section in course.get('current_sections', []):
+            location = section.get('location', '')
+            if location:  # Only store non-empty locations
+                key = (course_id, section.get('section', 'default'))
+                old_locations[key] = location
+
+    return old_locations
+
+def merge_data(all_courses: List[Dict], analytics: Dict, old_locations: Dict[Tuple[str, str], str] = None) -> Tuple[List[Dict], int]:
     """
     Merge all_courses_cleaned with course_analytics.
     Only keeps courses that are currently being offered.
+
+    Args:
+        all_courses: List of current course data
+        analytics: Dict of Q-Guide analytics by course_id
+        old_locations: Optional dict of (course_id, section) -> location for preserving old data
+
+    Returns:
+        Tuple of (merged_data, locations_preserved_count)
     """
-    
+    if old_locations is None:
+        old_locations = {}
+
     # Group current courses by course_id
     current_courses = group_current_courses(all_courses)
-    
+
     # Create merged entries - one per unique course_id from current offerings
     merged_data = []
-    
+    locations_preserved = 0
+
     for course_id, sections in current_courses.items():
         if not course_id:
             continue
@@ -73,8 +107,19 @@ def merge_data(all_courses: List[Dict], analytics: Dict) -> List[Dict]:
         
         # Add all current sections
         for section in sections:
+            section_id = section.get('section', 'default')
+            location = section.get('location', '')
+
+            # If location is empty, try to preserve from old data
+            if not location:
+                key = (course_id, section_id)
+                old_location = old_locations.get(key, '')
+                if old_location:
+                    location = old_location
+                    locations_preserved += 1
+
             section_info = {
-                'section': section.get('section', 'default'),
+                'section': section_id,
                 'instructors': section.get('instructors', ''),
                 'enrollment': section.get('enrollment', ''),
                 'class_number': section.get('class_number', ''),
@@ -83,7 +128,7 @@ def merge_data(all_courses: List[Dict], analytics: Dict) -> List[Dict]:
                 'start_time': section.get('start_time', ''),
                 'end_time': section.get('end_time', ''),
                 'weekdays': section.get('weekdays', ''),
-                'location': section.get('location', ''),
+                'location': location,
                 'grading_basis': section.get('grading_basis', ''),
             }
             
@@ -138,8 +183,8 @@ def merge_data(all_courses: List[Dict], analytics: Dict) -> List[Dict]:
     
     # Sort by course code for better readability
     merged_data.sort(key=lambda x: x.get('course_code', 'ZZZ'))
-    
-    return merged_data
+
+    return merged_data, locations_preserved
 
 def generate_summary_stats(merged_data: List[Dict]) -> Dict:
     """Generate summary statistics for the merged data."""
@@ -228,13 +273,29 @@ def main(term=None, year=None):
     if not analytics:
         print("Failed to load course_analytics.json")
         return
-    
+
+    # Load existing master data to preserve locations when new data is empty
+    # (handles case where cookies expired and locations weren't scraped)
+    if term and year:
+        # Try term-specific file first, fall back to default
+        term_lower = term.lower()
+        old_master_path = f'../public/data/master_courses_{term_lower}{year}.json'
+        old_master = load_json(old_master_path)
+        if not old_master:
+            # Fall back to default master_courses.json
+            old_master = load_json('../public/data/master_courses.json')
+    else:
+        old_master = load_json('../public/data/master_courses.json')
+    old_locations = build_old_locations(old_master)
+
     print(f"Loaded {len(all_courses)} current course entries")
     print(f"Loaded {len(analytics)} courses with analytics data")
-    
+    if old_locations:
+        print(f"Loaded {len(old_locations)} existing locations for preservation")
+
     # Perform merge
     print("\nMerging data (keeping only currently offered courses)...")
-    merged_data = merge_data(all_courses, analytics)
+    merged_data, locations_preserved = merge_data(all_courses, analytics, old_locations)
     
     # Generate statistics
     stats = generate_summary_stats(merged_data)
@@ -275,6 +336,9 @@ def main(term=None, year=None):
     print(f"Courses with multiple sections: {stats['courses_with_multiple_sections']}")
     print(f"Average rating (where available): {stats['avg_rating']}/5.0")
     print(f"Average hours per week (where available): {stats['avg_hours']}")
+    if locations_preserved > 0:
+        print(f"\n⚠️  Locations preserved from old data: {locations_preserved}")
+        print(f"   (This may indicate expired cookies - consider updating MY_HARVARD_COOKIE)")
     
     print("\n" + "="*60)
     print("TOP 10 HIGHEST RATED COURSES (Currently Offered):")
