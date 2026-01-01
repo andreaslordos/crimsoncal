@@ -430,39 +430,39 @@ const AppContent = () => {
           <Calendar />
           <MyCourses />
 
-          {/* Report Bug and Export buttons - centered below calendar */}
-          <div className="flex justify-center items-center gap-4 mt-4">
-            <a
-              href="https://docs.google.com/forms/d/e/1FAIpQLSdPks0Z_z6oamuEs4bMHJznTadvBFjVHmZK4l7vwdERCHWgBg/viewform?usp=header"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150"
-            >
-              Report Bug
-            </a>
-            {hasVisibleCourses ? (
-              <button
-                onClick={handleExportToCalendar}
-                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150 cursor-pointer"
-                title="Export selected courses to calendar file"
+          {/* Footer row: Last updated (left), Report Bug and Export (center) */}
+          <div className="relative flex items-center justify-center mt-4">
+            <div className="absolute left-0 text-xs text-gray-500">
+              Last updated: {lastUpdated}
+            </div>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://docs.google.com/forms/d/e/1FAIpQLSdPks0Z_z6oamuEs4bMHJznTadvBFjVHmZK4l7vwdERCHWgBg/viewform?usp=header"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150"
               >
-                <CalendarPlus size={16} />
-                <span>Export to Calendar</span>
-              </button>
-            ) : (
-              <span
-                className="flex items-center gap-1 text-sm text-gray-400 cursor-not-allowed"
-                title="No courses selected to export"
-              >
-                <CalendarPlus size={16} />
-                <span>Export to Calendar</span>
-              </span>
-            )}
-          </div>
-
-          {/* Last updated timestamp - bottom left */}
-          <div className="fixed bottom-4 left-4 text-xs text-gray-500">
-            Last updated: {lastUpdated}
+                Report Bug
+              </a>
+              {hasVisibleCourses ? (
+                <button
+                  onClick={handleExportToCalendar}
+                  className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150 cursor-pointer"
+                  title="Export selected courses to calendar file"
+                >
+                  <CalendarPlus size={16} />
+                  <span>Export to Calendar</span>
+                </button>
+              ) : (
+                <span
+                  className="flex items-center gap-1 text-sm text-gray-400 cursor-not-allowed"
+                  title="No courses selected to export"
+                >
+                  <CalendarPlus size={16} />
+                  <span>Export to Calendar</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
