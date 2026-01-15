@@ -1,5 +1,6 @@
-import React, { createContext, useState, useEffect, useMemo, useRef } from 'react';
+import React, { createContext, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
+import LZString from 'lz-string';
 
 const DEFAULT_SEMESTER = 'Spring 2026';
 const SUPPORTED_SEMESTERS = ['Fall 2025', 'Spring 2026'];
@@ -61,6 +62,72 @@ const getDefaultCalendarName = (calendars, semester) => {
   }
 
   return `${DEFAULT_CALENDAR_PREFIX} ${index}`;
+};
+
+// Share URL helpers
+const SHARE_DATA_VERSION = 1;
+
+const generateShareData = (calendar) => {
+  if (!calendar || !calendar.courses || calendar.courses.length === 0) {
+    return null;
+  }
+
+  return {
+    v: SHARE_DATA_VERSION,
+    n: calendar.name || 'Shared Calendar',
+    s: calendar.semester || DEFAULT_SEMESTER,
+    c: calendar.courses.map(course => ({
+      id: course.course_id,
+      sec: course.selectedSection?.section || null,
+      h: calendar.hiddenCourses?.[course.course_id] || false
+    }))
+  };
+};
+
+const compressShareData = (shareData) => {
+  if (!shareData) return null;
+  try {
+    const json = JSON.stringify(shareData);
+    return LZString.compressToEncodedURIComponent(json);
+  } catch (error) {
+    console.error('Failed to compress share data:', error);
+    return null;
+  }
+};
+
+const decompressShareData = (compressed) => {
+  if (!compressed) return null;
+  try {
+    const json = LZString.decompressFromEncodedURIComponent(compressed);
+    if (!json) return null;
+    return JSON.parse(json);
+  } catch (error) {
+    console.error('Failed to decompress share data:', error);
+    return null;
+  }
+};
+
+const isDefaultCalendarName = (name) => {
+  return /^Calendar \d+$/.test(name);
+};
+
+const getUniqueCalendarName = (baseName, existingCalendars, semester) => {
+  const semesterKey = getSemesterKey(semester);
+  const semesterCalendars = existingCalendars.filter(
+    cal => getSemesterKey(cal.semester) === semesterKey
+  );
+
+  if (!semesterCalendars.some(cal => cal.name === baseName)) {
+    return baseName;
+  }
+
+  let counter = 2;
+  let candidate = `${baseName} ${counter}`;
+  while (semesterCalendars.some(cal => cal.name === candidate)) {
+    counter++;
+    candidate = `${baseName} ${counter}`;
+  }
+  return candidate;
 };
 
 const migrateCalendars = (calendars = []) => {
@@ -1078,6 +1145,118 @@ export const AppProvider = ({ children }) => {
     return duplicatedCalendar;
   };
 
+  // Generate share URL for the active calendar
+  const generateCalendarShareURL = useCallback(() => {
+    if (!activeCalendar || !activeCalendar.courses || activeCalendar.courses.length === 0) {
+      return null;
+    }
+
+    const shareData = generateShareData(activeCalendar);
+    if (!shareData) return null;
+
+    const compressed = compressShareData(shareData);
+    if (!compressed) return null;
+
+    return `${window.location.origin}?cal=${compressed}`;
+  }, [activeCalendar]);
+
+  // Check if a share hash already exists
+  const findCalendarBySourceHash = useCallback((sourceHash) => {
+    if (!sourceHash) return null;
+    return userCalendars.find(cal => cal.sourceHash === sourceHash);
+  }, [userCalendars]);
+
+  // Import a shared calendar from URL data
+  const importSharedCalendar = useCallback((compressed, availableCourses) => {
+    const shareData = decompressShareData(compressed);
+    if (!shareData || !shareData.c || shareData.c.length === 0) {
+      return { success: false, error: 'invalid' };
+    }
+
+    // Check for duplicate import
+    const existingCalendar = findCalendarBySourceHash(compressed);
+    if (existingCalendar) {
+      return { success: false, error: 'duplicate', calendar: existingCalendar };
+    }
+
+    // Validate courses exist in available data
+    const courseMap = new Map(availableCourses.map(c => [c.course_id, c]));
+    const validCourses = [];
+    const missingCourses = [];
+
+    shareData.c.forEach(sharedCourse => {
+      const fullCourse = courseMap.get(sharedCourse.id);
+      if (fullCourse) {
+        // Find the matching section if specified
+        let selectedSection = null;
+        if (sharedCourse.sec && fullCourse.sections) {
+          selectedSection = fullCourse.sections.find(s => s.section === sharedCourse.sec) || null;
+        }
+        validCourses.push({
+          ...fullCourse,
+          selectedSection,
+          _hiddenOnImport: sharedCourse.h
+        });
+      } else {
+        missingCourses.push(sharedCourse.id);
+      }
+    });
+
+    if (validCourses.length === 0) {
+      return { success: false, error: 'no_valid_courses', missingCourses };
+    }
+
+    // Build hidden courses map
+    const hiddenCoursesMap = {};
+    validCourses.forEach(course => {
+      if (course._hiddenOnImport) {
+        hiddenCoursesMap[course.course_id] = true;
+      }
+      delete course._hiddenOnImport;
+    });
+
+    // Generate unique name
+    // If sharer used a default name like "Calendar 1", use next available number instead
+    const sharedName = shareData.n || 'Shared Calendar';
+    const baseName = isDefaultCalendarName(sharedName)
+      ? getDefaultCalendarName(userCalendars, shareData.s)
+      : sharedName;
+    const uniqueName = getUniqueCalendarName(baseName, userCalendars, shareData.s);
+
+    // Create new calendar
+    const newCalendar = {
+      id: generateCalendarId(),
+      name: uniqueName,
+      semester: normalizeSemester(shareData.s),
+      courses: validCourses,
+      hiddenCourses: hiddenCoursesMap,
+      sourceHash: compressed
+    };
+
+    setUserCalendars(prevCalendars => [...prevCalendars, newCalendar]);
+    setActiveCalendarId(newCalendar.id);
+    setSelectedSemester(newCalendar.semester);
+
+    return {
+      success: true,
+      calendar: newCalendar,
+      missingCourses: missingCourses.length > 0 ? missingCourses : null
+    };
+  }, [userCalendars, findCalendarBySourceHash]);
+
+  // Parse share URL parameter
+  const parseShareURLParam = useCallback(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('cal');
+  }, []);
+
+  // Clean share URL parameter from address bar
+  const cleanShareURLParam = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('cal');
+    window.history.replaceState({}, '', url.toString());
+  }, []);
+
   return (
     <AppContext.Provider value={{
       courseEvals,
@@ -1114,7 +1293,13 @@ export const AppProvider = ({ children }) => {
       createNewCalendar,
       deleteCalendar,
       renameCalendar,
-      duplicateCalendar
+      duplicateCalendar,
+      // Share functionality
+      generateCalendarShareURL,
+      importSharedCalendar,
+      findCalendarBySourceHash,
+      parseShareURLParam,
+      cleanShareURLParam
     }}>
       {children}
     </AppContext.Provider>

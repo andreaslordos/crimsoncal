@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AppProvider } from './context/AppContext.jsx';
 import Header from './components/Header.jsx';
 import Calendar from './components/Calendar.jsx';
@@ -7,16 +7,39 @@ import MyCourses from './components/MyCourses.jsx';
 import CourseDetails from './components/CourseDetails.jsx';
 import LoadingScreen from './components/LoadingScreen.jsx';
 import ResizableDivider from './components/ResizableDivider.jsx';
+import Toast, { useToast } from './components/Toast.jsx';
 import { useAppContext } from './context/AppContext.jsx';
-import { Menu, X, CalendarPlus } from 'lucide-react';
+import { Menu, X, CalendarPlus, Share2 } from 'lucide-react';
+import LZString from 'lz-string';
 import './App.css';
 
 // App.jsx - Make sidebar take full width on mobile
 const AppContent = () => {
-  const { isLoading, myCourses, hiddenCourses, selectedSemester } = useAppContext();
+  const {
+    isLoading,
+    myCourses,
+    hiddenCourses,
+    selectedSemester,
+    processedCourses,
+    activeCalendar,
+    generateCalendarShareURL,
+    importSharedCalendar,
+    findCalendarBySourceHash,
+    parseShareURLParam,
+    cleanShareURLParam,
+    switchCalendar,
+    changeSemester
+  } = useAppContext();
+
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [lastUpdated, setLastUpdated] = useState('');
   const [leftColumnWidth, setLeftColumnWidth] = useState(60);
+  const [importProcessed, setImportProcessed] = useState(false);
+  const [semesterPrompt, setSemesterPrompt] = useState(null);
+  const pendingImportSemester = React.useRef(null);
+
+  // Toast management
+  const { toasts, addToast, removeToast } = useToast();
 
   const normalizedSemester = selectedSemester || '';
   const lowerSemester = normalizedSemester.toLowerCase();
@@ -33,7 +56,135 @@ const AppContent = () => {
         setLastUpdated('Aug 24, 2025');
       });
   }, []);
-  
+
+  // Handle share calendar click
+  const handleShareCalendar = useCallback(() => {
+    const shareURL = generateCalendarShareURL();
+    if (!shareURL) {
+      addToast('No courses to share', { type: 'error', duration: 3000 });
+      return;
+    }
+
+    navigator.clipboard.writeText(shareURL).then(() => {
+      addToast('Link copied! Share it with anyone.', { type: 'success', duration: 4000 });
+    }).catch(() => {
+      addToast('Failed to copy link', { type: 'error', duration: 3000 });
+    });
+  }, [generateCalendarShareURL, addToast]);
+
+  // Handle import from URL on page load
+  useEffect(() => {
+    if (isLoading || importProcessed || processedCourses.length === 0) return;
+
+    // If we're waiting for a specific semester to load, check if it matches
+    if (pendingImportSemester.current && pendingImportSemester.current !== selectedSemester) {
+      return; // Wait for the correct semester's courses to load
+    }
+
+    const shareParam = parseShareURLParam();
+    if (!shareParam) {
+      pendingImportSemester.current = null;
+      setImportProcessed(true);
+      return;
+    }
+
+    // Check for duplicate first
+    const existingCalendar = findCalendarBySourceHash(shareParam);
+    if (existingCalendar) {
+      cleanShareURLParam();
+      pendingImportSemester.current = null;
+      addToast('This calendar has already been added', {
+        type: 'info',
+        duration: 5000,
+        action: {
+          label: 'View',
+          onClick: () => {
+            switchCalendar(existingCalendar.id);
+            if (existingCalendar.semester !== selectedSemester) {
+              changeSemester(existingCalendar.semester);
+            }
+          }
+        }
+      });
+      setImportProcessed(true);
+      return;
+    }
+
+    // Parse the share data to check semester (only if not already handling a semester switch)
+    if (!pendingImportSemester.current) {
+      try {
+        const json = LZString.decompressFromEncodedURIComponent(shareParam);
+        if (json) {
+          const decompressed = JSON.parse(json);
+
+          if (decompressed && decompressed.s && decompressed.s !== selectedSemester) {
+            // Show semester mismatch prompt
+            setSemesterPrompt({
+              shareParam,
+              targetSemester: decompressed.s
+            });
+            setImportProcessed(true);
+            return;
+          }
+        }
+      } catch {
+        // If parsing fails, try import anyway
+      }
+    }
+
+    // Proceed with import
+    const result = importSharedCalendar(shareParam, processedCourses);
+    cleanShareURLParam();
+    pendingImportSemester.current = null;
+    setImportProcessed(true);
+
+    if (result.success) {
+      addToast(`"${result.calendar.name}" added!`, { type: 'success', duration: 4000 });
+      if (result.missingCourses && result.missingCourses.length > 0) {
+        setTimeout(() => {
+          addToast(`${result.missingCourses.length} course(s) could not be imported`, {
+            type: 'warning',
+            duration: 5000
+          });
+        }, 500);
+      }
+    } else if (result.error === 'invalid') {
+      addToast('Invalid share link', { type: 'error', duration: 4000 });
+    } else if (result.error === 'no_valid_courses') {
+      addToast('No valid courses found in share link', { type: 'error', duration: 4000 });
+    }
+  }, [
+    isLoading,
+    importProcessed,
+    processedCourses,
+    parseShareURLParam,
+    findCalendarBySourceHash,
+    cleanShareURLParam,
+    importSharedCalendar,
+    switchCalendar,
+    changeSemester,
+    selectedSemester,
+    addToast
+  ]);
+
+  // Handle semester prompt confirmation
+  const handleSemesterPromptConfirm = useCallback(() => {
+    if (!semesterPrompt) return;
+
+    // Store the target semester in ref to track pending import
+    pendingImportSemester.current = semesterPrompt.targetSemester;
+
+    // Change semester, which will trigger data reload
+    changeSemester(semesterPrompt.targetSemester);
+    setSemesterPrompt(null);
+    setImportProcessed(false);
+  }, [semesterPrompt, changeSemester]);
+
+  const handleSemesterPromptCancel = useCallback(() => {
+    cleanShareURLParam();
+    setSemesterPrompt(null);
+  }, [cleanShareURLParam]);
+
   // Function to generate ICS file content for selected courses along with suggested filename slug
   const generateICSExport = () => {
     const visibleCourses = myCourses.filter(course => !hiddenCourses[course.course_id]);
@@ -383,8 +534,8 @@ const AppContent = () => {
           {/* CourseDetails - shown at bottom when a course is selected */}
           <CourseDetails onAddCourse={() => {}} />
 
-          {/* Report Bug and Export buttons */}
-          <div className="flex justify-center items-center gap-4 mt-4">
+          {/* Report Bug, Share, and Export buttons */}
+          <div className="flex justify-center items-center gap-4 mt-4 flex-wrap">
             <a
               href="https://docs.google.com/forms/d/e/1FAIpQLSdPks0Z_z6oamuEs4bMHJznTadvBFjVHmZK4l7vwdERCHWgBg/viewform?usp=header"
               target="_blank"
@@ -393,6 +544,24 @@ const AppContent = () => {
             >
               Report Bug
             </a>
+            {hasVisibleCourses ? (
+              <button
+                onClick={handleShareCalendar}
+                className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150 cursor-pointer"
+                title="Share calendar with others"
+              >
+                <Share2 size={16} />
+                <span>Share Calendar</span>
+              </button>
+            ) : (
+              <span
+                className="flex items-center gap-1 text-sm text-gray-400 cursor-not-allowed"
+                title="No courses to share"
+              >
+                <Share2 size={16} />
+                <span>Share Calendar</span>
+              </span>
+            )}
             {hasVisibleCourses ? (
               <button
                 onClick={handleExportToCalendar}
@@ -430,7 +599,7 @@ const AppContent = () => {
           <Calendar />
           <MyCourses />
 
-          {/* Footer row: Last updated (left), Report Bug and Export (center) */}
+          {/* Footer row: Last updated (left), Report Bug, Share and Export (center) */}
           <div className="relative flex items-center justify-center mt-4">
             <div className="absolute left-0 text-xs text-gray-500">
               Last updated: {lastUpdated}
@@ -444,6 +613,24 @@ const AppContent = () => {
               >
                 Report Bug
               </a>
+              {hasVisibleCourses ? (
+                <button
+                  onClick={handleShareCalendar}
+                  className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors duration-150 cursor-pointer"
+                  title="Share calendar with others"
+                >
+                  <Share2 size={16} />
+                  <span>Share Calendar</span>
+                </button>
+              ) : (
+                <span
+                  className="flex items-center gap-1 text-sm text-gray-400 cursor-not-allowed"
+                  title="No courses to share"
+                >
+                  <Share2 size={16} />
+                  <span>Share Calendar</span>
+                </span>
+              )}
               {hasVisibleCourses ? (
                 <button
                   onClick={handleExportToCalendar}
@@ -483,6 +670,46 @@ const AppContent = () => {
           <Sidebar onCloseMobile={() => {}} isMobile={false} />
         </div>
       </div>
+
+      {/* Semester mismatch prompt dialog */}
+      {semesterPrompt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Different Semester
+            </h3>
+            <p className="text-gray-600 mb-4">
+              This calendar is for {semesterPrompt.targetSemester}. Switch to {semesterPrompt.targetSemester} and import?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleSemesterPromptCancel}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSemesterPromptConfirm}
+                className="px-4 py-2 text-sm bg-harvard-crimson text-white rounded hover:bg-harvard-crimson-dark transition-colors"
+              >
+                Import
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast notifications */}
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type || 'success'}
+          onClose={() => removeToast(toast.id)}
+          action={toast.action}
+          duration={toast.duration || 5000}
+        />
+      ))}
     </div>
   );
 };

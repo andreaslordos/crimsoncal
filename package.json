@@ -12,6 +12,7 @@
   "dependencies": {
     "firebase-tools": "^14.1.0",
     "lucide-react": "^0.487.0",
+    "lz-string": "^1.5.0",
     "papaparse": "^5.5.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
