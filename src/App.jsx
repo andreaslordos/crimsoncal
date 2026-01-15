@@ -35,7 +35,6 @@ const AppContent = () => {
   const [lastUpdated, setLastUpdated] = useState('');
   const [leftColumnWidth, setLeftColumnWidth] = useState(60);
   const [importProcessed, setImportProcessed] = useState(false);
-  const [semesterPrompt, setSemesterPrompt] = useState(null);
   const pendingImportSemester = React.useRef(null);
 
   // Toast management
@@ -118,12 +117,9 @@ const AppContent = () => {
           const decompressed = JSON.parse(json);
 
           if (decompressed && decompressed.s && decompressed.s !== selectedSemester) {
-            // Show semester mismatch prompt
-            setSemesterPrompt({
-              shareParam,
-              targetSemester: decompressed.s
-            });
-            setImportProcessed(true);
+            // Automatically switch to the correct semester
+            pendingImportSemester.current = decompressed.s;
+            changeSemester(decompressed.s);
             return;
           }
         }
@@ -166,24 +162,6 @@ const AppContent = () => {
     selectedSemester,
     addToast
   ]);
-
-  // Handle semester prompt confirmation
-  const handleSemesterPromptConfirm = useCallback(() => {
-    if (!semesterPrompt) return;
-
-    // Store the target semester in ref to track pending import
-    pendingImportSemester.current = semesterPrompt.targetSemester;
-
-    // Change semester, which will trigger data reload
-    changeSemester(semesterPrompt.targetSemester);
-    setSemesterPrompt(null);
-    setImportProcessed(false);
-  }, [semesterPrompt, changeSemester]);
-
-  const handleSemesterPromptCancel = useCallback(() => {
-    cleanShareURLParam();
-    setSemesterPrompt(null);
-  }, [cleanShareURLParam]);
 
   // Function to generate ICS file content for selected courses along with suggested filename slug
   const generateICSExport = () => {
@@ -670,34 +648,6 @@ const AppContent = () => {
           <Sidebar onCloseMobile={() => {}} isMobile={false} />
         </div>
       </div>
-
-      {/* Semester mismatch prompt dialog */}
-      {semesterPrompt && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Different Semester
-            </h3>
-            <p className="text-gray-600 mb-4">
-              This calendar is for {semesterPrompt.targetSemester}. Switch to {semesterPrompt.targetSemester} and import?
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={handleSemesterPromptCancel}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSemesterPromptConfirm}
-                className="px-4 py-2 text-sm bg-harvard-crimson text-white rounded hover:bg-harvard-crimson-dark transition-colors"
-              >
-                Import
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Toast notifications */}
       {toasts.map((toast) => (
