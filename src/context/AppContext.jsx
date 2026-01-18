@@ -879,66 +879,69 @@ export const AppProvider = ({ children }) => {
           return true; // Always show courses that are already in the user's calendar
         }
 
-        // Check if this course conflicts with any visible selected course
-        const hasConflict = visibleSelectedCourses.some(selectedCourse => {
-          // Get time and day information for both courses
-          const section = selectedCourse.selectedSection || {};
-          const selectedStartTime = section.start_time || selectedCourse.start_time;
-          const selectedEndTime = section.end_time || selectedCourse.end_time;
+        // Check if this course conflicts with visible selected courses
+        // A course conflicts ONLY if ALL its sections conflict
+        const courseSections = course.sections?.length > 0 ? course.sections : [course];
 
-          // Parse dayMap for selected course if not already parsed
-          let selectedDayMap = section.dayMap || selectedCourse.dayMap;
-          if (!selectedDayMap && selectedCourse.weekdays) {
-            selectedDayMap = parseWeekdays(selectedCourse.weekdays);
-          }
-          // If still no dayMap, check for individual day fields
-          if (!selectedDayMap) {
-            selectedDayMap = {
-              monday: selectedCourse.lecture_monday === true,
-              tuesday: selectedCourse.lecture_tuesday === true,
-              wednesday: selectedCourse.lecture_wednesday === true,
-              thursday: selectedCourse.lecture_thursday === true,
-              friday: selectedCourse.lecture_friday === true,
-              saturday: selectedCourse.lecture_saturday === true,
-              sunday: selectedCourse.lecture_sunday === true
-            };
+        const allSectionsConflict = courseSections.every(courseSection => {
+          const sectionStartTime = courseSection.start_time || course.start_time;
+          const sectionEndTime = courseSection.end_time || course.end_time;
+          let sectionDayMap = courseSection.dayMap || course.dayMap;
+
+          // Sections without time info don't conflict
+          if (!sectionStartTime || !sectionEndTime || !sectionDayMap) {
+            return false; // This section fits, so not all sections conflict
           }
 
-          const courseStartTime = course.start_time;
-          const courseEndTime = course.end_time;
-          const courseDayMap = course.dayMap;
+          // Check if this section conflicts with ANY visible selected course
+          return visibleSelectedCourses.some(selectedCourse => {
+            const selectedSection = selectedCourse.selectedSection || {};
+            const selectedStartTime = selectedSection.start_time || selectedCourse.start_time;
+            const selectedEndTime = selectedSection.end_time || selectedCourse.end_time;
 
-          // Skip if either course lacks time information
-          if (!selectedStartTime || !selectedEndTime || !courseStartTime || !courseEndTime) {
-            return false;
-          }
+            // Parse dayMap for selected course
+            let selectedDayMap = selectedSection.dayMap || selectedCourse.dayMap;
+            if (!selectedDayMap && selectedCourse.weekdays) {
+              selectedDayMap = parseWeekdays(selectedCourse.weekdays);
+            }
+            if (!selectedDayMap) {
+              selectedDayMap = {
+                monday: selectedCourse.lecture_monday === true,
+                tuesday: selectedCourse.lecture_tuesday === true,
+                wednesday: selectedCourse.lecture_wednesday === true,
+                thursday: selectedCourse.lecture_thursday === true,
+                friday: selectedCourse.lecture_friday === true,
+                saturday: selectedCourse.lecture_saturday === true,
+                sunday: selectedCourse.lecture_sunday === true
+              };
+            }
 
-          // Skip if either course lacks day information
-          if (!selectedDayMap || !courseDayMap) {
-            return false;
-          }
+            // Skip if selected course lacks time/day info
+            if (!selectedStartTime || !selectedEndTime || !selectedDayMap) {
+              return false;
+            }
 
-          // Check if courses meet on any of the same days
-          const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
-          const hasCommonDay = days.some(day =>
-            selectedDayMap[day] === true && courseDayMap[day] === true
-          );
+            // Check if they meet on any common day
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+            const hasCommonDay = days.some(day =>
+              selectedDayMap[day] === true && sectionDayMap[day] === true
+            );
 
-          if (!hasCommonDay) {
-            return false; // No conflict if they don't meet on the same day
-          }
+            if (!hasCommonDay) {
+              return false;
+            }
 
-          // Check for time overlap
-          const selectedStartMinutes = timeStringToMinutes(selectedStartTime);
-          const selectedEndMinutes = timeStringToMinutes(selectedEndTime);
-          const courseStartMinutes = timeStringToMinutes(courseStartTime);
-          const courseEndMinutes = timeStringToMinutes(courseEndTime);
+            // Check for time overlap
+            const selectedStartMinutes = timeStringToMinutes(selectedStartTime);
+            const selectedEndMinutes = timeStringToMinutes(selectedEndTime);
+            const sectionStartMinutes = timeStringToMinutes(sectionStartTime);
+            const sectionEndMinutes = timeStringToMinutes(sectionEndTime);
 
-          // Times overlap if: max(startA, startB) < min(endA, endB)
-          return Math.max(selectedStartMinutes, courseStartMinutes) < Math.min(selectedEndMinutes, courseEndMinutes);
+            return Math.max(selectedStartMinutes, sectionStartMinutes) < Math.min(selectedEndMinutes, sectionEndMinutes);
+          });
         });
 
-        if (hasConflict) {
+        if (allSectionsConflict) {
           return false;
         }
       }

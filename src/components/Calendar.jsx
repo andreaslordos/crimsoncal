@@ -140,19 +140,25 @@ const Calendar = () => {
         let merged = true;
         while (merged) {
           merged = false;
-          
+
           for (let i = 0; i < conflictGroups.length; i++) {
             for (let j = i + 1; j < conflictGroups.length; j++) {
               // Check if these groups share any overlapping courses
-              const shouldMerge = conflictGroups[i].some(courseI => 
-                conflictGroups[j].some(courseJ => 
-                  isOverlapping(
-                    courseI.start_time, courseI.end_time,
-                    courseJ.start_time, courseJ.end_time
-                  )
-                )
-              );
-              
+              // Use selectedSection times if available, otherwise fall back to course defaults
+              const shouldMerge = conflictGroups[i].some(courseI => {
+                const sectionI = courseI.selectedSection || {};
+                const startTimeI = sectionI.start_time || courseI.start_time;
+                const endTimeI = sectionI.end_time || courseI.end_time;
+
+                return conflictGroups[j].some(courseJ => {
+                  const sectionJ = courseJ.selectedSection || {};
+                  const startTimeJ = sectionJ.start_time || courseJ.start_time;
+                  const endTimeJ = sectionJ.end_time || courseJ.end_time;
+
+                  return isOverlapping(startTimeI, endTimeI, startTimeJ, endTimeJ);
+                });
+              });
+
               if (shouldMerge) {
                 // Merge the groups
                 conflictGroups[i] = [...conflictGroups[i], ...conflictGroups[j]];
