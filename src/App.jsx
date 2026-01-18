@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { AppProvider } from './context/AppContext.jsx';
 import Header from './components/Header.jsx';
 import Calendar from './components/Calendar.jsx';
@@ -669,6 +670,7 @@ const App = () => {
   return (
     <AppProvider>
       <AppContent />
+      <Analytics />
     </AppProvider>
   );
 };
