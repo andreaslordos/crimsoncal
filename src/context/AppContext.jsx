@@ -3,7 +3,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import LZString from 'lz-string';
 
 const DEFAULT_SEMESTER = 'Spring 2026';
-const SUPPORTED_SEMESTERS = ['Fall 2025', 'Spring 2026'];
+const SUPPORTED_SEMESTERS = ['Spring 2026'];
 const DEFAULT_CALENDAR_PREFIX = 'Calendar';
 
 const normalizeSemester = (semester) => (
@@ -14,7 +14,6 @@ const detectCourseSemester = (course, fallbackSemester = DEFAULT_SEMESTER) => {
   if (!course) return fallbackSemester;
   const rawTerm = `${course.current_term || course.year_term || ''}`.toLowerCase();
   if (rawTerm.includes('spring') && rawTerm.includes('2026')) return 'Spring 2026';
-  if (rawTerm.includes('fall') && rawTerm.includes('2025')) return 'Fall 2025';
   return fallbackSemester;
 };
 
@@ -351,43 +350,8 @@ export const AppProvider = ({ children }) => {
           }
         };
 
-        // Try to load semester-specific file first, then fall back to default
-        let dataFile = '/data/master_courses.json'; // default
-        let response;
-
-        if (selectedSemester === 'Fall 2025') {
-          // Try Fall 2025 specific file first
-          try {
-            response = await fetch('/data/master_courses_fall2025.json');
-            if (response.ok) {
-              dataFile = '/data/master_courses_fall2025.json';
-            } else {
-              throw new Error('Fall 2025 file not found');
-            }
-          } catch {
-            // Fall back to default file
-            console.log('Fall 2025 specific file not found, using default');
-            response = await fetch('/data/master_courses.json');
-          }
-        } else if (selectedSemester === 'Spring 2026') {
-          // Try Spring 2026 specific file first
-          try {
-            response = await fetch('/data/master_courses_spring2026.json');
-            if (response.ok) {
-              dataFile = '/data/master_courses_spring2026.json';
-            } else {
-              throw new Error('Spring 2026 file not found');
-            }
-          } catch {
-            // Fall back to default file but we'll filter for Spring 2026 in processing
-            console.log('Spring 2026 specific file not found, using default and filtering');
-            response = await fetch('/data/master_courses.json');
-          }
-        } else {
-          // Default case
-          response = await fetch('/data/master_courses.json');
-        }
-
+        // Load the master courses file (contains Spring 2026 data)
+        const response = await fetch('/data/master_courses.json');
         const data = await response.json();
 
         processData(data);
@@ -398,7 +362,7 @@ export const AppProvider = ({ children }) => {
     };
 
     loadData();
-  }, [selectedSemester]); // Reload when semester changes
+  }, []);
   
   // Helper to convert time string to minutes for comparison
   const timeStringToMinutes = (timeStr) => {
@@ -484,18 +448,8 @@ export const AppProvider = ({ children }) => {
       // Skip if not matching selected semester
       // Check both current_term and year_term fields
       const termToCheck = course.current_term || course.year_term || '';
-      if (selectedSemester === 'Spring 2026') {
-        // For Spring 2026, check if term contains "Spring" and "2026" (format: "2026 Spring")
-        if (!termToCheck.includes('Spring') || !termToCheck.includes('2026')) {
-          return;
-        }
-      } else if (selectedSemester === 'Fall 2025') {
-        // For Fall 2025, check if term contains "Fall" and "2025" (format: "2025 Fall")
-        if (!termToCheck.includes('Fall') || !termToCheck.includes('2025')) {
-          return;
-        }
-      } else if (termToCheck && !termToCheck.includes('2025')) {
-        // If a term is selected but doesn't match any known pattern, skip
+      // Filter for Spring 2026 courses only
+      if (!termToCheck.includes('Spring') || !termToCheck.includes('2026')) {
         return;
       }
       
@@ -680,15 +634,10 @@ export const AppProvider = ({ children }) => {
   const filteredCourses = useMemo(() => {
     if (!processedCourses.length) return [];
 
-    // Get courses for selected semester for conflict checking
+    // Get courses for Spring 2026 for conflict checking
     const myCoursesForSemester = myCourses.filter(course => {
       const termToCheck = course.current_term || course.year_term || '';
-      if (selectedSemester === 'Spring 2026') {
-        return termToCheck.includes('Spring') && termToCheck.includes('2026');
-      } else if (selectedSemester === 'Fall 2025') {
-        return termToCheck.includes('Fall') && termToCheck.includes('2025');
-      }
-      return true;
+      return termToCheck.includes('Spring') && termToCheck.includes('2026');
     });
 
     return processedCourses.filter(course => {
@@ -977,21 +926,13 @@ export const AppProvider = ({ children }) => {
     ));
   };
 
-  // Filter myCourses to only show courses for the selected semester
+  // Filter myCourses to only show Spring 2026 courses
   const myCoursesForSelectedSemester = useMemo(() => {
     return myCourses.filter(course => {
       const termToCheck = course.current_term || course.year_term || '';
-
-      if (selectedSemester === 'Spring 2026') {
-        return termToCheck.includes('Spring') && termToCheck.includes('2026');
-      } else if (selectedSemester === 'Fall 2025') {
-        return termToCheck.includes('Fall') && termToCheck.includes('2025');
-      }
-
-      // Default to showing courses if no clear term match
-      return true;
+      return termToCheck.includes('Spring') && termToCheck.includes('2026');
     });
-  }, [myCourses, selectedSemester]);
+  }, [myCourses]);
 
   // Get total hours for selected courses (filtered by semester)
   const totalHours = useMemo(() => {
