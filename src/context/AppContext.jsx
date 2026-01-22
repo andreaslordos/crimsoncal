@@ -320,7 +320,32 @@ export const AppProvider = ({ children }) => {
       setSelectedSemester(calendar.semester || DEFAULT_SEMESTER);
     }
   }, [activeCalendarId]);
-  
+
+  // Sync myCourses with fresh course data when processedCourses updates
+  useEffect(() => {
+    if (!processedCourses.length || isLoading) return;
+
+    setMyCourses(prevCourses => {
+      if (!prevCourses.length) return prevCourses;
+
+      // Create lookup map for O(1) access
+      const freshCourseMap = new Map(
+        processedCourses.map(c => [c.course_id, c])
+      );
+
+      // Update each stored course with fresh data, preserving user selections
+      return prevCourses.map(storedCourse => {
+        const freshCourse = freshCourseMap.get(storedCourse.course_id);
+        if (!freshCourse) return storedCourse; // Course no longer exists, keep as-is
+
+        return {
+          ...freshCourse,
+          selectedSection: storedCourse.selectedSection // Preserve user's section choice
+        };
+      });
+    });
+  }, [processedCourses, isLoading]);
+
   // Normalize course code (make consistent format and normalize spaces)
   const normalizeCode = (code) => {
     if (!code) return null;
