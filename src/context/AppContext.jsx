@@ -351,7 +351,9 @@ export const AppProvider = ({ children }) => {
         };
 
         // Load the master courses file (contains Spring 2026 data)
-        const response = await fetch('/data/master_courses.json');
+        // Daily cache key - refreshes data once per day
+        const today = new Date().toISOString().split('T')[0];
+        const response = await fetch(`/data/master_courses.json?v=${today}`);
         const data = await response.json();
 
         processData(data);
