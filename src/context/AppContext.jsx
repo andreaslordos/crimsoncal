@@ -644,9 +644,17 @@ export const AppProvider = ({ children }) => {
         const freshCourse = freshCourseMap.get(storedCourse.course_id);
         if (!freshCourse) return storedCourse; // Course no longer exists, keep as-is
 
+        // Find fresh section data matching user's selection
+        let freshSelectedSection = null;
+        if (storedCourse.selectedSection && freshCourse.sections) {
+          freshSelectedSection = freshCourse.sections.find(
+            s => s.section === storedCourse.selectedSection.section
+          ) || null;
+        }
+
         return {
           ...freshCourse,
-          selectedSection: storedCourse.selectedSection // Preserve user's section choice
+          selectedSection: freshSelectedSection
         };
       });
     });
