@@ -654,7 +654,9 @@ export const AppProvider = ({ children }) => {
 
         return {
           ...freshCourse,
-          selectedSection: freshSelectedSection
+          selectedSection: freshSelectedSection,
+          // Preserve user-created custom sections
+          customSections: storedCourse.customSections || []
         };
       });
     });

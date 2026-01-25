@@ -1,5 +1,56 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { parseAndFormatTime } from "../utils/timeUtils";
+
+// Inline time input component with validation
+const TimeInput = ({ value, onChange, placeholder, hasError }) => {
+  const [localValue, setLocalValue] = useState(value);
+  const [isInvalid, setIsInvalid] = useState(false);
+
+  // Sync local value when external value changes
+  useEffect(() => {
+    setLocalValue(value);
+    setIsInvalid(false);
+  }, [value]);
+
+  const handleBlur = () => {
+    const result = parseAndFormatTime(localValue);
+    if (result.isValid) {
+      setIsInvalid(false);
+      onChange(result.formatted);
+      setLocalValue(result.formatted);
+    } else if (localValue.trim()) {
+      setIsInvalid(true);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.target.blur();
+    }
+  };
+
+  const showError = isInvalid || hasError;
+
+  return (
+    <input
+      type="text"
+      value={localValue}
+      onChange={(e) => {
+        setLocalValue(e.target.value);
+        setIsInvalid(false);
+      }}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      placeholder={placeholder}
+      className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 transition-colors ${
+        showError
+          ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+          : 'border-gray-300 focus:ring-teal-500 focus:border-transparent'
+      }`}
+    />
+  );
+};
 
 const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existingSection = null }) => {
   const [name, setName] = useState("Section");
@@ -15,6 +66,8 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
   const [startTime, setStartTime] = useState("9:00am");
   const [endTime, setEndTime] = useState("10:00am");
   const [location, setLocation] = useState("");
+  const [startTimeError, setStartTimeError] = useState(false);
+  const [endTimeError, setEndTimeError] = useState(false);
 
   // Reset form when modal opens/closes or existingSection changes
   useEffect(() => {
@@ -37,6 +90,8 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
       setEndTime("10:00am");
       setLocation("");
     }
+    setStartTimeError(false);
+    setEndTimeError(false);
   }, [existingSection, isOpen]);
 
   if (!isOpen) return null;
@@ -62,11 +117,24 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
       return;
     }
 
+    // Validate times before submitting
+    const startResult = parseAndFormatTime(startTime);
+    const endResult = parseAndFormatTime(endTime);
+
+    if (!startResult.isValid) {
+      setStartTimeError(true);
+      return;
+    }
+    if (!endResult.isValid) {
+      setEndTimeError(true);
+      return;
+    }
+
     const sectionData = {
       name: name.trim() || "Section",
       days,
-      startTime,
-      endTime,
+      startTime: startResult.formatted,
+      endTime: endResult.formatted,
       location: location.trim() || null
     };
 
@@ -143,24 +211,28 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Start Time
               </label>
-              <input
-                type="text"
+              <TimeInput
                 value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                onChange={(val) => {
+                  setStartTime(val);
+                  setStartTimeError(false);
+                }}
                 placeholder="9:00am"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                hasError={startTimeError}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 End Time
               </label>
-              <input
-                type="text"
+              <TimeInput
                 value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+                onChange={(val) => {
+                  setEndTime(val);
+                  setEndTimeError(false);
+                }}
                 placeholder="10:00am"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                hasError={endTimeError}
               />
             </div>
           </div>
