@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
-const AddSectionModal = ({ isOpen, onClose, onAdd, courseName }) => {
+const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existingSection = null }) => {
   const [days, setDays] = useState({
     monday: false,
     tuesday: false,
@@ -14,6 +14,27 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, courseName }) => {
   const [startTime, setStartTime] = useState("9:00am");
   const [endTime, setEndTime] = useState("10:00am");
   const [location, setLocation] = useState("");
+
+  // Reset form when modal opens/closes or existingSection changes
+  useEffect(() => {
+    if (existingSection) {
+      setDays(existingSection.days || {
+        monday: false, tuesday: false, wednesday: false,
+        thursday: false, friday: false, saturday: false, sunday: false
+      });
+      setStartTime(existingSection.startTime || "9:00am");
+      setEndTime(existingSection.endTime || "10:00am");
+      setLocation(existingSection.location || "");
+    } else {
+      setDays({
+        monday: false, tuesday: false, wednesday: false,
+        thursday: false, friday: false, saturday: false, sunday: false
+      });
+      setStartTime("9:00am");
+      setEndTime("10:00am");
+      setLocation("");
+    }
+  }, [existingSection, isOpen]);
 
   if (!isOpen) return null;
 
@@ -44,31 +65,23 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, courseName }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validate at least one day is selected
     if (!Object.values(days).some(Boolean)) {
       return;
     }
 
-    onAdd({
+    const sectionData = {
       days,
       startTime,
       endTime,
       location: location.trim() || null
-    });
+    };
 
-    // Reset form
-    setDays({
-      monday: false,
-      tuesday: false,
-      wednesday: false,
-      thursday: false,
-      friday: false,
-      saturday: false,
-      sunday: false
-    });
-    setStartTime("9:00am");
-    setEndTime("10:00am");
-    setLocation("");
+    if (existingSection && onUpdate) {
+      onUpdate(existingSection.id, sectionData);
+    } else {
+      onAdd(sectionData);
+    }
+
     onClose();
   };
 
@@ -87,7 +100,7 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, courseName }) => {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">
-            Add Section
+            {existingSection ? "Edit Section" : "Add Section"}
           </h2>
           <button
             onClick={onClose}
@@ -99,7 +112,7 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, courseName }) => {
 
         {/* Course name */}
         <p className="text-sm text-gray-600 mb-4">
-          Adding section for <span className="font-medium">{courseName}</span>
+          {existingSection ? "Editing" : "Adding"} section for <span className="font-medium">{courseName}</span>
         </p>
 
         <form onSubmit={handleSubmit}>
@@ -189,7 +202,7 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, courseName }) => {
               onMouseEnter={(e) => hasSelectedDay && (e.target.style.backgroundColor = 'var(--harvard-crimson-dark)')}
               onMouseLeave={(e) => hasSelectedDay && (e.target.style.backgroundColor = 'var(--harvard-crimson)')}
             >
-              Add Section
+              {existingSection ? "Save Changes" : "Add Section"}
             </button>
           </div>
         </form>
