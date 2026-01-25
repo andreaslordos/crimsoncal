@@ -1,87 +1,6 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
-// Helper to parse time string like "9:00am" into { hour, minute, period }
-const parseTime = (timeStr) => {
-  const match = timeStr?.match(/^(\d{1,2}):(\d{2})(am|pm)$/i);
-  if (match) {
-    return { hour: match[1], minute: match[2], period: match[3].toLowerCase() };
-  }
-  return { hour: "9", minute: "00", period: "am" };
-};
-
-// Helper to format time parts back to string
-const formatTime = (hour, minute, period) => {
-  return `${hour}:${minute}${period}`;
-};
-
-const TimeInput = ({ value, onChange, label }) => {
-  const { hour, minute, period } = parseTime(value);
-
-  const updateTime = (newHour, newMinute, newPeriod) => {
-    onChange(formatTime(newHour, newMinute, newPeriod));
-  };
-
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label}
-      </label>
-      <div className="flex items-center gap-1">
-        {/* Hour */}
-        <select
-          value={hour}
-          onChange={(e) => updateTime(e.target.value, minute, period)}
-          className="px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
-        >
-          {[...Array(12)].map((_, i) => (
-            <option key={i + 1} value={i + 1}>{i + 1}</option>
-          ))}
-        </select>
-
-        <span className="text-gray-500">:</span>
-
-        {/* Minute */}
-        <select
-          value={minute}
-          onChange={(e) => updateTime(hour, e.target.value, period)}
-          className="px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
-        >
-          {["00", "15", "30", "45"].map((m) => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </select>
-
-        {/* AM/PM toggle */}
-        <div className="flex rounded-md overflow-hidden border border-gray-300 ml-1">
-          <button
-            type="button"
-            onClick={() => updateTime(hour, minute, "am")}
-            className={`px-2 py-1.5 text-sm font-medium transition-colors ${
-              period === "am"
-                ? "bg-teal-500 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            AM
-          </button>
-          <button
-            type="button"
-            onClick={() => updateTime(hour, minute, "pm")}
-            className={`px-2 py-1.5 text-sm font-medium transition-colors border-l border-gray-300 ${
-              period === "pm"
-                ? "bg-teal-500 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            PM
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existingSection = null }) => {
   const [name, setName] = useState("Section");
   const [days, setDays] = useState({
@@ -93,9 +12,26 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
     saturday: false,
     sunday: false
   });
-  const [startTime, setStartTime] = useState("9:00am");
-  const [endTime, setEndTime] = useState("10:00am");
+  const [startHour, setStartHour] = useState("9:00");
+  const [startPeriod, setStartPeriod] = useState("am");
+  const [endHour, setEndHour] = useState("10:00");
+  const [endPeriod, setEndPeriod] = useState("am");
   const [location, setLocation] = useState("");
+
+  // Parse time string like "9:00am" into { hour: "9:00", period: "am" }
+  const parseTime = (timeStr) => {
+    if (!timeStr) return { hour: "9:00", period: "am" };
+    const match = timeStr.match(/^(\d{1,2}:\d{2})\s*(am|pm)$/i);
+    if (match) {
+      return { hour: match[1], period: match[2].toLowerCase() };
+    }
+    // Try without colon: "9am" -> "9:00am"
+    const simpleMatch = timeStr.match(/^(\d{1,2})\s*(am|pm)$/i);
+    if (simpleMatch) {
+      return { hour: `${simpleMatch[1]}:00`, period: simpleMatch[2].toLowerCase() };
+    }
+    return { hour: "9:00", period: "am" };
+  };
 
   // Reset form when modal opens/closes or existingSection changes
   useEffect(() => {
@@ -105,8 +41,12 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
         monday: false, tuesday: false, wednesday: false,
         thursday: false, friday: false, saturday: false, sunday: false
       });
-      setStartTime(existingSection.startTime || "9:00am");
-      setEndTime(existingSection.endTime || "10:00am");
+      const start = parseTime(existingSection.startTime);
+      const end = parseTime(existingSection.endTime);
+      setStartHour(start.hour);
+      setStartPeriod(start.period);
+      setEndHour(end.hour);
+      setEndPeriod(end.period);
       setLocation(existingSection.location || "");
     } else {
       setName("Section");
@@ -114,8 +54,10 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
         monday: false, tuesday: false, wednesday: false,
         thursday: false, friday: false, saturday: false, sunday: false
       });
-      setStartTime("9:00am");
-      setEndTime("10:00am");
+      setStartHour("9:00");
+      setStartPeriod("am");
+      setEndHour("10:00");
+      setEndPeriod("am");
       setLocation("");
     }
   }, [existingSection, isOpen]);
@@ -146,8 +88,8 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
     const sectionData = {
       name: name.trim() || "Section",
       days,
-      startTime,
-      endTime,
+      startTime: `${startHour}${startPeriod}`,
+      endTime: `${endHour}${endPeriod}`,
       location: location.trim() || null
     };
 
@@ -161,6 +103,48 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
   };
 
   const hasSelectedDay = Object.values(days).some(Boolean);
+
+  // Compact time input component
+  const TimeInput = ({ hour, setHour, period, setPeriod, label }) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
+      <div className="flex">
+        <input
+          type="text"
+          value={hour}
+          onChange={(e) => setHour(e.target.value)}
+          placeholder="9:00"
+          className="w-16 px-2 py-2 border border-gray-300 rounded-l-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-center"
+        />
+        <div className="flex border border-l-0 border-gray-300 rounded-r-md overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setPeriod("am")}
+            className={`px-2 py-2 text-xs font-medium transition-colors ${
+              period === "am"
+                ? "bg-teal-500 text-white"
+                : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            am
+          </button>
+          <button
+            type="button"
+            onClick={() => setPeriod("pm")}
+            className={`px-2 py-2 text-xs font-medium transition-colors border-l border-gray-300 ${
+              period === "pm"
+                ? "bg-teal-500 text-white"
+                : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            pm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -221,14 +205,18 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
           {/* Time inputs */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <TimeInput
-              value={startTime}
-              onChange={setStartTime}
-              label="Start Time"
+              hour={startHour}
+              setHour={setStartHour}
+              period={startPeriod}
+              setPeriod={setStartPeriod}
+              label="Start"
             />
             <TimeInput
-              value={endTime}
-              onChange={setEndTime}
-              label="End Time"
+              hour={endHour}
+              setHour={setEndHour}
+              period={endPeriod}
+              setPeriod={setEndPeriod}
+              label="End"
             />
           </div>
 
