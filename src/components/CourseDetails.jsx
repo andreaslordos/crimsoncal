@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { useAppContext } from "../context/AppContext";
-import { Clock, Star, Plus, Minus, ChevronDown, Users, ChevronUp, CalendarPlus } from "lucide-react";
+import { Clock, Star, Plus, Minus, ChevronDown, Users, ChevronUp, CalendarPlus, Pencil, Trash2 } from "lucide-react";
 import { formatTime } from "../utils/timeUtils";
 import AddSectionModal from "./AddSectionModal";
 
 const CourseDetails = ({ onAddCourse }) => {
-  const { selectedCourse, myCourses, addCourse, removeCourse, updateCourseSection, addCustomSection, filters, setFilters } = useAppContext();
+  const { selectedCourse, myCourses, addCourse, removeCourse, updateCourseSection, addCustomSection, updateCustomSection, removeCustomSection, filters, setFilters } = useAppContext();
   const [selectedSection, setSelectedSection] = useState(null);
   const [showSectionDropdown, setShowSectionDropdown] = useState(false);
   const [showEvaluations, setShowEvaluations] = useState(false);
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
+  const [editingSection, setEditingSection] = useState(null);
 
   // Reset selected section when course changes
   useEffect(() => {
@@ -31,6 +32,11 @@ const CourseDetails = ({ onAddCourse }) => {
   if (!selectedCourse) return null;
 
   const isAdded = myCourses.some(c => c.course_id === selectedCourse.course_id);
+
+  // Get custom sections for this course (from myCourses, not selectedCourse)
+  const courseInCalendar = myCourses.find(c => c.course_id === selectedCourse.course_id);
+  const customSections = courseInCalendar?.customSections || [];
+
   const hasMultipleSections = selectedCourse.sections && selectedCourse.sections.length > 1;
   
   // Use selected section data if available, otherwise use course defaults
@@ -79,6 +85,25 @@ const CourseDetails = ({ onAddCourse }) => {
 
   const handleAddCustomSection = (sectionData) => {
     addCustomSection(selectedCourse.course_id, sectionData);
+  };
+
+  const handleEditSection = (section) => {
+    setEditingSection(section);
+    setShowAddSectionModal(true);
+  };
+
+  const handleUpdateSection = (sectionId, sectionData) => {
+    updateCustomSection(selectedCourse.course_id, sectionId, sectionData);
+    setEditingSection(null);
+  };
+
+  const handleDeleteSection = (sectionId) => {
+    removeCustomSection(selectedCourse.course_id, sectionId);
+  };
+
+  const handleCloseModal = () => {
+    setShowAddSectionModal(false);
+    setEditingSection(null);
   };
 
   // Determine if we have a real schedule (days and times) and a real location
@@ -350,6 +375,50 @@ const CourseDetails = ({ onAddCourse }) => {
         )}
       </div>
 
+      {/* Custom Sections List */}
+      {isAdded && customSections.length > 0 && (
+        <div className="mt-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+          <div className="text-sm font-medium text-gray-700 mb-2">Custom Sections</div>
+          <div className="space-y-2">
+            {customSections.map((section) => {
+              const dayAbbrevs = { monday: 'M', tuesday: 'Tu', wednesday: 'W', thursday: 'Th', friday: 'F', saturday: 'Sa', sunday: 'Su' };
+              const daysStr = Object.entries(section.days || {})
+                .filter(([_, active]) => active)
+                .map(([day]) => dayAbbrevs[day])
+                .join(' ');
+
+              return (
+                <div key={section.id} className="flex items-center justify-between bg-white p-2 rounded border border-gray-100">
+                  <div className="text-sm">
+                    <span className="font-medium">{daysStr}</span>
+                    <span className="text-gray-600 ml-2">{section.startTime}-{section.endTime}</span>
+                    {section.location && (
+                      <span className="text-gray-500 ml-2">• {section.location}</span>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => handleEditSection(section)}
+                      className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                      title="Edit section"
+                    >
+                      <Pencil size={14} className="text-gray-500" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSection(section.id)}
+                      className="p-1.5 hover:bg-red-50 rounded transition-colors"
+                      title="Delete section"
+                    >
+                      <Trash2 size={14} className="text-red-500" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {selectedCourse.description && (
         <div className="mt-3 text-sm">
           <p className="text-gray-700">{selectedCourse.description}</p>
@@ -471,9 +540,11 @@ const CourseDetails = ({ onAddCourse }) => {
 
       <AddSectionModal
         isOpen={showAddSectionModal}
-        onClose={() => setShowAddSectionModal(false)}
+        onClose={handleCloseModal}
         onAdd={handleAddCustomSection}
+        onUpdate={handleUpdateSection}
         courseName={selectedCourse.subject_catalog}
+        existingSection={editingSection}
       />
     </div>
   );
