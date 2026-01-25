@@ -92,13 +92,17 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
       {/* Modal */}
       <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {existingSection ? "Edit Section" : "Add Section"}
-          </h2>
+        <div className="flex items-center justify-between mb-1">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Section"
+            className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none focus:ring-0 p-0 w-full"
+          />
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
           >
             <X size={20} className="text-gray-500" />
           </button>
@@ -106,24 +110,10 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
 
         {/* Course name */}
         <p className="text-sm text-gray-600 mb-4">
-          {existingSection ? "Editing" : "Adding"} section for <span className="font-medium">{courseName}</span>
+          for <span className="font-medium">{courseName}</span>
         </p>
 
         <form onSubmit={handleSubmit}>
-          {/* Section name */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Name <span className="text-gray-400 font-normal">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Section"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            />
-          </div>
-
           {/* Days selector */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
