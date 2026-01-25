@@ -12,26 +12,9 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
     saturday: false,
     sunday: false
   });
-  const [startHour, setStartHour] = useState("9:00");
-  const [startPeriod, setStartPeriod] = useState("am");
-  const [endHour, setEndHour] = useState("10:00");
-  const [endPeriod, setEndPeriod] = useState("am");
+  const [startTime, setStartTime] = useState("9:00am");
+  const [endTime, setEndTime] = useState("10:00am");
   const [location, setLocation] = useState("");
-
-  // Parse time string like "9:00am" into { hour: "9:00", period: "am" }
-  const parseTime = (timeStr) => {
-    if (!timeStr) return { hour: "9:00", period: "am" };
-    const match = timeStr.match(/^(\d{1,2}:\d{2})\s*(am|pm)$/i);
-    if (match) {
-      return { hour: match[1], period: match[2].toLowerCase() };
-    }
-    // Try without colon: "9am" -> "9:00am"
-    const simpleMatch = timeStr.match(/^(\d{1,2})\s*(am|pm)$/i);
-    if (simpleMatch) {
-      return { hour: `${simpleMatch[1]}:00`, period: simpleMatch[2].toLowerCase() };
-    }
-    return { hour: "9:00", period: "am" };
-  };
 
   // Reset form when modal opens/closes or existingSection changes
   useEffect(() => {
@@ -41,12 +24,8 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
         monday: false, tuesday: false, wednesday: false,
         thursday: false, friday: false, saturday: false, sunday: false
       });
-      const start = parseTime(existingSection.startTime);
-      const end = parseTime(existingSection.endTime);
-      setStartHour(start.hour);
-      setStartPeriod(start.period);
-      setEndHour(end.hour);
-      setEndPeriod(end.period);
+      setStartTime(existingSection.startTime || "9:00am");
+      setEndTime(existingSection.endTime || "10:00am");
       setLocation(existingSection.location || "");
     } else {
       setName("Section");
@@ -54,10 +33,8 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
         monday: false, tuesday: false, wednesday: false,
         thursday: false, friday: false, saturday: false, sunday: false
       });
-      setStartHour("9:00");
-      setStartPeriod("am");
-      setEndHour("10:00");
-      setEndPeriod("am");
+      setStartTime("9:00am");
+      setEndTime("10:00am");
       setLocation("");
     }
   }, [existingSection, isOpen]);
@@ -88,8 +65,8 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
     const sectionData = {
       name: name.trim() || "Section",
       days,
-      startTime: `${startHour}${startPeriod}`,
-      endTime: `${endHour}${endPeriod}`,
+      startTime,
+      endTime,
       location: location.trim() || null
     };
 
@@ -103,48 +80,6 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
   };
 
   const hasSelectedDay = Object.values(days).some(Boolean);
-
-  // Compact time input component
-  const TimeInput = ({ hour, setHour, period, setPeriod, label }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label}
-      </label>
-      <div className="flex">
-        <input
-          type="text"
-          value={hour}
-          onChange={(e) => setHour(e.target.value)}
-          placeholder="9:00"
-          className="w-16 px-2 py-2 border border-gray-300 rounded-l-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-center"
-        />
-        <div className="flex border border-l-0 border-gray-300 rounded-r-md overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setPeriod("am")}
-            className={`px-2 py-2 text-xs font-medium transition-colors ${
-              period === "am"
-                ? "bg-teal-500 text-white"
-                : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            am
-          </button>
-          <button
-            type="button"
-            onClick={() => setPeriod("pm")}
-            className={`px-2 py-2 text-xs font-medium transition-colors border-l border-gray-300 ${
-              period === "pm"
-                ? "bg-teal-500 text-white"
-                : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            pm
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -163,7 +98,7 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Section"
-            className="text-lg font-semibold text-gray-900 bg-transparent border-none outline-none focus:ring-0 p-0 w-full"
+            className="text-lg font-semibold text-gray-900 bg-transparent border-b border-dashed border-gray-300 hover:border-gray-400 focus:border-solid focus:border-teal-500 outline-none focus:ring-0 pb-0.5 w-full transition-colors"
           />
           <button
             onClick={onClose}
@@ -204,20 +139,30 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
 
           {/* Time inputs */}
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <TimeInput
-              hour={startHour}
-              setHour={setStartHour}
-              period={startPeriod}
-              setPeriod={setStartPeriod}
-              label="Start"
-            />
-            <TimeInput
-              hour={endHour}
-              setHour={setEndHour}
-              period={endPeriod}
-              setPeriod={setEndPeriod}
-              label="End"
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Start Time
+              </label>
+              <input
+                type="text"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                placeholder="9:00am"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                End Time
+              </label>
+              <input
+                type="text"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                placeholder="10:00am"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+            </div>
           </div>
 
           {/* Location input */}
