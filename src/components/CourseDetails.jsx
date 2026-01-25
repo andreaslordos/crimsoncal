@@ -106,6 +106,12 @@ const CourseDetails = ({ onAddCourse }) => {
     setEditingSection(null);
   };
 
+  // Clean location string (remove "(FAS)" suffix)
+  const cleanLocation = (loc) => {
+    if (!loc) return loc;
+    return loc.replace(/\s*\(FAS\)\s*$/i, '').trim();
+  };
+
   // Determine if we have a real schedule (days and times) and a real location
   const hasSchedule = (() => {
     const section = displaySection || {};
@@ -337,7 +343,7 @@ const CourseDetails = ({ onAddCourse }) => {
               </strong>
             )}
             {hasSchedule && hasLocation && ' '}
-            {hasLocation && <em>({displaySection.location})</em>}
+            {hasLocation && <em>({cleanLocation(displaySection.location)})</em>}
           </div>
         )}
       </div>
@@ -393,7 +399,7 @@ const CourseDetails = ({ onAddCourse }) => {
                     <span className="font-medium">{daysStr}</span>
                     <span className="text-gray-600 ml-2">{section.startTime}-{section.endTime}</span>
                     {section.location && (
-                      <span className="text-gray-500 ml-2">• {section.location}</span>
+                      <span className="text-gray-500 ml-2">• {cleanLocation(section.location)}</span>
                     )}
                   </div>
                   <div className="flex gap-1">
