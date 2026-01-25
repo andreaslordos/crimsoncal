@@ -2,9 +2,9 @@
 import { useAppContext } from "../context/AppContext";
 import { getCourseColor, getTimePosition, getTimeHeight, formatTime } from "../utils/timeUtils";
 
-const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts = 1 }) => {
+const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts = 1, isCustomSection = false, parentCourseId = null }) => {
     const { setSelectedCourse } = useAppContext();
-    const colorClass = getCourseColor(course.course_id);
+    const colorClass = getCourseColor(isCustomSection ? parentCourseId : course.course_id);
     
     // Use selected section data if available, otherwise use course defaults
     const section = course.selectedSection || {};
@@ -41,11 +41,12 @@ const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts 
           width: widthPercentage,
           height: `${height}px`,
           zIndex: conflictIndex + 1,
+          border: isCustomSection ? '2px dashed rgba(255,255,255,0.6)' : undefined,
         }}
         onClick={() => setSelectedCourse(course)}
       >
         <div className="text-xs font-bold break-words md:truncate">
-          {course.subject_catalog}
+          {isCustomSection ? `${course.subject_catalog} Section` : course.subject_catalog}
         </div>
         <div className="text-xs truncate hidden md:block">
           {formatTime(startTime)}-{formatTime(endTime)}
