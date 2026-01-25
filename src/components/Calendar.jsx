@@ -66,12 +66,15 @@ const Calendar = () => {
     // Find conflicting courses with improved conflict detection
     const coursesByDayAndTime = useMemo(() => {
       const result = {};
-      
+
       // Initialize result object for each day
       days.forEach(day => {
         result[day] = [];
       });
-      
+
+      // Build list of all blocks to render (courses + custom sections)
+      const allBlocks = [];
+
       // Get courses with valid time data that aren't hidden
       const validCourses = myCourses.filter(course => {
         // Use selected section data if available, otherwise use course defaults
@@ -79,82 +82,118 @@ const Calendar = () => {
         const startTime = section.start_time || course.start_time;
         const endTime = section.end_time || course.end_time;
         const dayMap = section.dayMap || course.dayMap;
-        
-        return startTime && 
-               endTime && 
+
+        return startTime &&
+               endTime &&
                days.some(day => dayMap[day]) &&
                !hiddenCourses[course.course_id];
       });
-      
-      // For each day, find groups of overlapping courses
+
+      // Add regular courses to allBlocks
+      validCourses.forEach(course => {
+        allBlocks.push({
+          ...course,
+          isCustomSection: false
+        });
+      });
+
+      // Add custom sections to allBlocks (only if parent course is not hidden)
+      myCourses.forEach(course => {
+        if (hiddenCourses[course.course_id]) return;
+        if (!course.customSections || course.customSections.length === 0) return;
+
+        course.customSections.forEach(customSection => {
+          // Validate custom section has required data
+          if (!customSection.startTime || !customSection.endTime) return;
+          if (!customSection.days || !days.some(day => customSection.days[day])) return;
+
+          allBlocks.push({
+            course_id: `${course.course_id}-${customSection.id}`,
+            parent_course_id: course.course_id,
+            subject_catalog: course.subject_catalog,
+            start_time: customSection.startTime,
+            end_time: customSection.endTime,
+            dayMap: customSection.days,
+            location: customSection.location,
+            isCustomSection: true,
+            customSectionId: customSection.id
+          });
+        });
+      });
+
+      // For each day, find groups of overlapping blocks
       days.forEach(day => {
-        // Get courses for this day
-        const coursesForDay = validCourses.filter(course => {
-          const section = course.selectedSection || {};
-          const dayMap = section.dayMap || course.dayMap;
+        // Get blocks for this day
+        const blocksForDay = allBlocks.filter(block => {
+          if (block.isCustomSection) {
+            return block.dayMap[day];
+          }
+          const section = block.selectedSection || {};
+          const dayMap = section.dayMap || block.dayMap;
           return dayMap[day];
         });
-        
-        // Skip if no courses for this day
-        if (coursesForDay.length === 0) return;
-        
+
+        // Skip if no blocks for this day
+        if (blocksForDay.length === 0) return;
+
         // Create conflict groups
         const conflictGroups = [];
-        
-        // Helper function to check if a course overlaps with any course in a group
-        const overlapsWithGroup = (course, group) => {
-          const section = course.selectedSection || {};
-          const startTime = section.start_time || course.start_time;
-          const endTime = section.end_time || course.end_time;
-          
-          return group.some(groupCourse => {
-            const groupSection = groupCourse.selectedSection || {};
-            const groupStartTime = groupSection.start_time || groupCourse.start_time;
-            const groupEndTime = groupSection.end_time || groupCourse.end_time;
-            
+
+        // Helper function to get start/end times for a block
+        const getBlockTimes = (block) => {
+          if (block.isCustomSection) {
+            return { startTime: block.start_time, endTime: block.end_time };
+          }
+          const section = block.selectedSection || {};
+          return {
+            startTime: section.start_time || block.start_time,
+            endTime: section.end_time || block.end_time
+          };
+        };
+
+        // Helper function to check if a block overlaps with any block in a group
+        const overlapsWithGroup = (block, group) => {
+          const { startTime, endTime } = getBlockTimes(block);
+
+          return group.some(groupBlock => {
+            const { startTime: groupStartTime, endTime: groupEndTime } = getBlockTimes(groupBlock);
             return isOverlapping(startTime, endTime, groupStartTime, groupEndTime);
           });
         };
-        
-        // Process each course
-        coursesForDay.forEach(course => {
-          // Check if this course overlaps with any existing group
+
+        // Process each block
+        blocksForDay.forEach(block => {
+          // Check if this block overlaps with any existing group
           let addedToGroup = false;
-          
+
           // Try to add to existing groups first
           for (let i = 0; i < conflictGroups.length; i++) {
-            if (overlapsWithGroup(course, conflictGroups[i])) {
-              conflictGroups[i].push(course);
+            if (overlapsWithGroup(block, conflictGroups[i])) {
+              conflictGroups[i].push(block);
               addedToGroup = true;
               break;
             }
           }
-          
+
           // If not added to any existing group, create a new group
           if (!addedToGroup) {
-            conflictGroups.push([course]);
+            conflictGroups.push([block]);
           }
         });
-        
-        // Merge groups that share courses
+
+        // Merge groups that share overlapping blocks
         let merged = true;
         while (merged) {
           merged = false;
 
           for (let i = 0; i < conflictGroups.length; i++) {
             for (let j = i + 1; j < conflictGroups.length; j++) {
-              // Check if these groups share any overlapping courses
-              // Use selectedSection times if available, otherwise fall back to course defaults
-              const shouldMerge = conflictGroups[i].some(courseI => {
-                const sectionI = courseI.selectedSection || {};
-                const startTimeI = sectionI.start_time || courseI.start_time;
-                const endTimeI = sectionI.end_time || courseI.end_time;
+              // Check if these groups share any overlapping blocks
+              const shouldMerge = conflictGroups[i].some(blockI => {
+                const { startTime: startTimeI, endTime: endTimeI } = getBlockTimes(blockI);
 
-                return conflictGroups[j].some(courseJ => {
-                  const sectionJ = courseJ.selectedSection || {};
-                  const startTimeJ = sectionJ.start_time || courseJ.start_time;
-                  const endTimeJ = sectionJ.end_time || courseJ.end_time;
-
+                return conflictGroups[j].some(blockJ => {
+                  const { startTime: startTimeJ, endTime: endTimeJ } = getBlockTimes(blockJ);
                   return isOverlapping(startTimeI, endTimeI, startTimeJ, endTimeJ);
                 });
               });
@@ -162,9 +201,9 @@ const Calendar = () => {
               if (shouldMerge) {
                 // Merge the groups
                 conflictGroups[i] = [...conflictGroups[i], ...conflictGroups[j]];
-                // Remove duplicate courses
-                conflictGroups[i] = Array.from(new Set(conflictGroups[i].map(c => c.course_id)))
-                  .map(id => conflictGroups[i].find(c => c.course_id === id));
+                // Remove duplicate blocks by course_id
+                conflictGroups[i] = Array.from(new Set(conflictGroups[i].map(b => b.course_id)))
+                  .map(id => conflictGroups[i].find(b => b.course_id === id));
                 // Remove the second group
                 conflictGroups.splice(j, 1);
                 merged = true;
@@ -174,11 +213,11 @@ const Calendar = () => {
             if (merged) break;
           }
         }
-        
+
         // Add conflict groups to result
         result[day] = conflictGroups;
       });
-      
+
       return result;
     }, [myCourses, hiddenCourses, isOverlapping, timeToMinutes, days]);
     
@@ -231,13 +270,15 @@ const Calendar = () => {
             <React.Fragment key={day}>
               {coursesByDayAndTime[day].map((conflictGroup, groupIndex) => 
                 conflictGroup.map((course, conflictIndex) => (
-                  <CourseBlock 
-                    key={`${course.course_id}-${day}-${conflictIndex}`} 
-                    course={course} 
-                    day={day} 
+                  <CourseBlock
+                    key={`${course.course_id}-${day}-${conflictIndex}`}
+                    course={course}
+                    day={day}
                     dayIndex={dayIndex}
                     conflictIndex={conflictIndex}
                     totalConflicts={conflictGroup.length}
+                    isCustomSection={course.isCustomSection}
+                    parentCourseId={course.parent_course_id}
                   />
                 ))
               )}
