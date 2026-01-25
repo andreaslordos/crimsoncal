@@ -990,6 +990,20 @@ export const AppProvider = ({ children }) => {
     }));
   };
 
+  // Update an existing custom section
+  const updateCustomSection = (courseId, sectionId, newData) => {
+    setMyCourses(prevCourses => prevCourses.map(course => {
+      if (course.course_id !== courseId) return course;
+
+      return {
+        ...course,
+        customSections: (course.customSections || []).map(s =>
+          s.id === sectionId ? { ...s, ...newData } : s
+        )
+      };
+    }));
+  };
+
   // Filter myCourses to only show Spring 2026 courses
   const myCoursesForSelectedSemester = useMemo(() => {
     return myCourses.filter(course => {
@@ -1282,6 +1296,7 @@ export const AppProvider = ({ children }) => {
       updateCourseSection,
       addCustomSection,
       removeCustomSection,
+      updateCustomSection,
       hiddenCourses,
       toggleCourseVisibility,
       filters,
