@@ -3,8 +3,20 @@ import { useAppContext } from "../context/AppContext";
 import { getCourseColor, getTimePosition, getTimeHeight, formatTime } from "../utils/timeUtils";
 
 const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts = 1, isCustomSection = false, parentCourseId = null }) => {
-    const { setSelectedCourse } = useAppContext();
+    const { setSelectedCourse, myCourses } = useAppContext();
     const colorClass = getCourseColor(isCustomSection ? parentCourseId : course.course_id);
+
+    // For custom sections, find the parent course to select when clicked
+    const handleClick = () => {
+      if (isCustomSection && parentCourseId) {
+        const parentCourse = myCourses.find(c => c.course_id === parentCourseId);
+        if (parentCourse) {
+          setSelectedCourse(parentCourse);
+          return;
+        }
+      }
+      setSelectedCourse(course);
+    };
     
     // Use selected section data if available, otherwise use course defaults
     const section = course.selectedSection || {};
@@ -43,7 +55,7 @@ const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts 
           zIndex: conflictIndex + 1,
           border: isCustomSection ? '2px dashed rgba(255,255,255,0.6)' : undefined,
         }}
-        onClick={() => setSelectedCourse(course)}
+        onClick={handleClick}
       >
         <div className="text-xs font-bold break-words md:truncate">
           {isCustomSection ? `${course.subject_catalog} Section` : course.subject_catalog}
