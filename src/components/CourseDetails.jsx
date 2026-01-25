@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { useAppContext } from "../context/AppContext";
-import { Clock, Star, Plus, Minus, ChevronDown, Users, ChevronUp } from "lucide-react";
+import { Clock, Star, Plus, Minus, ChevronDown, Users, ChevronUp, CalendarPlus } from "lucide-react";
 import { formatTime } from "../utils/timeUtils";
+import AddSectionModal from "./AddSectionModal";
 
 const CourseDetails = ({ onAddCourse }) => {
-  const { selectedCourse, myCourses, addCourse, removeCourse, updateCourseSection, filters, setFilters } = useAppContext();
+  const { selectedCourse, myCourses, addCourse, removeCourse, updateCourseSection, addCustomSection, filters, setFilters } = useAppContext();
   const [selectedSection, setSelectedSection] = useState(null);
   const [showSectionDropdown, setShowSectionDropdown] = useState(false);
   const [showEvaluations, setShowEvaluations] = useState(false);
+  const [showAddSectionModal, setShowAddSectionModal] = useState(false);
 
   // Reset selected section when course changes
   useEffect(() => {
@@ -68,11 +70,15 @@ const CourseDetails = ({ onAddCourse }) => {
   const handleSectionChange = (section) => {
     setSelectedSection(section);
     setShowSectionDropdown(false);
-    
+
     // If course is already added, update its section in myCourses
     if (isAdded) {
       updateCourseSection(selectedCourse.course_id, section);
     }
+  };
+
+  const handleAddCustomSection = (sectionData) => {
+    addCustomSection(selectedCourse.course_id, sectionData);
   };
 
   // Determine if we have a real schedule (days and times) and a real location
@@ -333,6 +339,15 @@ const CourseDetails = ({ onAddCourse }) => {
           {isAdded ? <Minus size={16} className="mr-2" /> : <Plus size={16} className="mr-2" />}
           {isAdded ? 'Remove course' : 'Add course'}
         </button>
+        {isAdded && (
+          <button
+            className="cursor-pointer py-3 md:py-2 px-4 md:px-5 rounded-md inline-flex items-center justify-center transition-colors duration-200 text-sm font-medium shadow-sm border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+            onClick={() => setShowAddSectionModal(true)}
+          >
+            <CalendarPlus size={16} className="mr-2" />
+            Add section
+          </button>
+        )}
       </div>
 
       {selectedCourse.description && (
@@ -453,6 +468,13 @@ const CourseDetails = ({ onAddCourse }) => {
           </div>
         </div>
       )}
+
+      <AddSectionModal
+        isOpen={showAddSectionModal}
+        onClose={() => setShowAddSectionModal(false)}
+        onAdd={handleAddCustomSection}
+        courseName={selectedCourse.subject_catalog}
+      />
     </div>
   );
 };
