@@ -111,6 +111,7 @@ const Calendar = () => {
             course_id: `${course.course_id}-${customSection.id}`,
             parent_course_id: course.course_id,
             subject_catalog: course.subject_catalog,
+            name: customSection.name || 'Section',
             start_time: customSection.startTime,
             end_time: customSection.endTime,
             dayMap: customSection.days,

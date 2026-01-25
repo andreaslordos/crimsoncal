@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
 const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existingSection = null }) => {
+  const [name, setName] = useState("Section");
   const [days, setDays] = useState({
     monday: false,
     tuesday: false,
@@ -18,6 +19,7 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
   // Reset form when modal opens/closes or existingSection changes
   useEffect(() => {
     if (existingSection) {
+      setName(existingSection.name || "Section");
       setDays(existingSection.days || {
         monday: false, tuesday: false, wednesday: false,
         thursday: false, friday: false, saturday: false, sunday: false
@@ -26,6 +28,7 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
       setEndTime(existingSection.endTime || "10:00am");
       setLocation(existingSection.location || "");
     } else {
+      setName("Section");
       setDays({
         monday: false, tuesday: false, wednesday: false,
         thursday: false, friday: false, saturday: false, sunday: false
@@ -48,16 +51,6 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
     { key: "sunday", label: "Su" }
   ];
 
-  const timeOptions = [];
-  for (let h = 7; h <= 22; h++) {
-    for (let m = 0; m < 60; m += 30) {
-      const hour = h > 12 ? h - 12 : h === 0 ? 12 : h;
-      const meridiem = h >= 12 ? "pm" : "am";
-      const minute = m === 0 ? "00" : m;
-      timeOptions.push(`${hour}:${minute}${meridiem}`);
-    }
-  }
-
   const toggleDay = (day) => {
     setDays(prev => ({ ...prev, [day]: !prev[day] }));
   };
@@ -70,6 +63,7 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
     }
 
     const sectionData = {
+      name: name.trim() || "Section",
       days,
       startTime,
       endTime,
@@ -116,6 +110,20 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
         </p>
 
         <form onSubmit={handleSubmit}>
+          {/* Section name */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Name <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Section"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            />
+          </div>
+
           {/* Days selector */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -139,35 +147,31 @@ const AddSectionModal = ({ isOpen, onClose, onAdd, onUpdate, courseName, existin
             </div>
           </div>
 
-          {/* Time selectors */}
+          {/* Time inputs */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Start Time
               </label>
-              <select
+              <input
+                type="text"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
+                placeholder="9:00am"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              >
-                {timeOptions.map(time => (
-                  <option key={`start-${time}`} value={time}>{time}</option>
-                ))}
-              </select>
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 End Time
               </label>
-              <select
+              <input
+                type="text"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
+                placeholder="10:00am"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              >
-                {timeOptions.map(time => (
-                  <option key={`end-${time}`} value={time}>{time}</option>
-                ))}
-              </select>
+              />
             </div>
           </div>
 

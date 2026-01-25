@@ -58,7 +58,7 @@ const CourseBlock = ({ course, day, dayIndex, conflictIndex = 0, totalConflicts 
         onClick={handleClick}
       >
         <div className="text-xs font-bold break-words md:truncate">
-          {isCustomSection ? `${course.subject_catalog} Section` : course.subject_catalog}
+          {isCustomSection ? `${course.subject_catalog} ${course.name || 'Section'}` : course.subject_catalog}
         </div>
         <div className="text-xs truncate hidden md:block">
           {formatTime(startTime)}-{formatTime(endTime)}

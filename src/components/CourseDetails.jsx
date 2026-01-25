@@ -396,7 +396,9 @@ const CourseDetails = ({ onAddCourse }) => {
               return (
                 <div key={section.id} className="flex items-center justify-between bg-white p-2 rounded border border-gray-100">
                   <div className="text-sm">
-                    <span className="font-medium">{daysStr}</span>
+                    <span className="font-medium text-gray-900">{section.name || 'Section'}</span>
+                    <span className="text-gray-500 mx-1">•</span>
+                    <span className="text-gray-600">{daysStr}</span>
                     <span className="text-gray-600 ml-2">{section.startTime}-{section.endTime}</span>
                     {section.location && (
                       <span className="text-gray-500 ml-2">• {cleanLocation(section.location)}</span>
