@@ -146,7 +146,7 @@ const CalendarDropdown = () => {
                         )}
                       </div>
                       <div className="flex items-center space-x-1">
-                        {userCalendars.length < 10 && (
+                        {(
                           <button
                             onClick={(e) => handleDuplicate(e, calendar.id)}
                             className="p-1 text-gray-500 hover:text-blue-600"
@@ -177,7 +177,7 @@ const CalendarDropdown = () => {
                 </div>
               ))}
 
-              {userCalendars.length < 10 && (
+              {(
                 <>
                   <div className="border-t border-gray-200 my-1" />
                   <button
