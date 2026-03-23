@@ -410,6 +410,9 @@ function QGuideManager() {
 
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
+  const [uploadTerm, setUploadTerm] = useState('Fall');
+  const [uploadYear, setUploadYear] = useState(new Date().getFullYear());
+  const [uploadFile, setUploadFile] = useState(null);
 
   const [running, setRunning] = useState(false);
   const [runId, setRunId] = useState(null);
@@ -497,29 +500,36 @@ function QGuideManager() {
     }
   };
 
-  const handleUpload = async (e) => {
+  const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) setUploadFile(file);
+    e.target.value = '';
+  };
+
+  const handleUpload = async () => {
+    if (!uploadFile) return;
     setUploading(true);
     setUploadResult(null);
 
+    const filename = `QReports_${uploadYear}${uploadTerm}.htm`;
+
     try {
-      const content = await file.text();
+      const content = await uploadFile.text();
       const res = await fetch('/api/admin/qguide-upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name, content }),
+        body: JSON.stringify({ filename, content }),
       });
       const data = await res.json();
       setUploadResult({
         type: res.ok ? 'success' : 'error',
-        message: res.ok ? `Uploaded ${file.name} to ${data.path}` : (data.error || 'Upload failed'),
+        message: res.ok ? `Uploaded as ${filename}` : (data.error || 'Upload failed'),
       });
+      if (res.ok) setUploadFile(null);
     } catch {
       setUploadResult({ type: 'error', message: 'Upload failed' });
     } finally {
       setUploading(false);
-      e.target.value = ''; // Reset file input
     }
   };
 
@@ -655,7 +665,7 @@ function QGuideManager() {
       {/* Upload Index HTML */}
       <div>
         <p className="text-xs text-gray-500 mb-2">
-          Upload Q-Guide browse page HTML. Save the page from <span className="font-mono">qreports.fas.harvard.edu/browse/index</span> (Ctrl+S → HTML only) and upload it here.
+          Upload Q-Guide browse page HTML. Save the page from <span className="font-mono">qreports.fas.harvard.edu/browse/index</span> (Ctrl+S → HTML only), pick the semester, and upload.
         </p>
         {uploadResult && (
           <div className={`mb-2 p-3 rounded-md border text-sm flex items-center gap-2 ${
@@ -667,17 +677,50 @@ function QGuideManager() {
             {uploadResult.message}
           </div>
         )}
-        <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
-          <Upload size={14} />
-          {uploading ? 'Uploading...' : 'Upload HTML File'}
-          <input
-            type="file"
-            accept=".html,.htm"
-            onChange={handleUpload}
-            disabled={uploading}
-            className="hidden"
-          />
-        </label>
+        <div className="flex items-end gap-2 flex-wrap">
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Term</label>
+            <select
+              value={uploadTerm}
+              onChange={(e) => setUploadTerm(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-md text-sm bg-white"
+            >
+              <option value="Fall">Fall</option>
+              <option value="Spring">Spring</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Year</label>
+            <select
+              value={uploadYear}
+              onChange={(e) => setUploadYear(Number(e.target.value))}
+              className="px-3 py-1.5 border border-gray-300 rounded-md text-sm bg-white"
+            >
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 3 + i).map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+          <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
+            <Upload size={14} />
+            {uploadFile ? uploadFile.name : 'Choose File'}
+            <input
+              type="file"
+              accept=".html,.htm"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </label>
+          <button
+            onClick={handleUpload}
+            disabled={uploading || !uploadFile}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-md disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-opacity"
+            style={{ backgroundColor: 'var(--harvard-crimson)' }}
+          >
+            {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            {uploading ? 'Uploading...' : `Upload as QReports_${uploadYear}${uploadTerm}.htm`}
+          </button>
+        </div>
       </div>
 
       <hr className="border-gray-200" />
