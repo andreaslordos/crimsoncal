@@ -235,8 +235,9 @@ function SemesterCard({ semester, onScrape, onPublish, onRemove, scrapeState }) 
 function CookieManager() {
   const [cookieValue, setCookieValue] = useState('');
   const [testing, setTesting] = useState(false);
+  const [testingSaved, setTestingSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState(null); // { type: 'success'|'error', message }
+  const [result, setResult] = useState(null); // { type: 'success'|'error'|'info', message }
 
   const handleTest = async () => {
     if (!cookieValue.trim()) return;
@@ -259,6 +260,39 @@ function CookieManager() {
       setResult({ type: 'error', message: 'Failed to test cookie' });
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handleTestSaved = async () => {
+    setTestingSaved(true);
+    setResult(null);
+
+    try {
+      // Fetch the saved cookie from GitHub variable
+      const fetchRes = await fetch('/api/admin/cookie-get-saved?type=harvard');
+      const fetchData = await fetchRes.json();
+
+      if (!fetchData.cookie) {
+        setResult({ type: 'error', message: fetchData.detail || 'No saved cookie found. Save one first.' });
+        return;
+      }
+
+      // Test the saved cookie
+      const testRes = await fetch('/api/admin/cookie-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cookie: fetchData.cookie }),
+      });
+      const testData = await testRes.json();
+
+      setResult({
+        type: testData.valid ? 'success' : 'error',
+        message: `[Saved cookie] ${testData.detail}`,
+      });
+    } catch {
+      setResult({ type: 'error', message: 'Failed to test saved cookie' });
+    } finally {
+      setTestingSaved(false);
     }
   };
 
@@ -286,6 +320,8 @@ function CookieManager() {
       setSaving(false);
     }
   };
+
+  const busy = testing || testingSaved || saving;
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
@@ -316,10 +352,10 @@ function CookieManager() {
         </div>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={handleTest}
-          disabled={testing || !cookieValue.trim()}
+          disabled={busy || !cookieValue.trim()}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
         >
           {testing ? <Loader2 size={14} className="animate-spin" /> : <FlaskConical size={14} />}
@@ -327,12 +363,20 @@ function CookieManager() {
         </button>
         <button
           onClick={handleSave}
-          disabled={saving || !cookieValue.trim()}
+          disabled={busy || !cookieValue.trim()}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-md disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-opacity"
           style={{ backgroundColor: 'var(--harvard-crimson)' }}
         >
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           {saving ? 'Saving...' : 'Save to GitHub'}
+        </button>
+        <button
+          onClick={handleTestSaved}
+          disabled={busy}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
+        >
+          {testingSaved ? <Loader2 size={14} className="animate-spin" /> : <FlaskConical size={14} />}
+          {testingSaved ? 'Testing...' : 'Test Saved'}
         </button>
       </div>
     </div>
@@ -341,8 +385,10 @@ function CookieManager() {
 
 // --- Q-Guide Manager ---
 function QGuideManager() {
-  const [cookieValue, setCookieValue] = useState('');
+  const [sessionId, setSessionId] = useState('');
+  const [cookieName, setCookieName] = useState('');
   const [testing, setTesting] = useState(false);
+  const [testingSaved, setTestingSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [cookieResult, setCookieResult] = useState(null);
 
@@ -361,17 +407,26 @@ function QGuideManager() {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
 
+  const buildCookieString = () =>
+    `ASP.NET_SessionId=${sessionId.trim()}; CookieName=${cookieName.trim()}`;
+
+  const hasInput = sessionId.trim() && cookieName.trim();
+
+  const testCookieValue = async (cookie) => {
+    const res = await fetch('/api/admin/qguide-cookie-test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cookie }),
+    });
+    return await res.json();
+  };
+
   const handleTestCookie = async () => {
-    if (!cookieValue.trim()) return;
+    if (!hasInput) return;
     setTesting(true);
     setCookieResult(null);
     try {
-      const res = await fetch('/api/admin/qguide-cookie-test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cookie: cookieValue }),
-      });
-      const data = await res.json();
+      const data = await testCookieValue(buildCookieString());
       setCookieResult({ type: data.valid ? 'success' : 'error', message: data.detail });
     } catch {
       setCookieResult({ type: 'error', message: 'Failed to test cookie' });
@@ -380,15 +435,39 @@ function QGuideManager() {
     }
   };
 
+  const handleTestSaved = async () => {
+    setTestingSaved(true);
+    setCookieResult(null);
+    try {
+      const fetchRes = await fetch('/api/admin/cookie-get-saved?type=qguide');
+      const fetchData = await fetchRes.json();
+
+      if (!fetchData.cookie) {
+        setCookieResult({ type: 'error', message: fetchData.detail || 'No saved cookie found. Save one first.' });
+        return;
+      }
+
+      const data = await testCookieValue(fetchData.cookie);
+      setCookieResult({
+        type: data.valid ? 'success' : 'error',
+        message: `[Saved cookie] ${data.detail}`,
+      });
+    } catch {
+      setCookieResult({ type: 'error', message: 'Failed to test saved cookie' });
+    } finally {
+      setTestingSaved(false);
+    }
+  };
+
   const handleSaveCookie = async () => {
-    if (!cookieValue.trim()) return;
+    if (!hasInput) return;
     setSaving(true);
     setCookieResult(null);
     try {
       const res = await fetch('/api/admin/qguide-cookie-save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cookie: cookieValue }),
+        body: JSON.stringify({ cookie: buildCookieString() }),
       });
       const data = await res.json();
       setCookieResult({
@@ -490,16 +569,32 @@ function QGuideManager() {
       {/* Q-Guide Cookie */}
       <div>
         <p className="text-xs text-gray-500 mb-2">
-          Q-Guide cookie from <span className="font-mono">qreports.fas.harvard.edu</span>. Get it from DevTools → Application → Cookies. Need <span className="font-mono">ASP.NET_SessionId</span> and <span className="font-mono">CookieName</span>.
+          Q-Guide cookies from <span className="font-mono">qreports.fas.harvard.edu</span>. Get them from DevTools → Application → Cookies.
         </p>
-        <textarea
-          value={cookieValue}
-          onChange={(e) => setCookieValue(e.target.value)}
-          placeholder="ASP.NET_SessionId=...; CookieName=..."
-          rows={2}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-xs font-mono focus:outline-none focus:ring-2 focus:border-transparent resize-y mb-2"
-          style={{ '--tw-ring-color': 'var(--harvard-crimson)' }}
-        />
+        <div className="space-y-2 mb-2">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">ASP.NET_SessionId</label>
+            <input
+              type="text"
+              value={sessionId}
+              onChange={(e) => setSessionId(e.target.value)}
+              placeholder="Paste session ID value..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-xs font-mono focus:outline-none focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--harvard-crimson)' }}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">CookieName</label>
+            <input
+              type="text"
+              value={cookieName}
+              onChange={(e) => setCookieName(e.target.value)}
+              placeholder="Paste CookieName value..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-xs font-mono focus:outline-none focus:ring-2 focus:border-transparent"
+              style={{ '--tw-ring-color': 'var(--harvard-crimson)' }}
+            />
+          </div>
+        </div>
         {cookieResult && (
           <div className={`mb-2 p-3 rounded-md border text-sm flex items-center gap-2 ${
             cookieResult.type === 'success'
@@ -510,10 +605,10 @@ function QGuideManager() {
             {cookieResult.message}
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleTestCookie}
-            disabled={testing || !cookieValue.trim()}
+            disabled={testing || testingSaved || saving || !hasInput}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
           >
             {testing ? <Loader2 size={14} className="animate-spin" /> : <FlaskConical size={14} />}
@@ -521,12 +616,20 @@ function QGuideManager() {
           </button>
           <button
             onClick={handleSaveCookie}
-            disabled={saving || !cookieValue.trim()}
+            disabled={testing || testingSaved || saving || !hasInput}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-md disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-opacity"
             style={{ backgroundColor: 'var(--harvard-crimson)' }}
           >
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {saving ? 'Saving...' : 'Save to GitHub'}
+          </button>
+          <button
+            onClick={handleTestSaved}
+            disabled={testing || testingSaved || saving}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
+          >
+            {testingSaved ? <Loader2 size={14} className="animate-spin" /> : <FlaskConical size={14} />}
+            {testingSaved ? 'Testing...' : 'Test Saved'}
           </button>
         </div>
       </div>

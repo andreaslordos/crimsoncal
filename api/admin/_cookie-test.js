@@ -37,7 +37,6 @@ export default async function handler(req, res) {
 
     // Check for the location div with actual data (same logic as test_auth.py)
     const hasLocationDiv = html.includes('id="course-location"');
-    const requiresSignIn = html.toLowerCase().includes('sign in') && html.includes('course-location');
 
     // Look for a real location value in the HTML near the course-location div
     // The Python script looks for a span inside div.flex inside #course-location
@@ -51,7 +50,8 @@ export default async function handler(req, res) {
       });
     }
 
-    if (requiresSignIn || (locationText && locationText.toLowerCase().includes('sign in'))) {
+    // Only check for "sign in" in the extracted location text, not the entire page
+    if (locationText && (locationText.toLowerCase().includes('sign in') || locationText.toLowerCase().includes('signin'))) {
       return res.status(200).json({
         valid: false,
         detail: 'Cookie is expired or invalid — location requires sign-in',

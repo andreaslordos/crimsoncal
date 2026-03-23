@@ -1,4 +1,4 @@
-import { verifyToken, githubFetch } from './_auth.js';
+import { verifyToken, githubFetch, upsertGitHubVariable } from './_auth.js';
 import sodium from 'libsodium-wrappers';
 
 export default async function handler(req, res) {
@@ -33,6 +33,9 @@ export default async function handler(req, res) {
         key_id: keyId,
       }),
     });
+
+    // Also save to a readable variable so we can test it later
+    try { await upsertGitHubVariable('QGUIDE_COOKIE_VAR', cookie.trim()); } catch {}
 
     return res.status(200).json({ ok: true, detail: 'Q-Guide cookie saved to GitHub Actions secret' });
   } catch (err) {

@@ -93,6 +93,61 @@ export async function getConfigFromGitHub() {
   return { content, sha: data.sha };
 }
 
+// GitHub Actions variable helpers (encrypted at rest using ADMIN_JWT_SECRET)
+const ENCRYPT_ALGO = 'aes-256-gcm';
+
+function deriveEncryptionKey() {
+  const secret = process.env.ADMIN_JWT_SECRET;
+  if (!secret) throw new Error('ADMIN_JWT_SECRET not configured');
+  return crypto.createHash('sha256').update(secret).digest();
+}
+
+function encryptValue(plaintext) {
+  const key = deriveEncryptionKey();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv(ENCRYPT_ALGO, key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  // Format: base64(iv + tag + ciphertext)
+  return Buffer.concat([iv, tag, encrypted]).toString('base64');
+}
+
+function decryptValue(encoded) {
+  const key = deriveEncryptionKey();
+  const buf = Buffer.from(encoded, 'base64');
+  const iv = buf.subarray(0, 12);
+  const tag = buf.subarray(12, 28);
+  const ciphertext = buf.subarray(28);
+  const decipher = crypto.createDecipheriv(ENCRYPT_ALGO, key, iv);
+  decipher.setAuthTag(tag);
+  return decipher.update(ciphertext, undefined, 'utf8') + decipher.final('utf8');
+}
+
+export async function upsertGitHubVariable(name, value) {
+  const encrypted = encryptValue(value);
+  try {
+    await githubFetch(`/actions/variables/${name}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ value: encrypted }),
+    });
+  } catch (err) {
+    if (err.message.includes('404')) {
+      await githubFetch('/actions/variables', {
+        method: 'POST',
+        body: JSON.stringify({ name, value: encrypted }),
+      });
+    } else {
+      throw err;
+    }
+  }
+}
+
+export async function getGitHubVariable(name) {
+  const res = await githubFetch(`/actions/variables/${name}`);
+  const data = await res.json();
+  return decryptValue(data.value);
+}
+
 export async function updateConfigOnGitHub(config, sha, message) {
   await githubFetch('/contents/public/data/config.json', {
     method: 'PUT',
