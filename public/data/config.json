@@ -6,6 +6,13 @@
       "dataFile": "master_courses.json",
       "lastScraped": null,
       "courseCount": 6588
+    },
+    {
+      "term": "Fall 2026",
+      "published": false,
+      "dataFile": "master_courses_fall2026.json",
+      "lastScraped": null,
+      "courseCount": 0
     }
   ]
 }
