@@ -9,7 +9,7 @@
     },
     {
       "term": "Fall 2026",
-      "published": false,
+      "published": true,
       "dataFile": "master_courses_fall2026.json",
       "lastScraped": null,
       "courseCount": 0
