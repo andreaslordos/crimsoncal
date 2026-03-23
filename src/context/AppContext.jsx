@@ -357,6 +357,11 @@ export const AppProvider = ({ children }) => {
             for (const s of published) {
               SEMESTER_DATA_FILES[s.term] = s.dataFile;
             }
+            // Always start on the config's default semester on initial load
+            const configDefault = SUPPORTED_SEMESTERS[0];
+            if (configDefault) {
+              setSelectedSemester(configDefault);
+            }
           }
         }
       } catch {
@@ -714,10 +719,11 @@ export const AppProvider = ({ children }) => {
   const filteredCourses = useMemo(() => {
     if (!processedCourses.length) return [];
 
-    // Get courses for Spring 2026 for conflict checking
+    // Get courses for selected semester for conflict checking
+    const [semTerm, semYear] = selectedSemester.split(' ');
     const myCoursesForSemester = myCourses.filter(course => {
       const termToCheck = course.current_term || course.year_term || '';
-      return termToCheck.includes('Spring') && termToCheck.includes('2026');
+      return termToCheck.includes(semTerm) && termToCheck.includes(semYear);
     });
 
     return processedCourses.filter(course => {
@@ -1051,11 +1057,12 @@ export const AppProvider = ({ children }) => {
 
   // Filter myCourses to only show Spring 2026 courses
   const myCoursesForSelectedSemester = useMemo(() => {
+    const [semTerm, semYear] = selectedSemester.split(' ');
     return myCourses.filter(course => {
       const termToCheck = course.current_term || course.year_term || '';
-      return termToCheck.includes('Spring') && termToCheck.includes('2026');
+      return termToCheck.includes(semTerm) && termToCheck.includes(semYear);
     });
-  }, [myCourses]);
+  }, [myCourses, selectedSemester]);
 
   // Get total hours for selected courses (filtered by semester)
   const totalHours = useMemo(() => {

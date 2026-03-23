@@ -19,7 +19,7 @@ const Header = () => {
                 <div className="flex items-center space-x-3 text-base md:text-base">
                     <CalendarDropdown />
                     <div className="flex items-center gap-1.5">
-                        {supportedSemesters.map(sem => (
+                        {[...supportedSemesters].reverse().map(sem => (
                             <button
                                 key={sem}
                                 onClick={() => changeSemester(sem)}
