@@ -72,7 +72,7 @@ function AdminLogin({ onLogin }) {
 }
 
 // --- Semester Card ---
-function SemesterCard({ semester, onScrape, onPublish, onRemove, scrapeState }) {
+function SemesterCard({ semester, isDefault, onScrape, onPublish, onRemove, onSetDefault, scrapeState }) {
   const [logsOpen, setLogsOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null); // 'publish' | 'unpublish' | 'remove'
 
@@ -113,14 +113,21 @@ function SemesterCard({ semester, onScrape, onPublish, onRemove, scrapeState }) 
             {!semester.lastScraped && semester.courseCount === 0 && <span>Not yet scraped</span>}
           </div>
         </div>
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-          semester.published
-            ? 'bg-green-50 text-green-700 border border-green-200'
-            : 'bg-gray-50 text-gray-600 border border-gray-200'
-        }`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${semester.published ? 'bg-green-500' : 'bg-gray-400'}`} />
-          {semester.published ? 'Published' : 'Unpublished'}
-        </span>
+        <div className="flex items-center gap-2">
+          {isDefault && (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+              Default
+            </span>
+          )}
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+            semester.published
+              ? 'bg-green-50 text-green-700 border border-green-200'
+              : 'bg-gray-50 text-gray-600 border border-gray-200'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${semester.published ? 'bg-green-500' : 'bg-gray-400'}`} />
+            {semester.published ? 'Published' : 'Unpublished'}
+          </span>
+        </div>
       </div>
 
       {/* Scrape progress */}
@@ -204,6 +211,15 @@ function SemesterCard({ semester, onScrape, onPublish, onRemove, scrapeState }) 
               {confirmAction === 'remove' ? 'Click again to confirm' : 'Remove'}
             </button>
           </>
+        )}
+
+        {semester.published && !isDefault && (
+          <button
+            onClick={() => onSetDefault(semester.term)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer transition-colors"
+          >
+            Set as Default
+          </button>
         )}
 
         {scrapeState?.htmlUrl && (
@@ -867,6 +883,20 @@ function AdminDashboard({ onLogout }) {
     }
   };
 
+  // Set default semester
+  const handleSetDefault = async (term) => {
+    try {
+      await fetch('/api/admin/set-default', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ term }),
+      });
+      fetchSemesters();
+    } catch (err) {
+      setError(`Failed to set default: ${err.message}`);
+    }
+  };
+
   // Add semester
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -944,13 +974,15 @@ function AdminDashboard({ onLogout }) {
             <p className="text-sm text-gray-500">No semesters configured yet.</p>
           )}
 
-          {semesters.map(sem => (
+          {semesters.map((sem, idx) => (
             <SemesterCard
               key={sem.term}
               semester={sem}
+              isDefault={idx === 0 && sem.published}
               onScrape={handleScrape}
               onPublish={handlePublish}
               onRemove={handleRemove}
+              onSetDefault={handleSetDefault}
               scrapeState={scrapeStates[sem.term]}
             />
           ))}

@@ -60,56 +60,89 @@ jobs:
         run: |
           cd scraper
           if [ -n "$INPUT_TERM" ] && [ -n "$INPUT_YEAR" ]; then
+            # Admin panel triggered — scrape one specific term
             echo "Running targeted scrape for $INPUT_TERM $INPUT_YEAR"
-            bash run_single_term.sh "$INPUT_TERM" "$INPUT_YEAR"
+            bash run_single_term.sh "$INPUT_TERM" "$INPUT_YEAR" --no-push
           else
-            echo "Running default full pipeline"
-            bash run_full_pipeline.sh
+            # Daily cron — read config.json and scrape all configured semesters
+            echo "Reading semesters from config.json..."
+            SEMESTERS=$(python3 -c "
+          import json
+          with open('../public/data/config.json') as f:
+              config = json.load(f)
+          for s in config['semesters']:
+              term, year = s['term'].split(' ')
+              print(f'{term} {year}')
+          ")
+
+            if [ -z "$SEMESTERS" ]; then
+              echo "No semesters in config.json, running default pipeline"
+              bash run_full_pipeline.sh --no-push
+            else
+              echo "Found semesters to scrape:"
+              echo "$SEMESTERS"
+              echo ""
+              FAIL=0
+              while IFS=' ' read -r TERM YEAR; do
+                echo "=========================================="
+                echo "Scraping $TERM $YEAR"
+                echo "=========================================="
+                bash run_single_term.sh "$TERM" "$YEAR" --no-push || FAIL=1
+              done <<< "$SEMESTERS"
+              if [ "$FAIL" -ne 0 ]; then
+                echo "Warning: one or more semesters failed to scrape"
+              fi
+            fi
           fi
 
       - name: Update config.json after scrape
-        if: ${{ github.event.inputs.term != '' && github.event.inputs.year != '' }}
-        env:
-          INPUT_TERM: ${{ github.event.inputs.term }}
-          INPUT_YEAR: ${{ github.event.inputs.year }}
         run: |
-          TERM_LOWER=$(echo "$INPUT_TERM" | tr '[:upper:]' '[:lower:]')
-          SEMESTER="$INPUT_TERM $INPUT_YEAR"
-          DATA_FILE="master_courses_${TERM_LOWER}${INPUT_YEAR}.json"
-          FILE_PATH="public/data/${DATA_FILE}"
+          # Update config.json with course counts and timestamps for all scraped semesters
+          python3 -c "
+          import json, os
+          from datetime import datetime, timezone
 
-          if [ -f "$FILE_PATH" ]; then
-            COURSE_COUNT=$(python3 -c "import json; print(len(json.load(open('$FILE_PATH'))))")
-            NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          config_path = 'public/data/config.json'
+          if not os.path.exists(config_path):
+              print('No config.json found, skipping update')
+              exit(0)
 
-            # Update config.json with new scrape info
-            python3 -c "
-          import json
-          with open('public/data/config.json', 'r') as f:
+          with open(config_path) as f:
               config = json.load(f)
+
+          now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+          updated = []
+
           for sem in config['semesters']:
-              if sem['term'] == '$SEMESTER':
-                  sem['lastScraped'] = '$NOW'
-                  sem['courseCount'] = $COURSE_COUNT
-                  break
-          with open('public/data/config.json', 'w') as f:
+              data_file = sem.get('dataFile', '')
+              file_path = f'public/data/{data_file}'
+              if os.path.exists(file_path):
+                  try:
+                      with open(file_path) as f:
+                          data = json.load(f)
+                      sem['courseCount'] = len(data)
+                      sem['lastScraped'] = now
+                      updated.append(f\"{sem['term']}: {len(data)} courses\")
+                  except Exception as e:
+                      print(f\"Warning: could not read {file_path}: {e}\")
+
+          with open(config_path, 'w') as f:
               json.dump(config, f, indent=2)
               f.write('\n')
+
+          for u in updated:
+              print(f'Updated: {u}')
+          if not updated:
+              print('No data files found to update')
           "
-            echo "Updated config.json: $SEMESTER has $COURSE_COUNT courses"
-          else
-            echo "Warning: $FILE_PATH not found, skipping config update"
-          fi
 
-      - name: Check for changes
-        id: check_changes
+      - name: Commit and push
         run: |
-          if [[ -n $(git status --porcelain) ]]; then
-            echo "changes=true" >> $GITHUB_OUTPUT
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes detected - data is already up to date"
           else
-            echo "changes=false" >> $GITHUB_OUTPUT
+            git commit -m "Update course data on $(date +%Y-%m-%d)"
+            git push
+            echo "Changes committed and pushed"
           fi
-
-      - name: Show status
-        if: steps.check_changes.outputs.changes == 'false'
-        run: echo "No changes detected - data is already up to date"
