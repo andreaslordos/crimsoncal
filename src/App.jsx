@@ -12,6 +12,7 @@ import Toast, { useToast } from './components/Toast.jsx';
 import { useAppContext } from './context/AppContext.jsx';
 import { Menu, X, CalendarPlus, Share2 } from 'lucide-react';
 import LZString from 'lz-string';
+import Admin from './components/Admin.jsx';
 import './App.css';
 
 // App.jsx - Make sidebar take full width on mobile
@@ -667,6 +668,16 @@ const AppContent = () => {
 
 // Main App Component
 const App = () => {
+  // Render admin panel at /keepout, otherwise the main app
+  if (window.location.pathname === '/keepout') {
+    return (
+      <>
+        <Admin />
+        <Analytics />
+      </>
+    );
+  }
+
   return (
     <AppProvider>
       <AppContent />

@@ -1,7 +1,9 @@
 import CalendarDropdown from "./CalendarDropdown";
+import { useAppContext } from "../context/AppContext";
 
 // ===== Header Component =====
 const Header = () => {
+    const { selectedSemester } = useAppContext();
 
     return (
         <header className="border-b px-4 md:px-6 py-4 flex items-center justify-between bg-white" style={{
@@ -20,7 +22,7 @@ const Header = () => {
                         className="px-3 py-1.5 rounded text-sm font-medium shadow-sm"
                         style={{color: 'white', backgroundColor: 'var(--harvard-crimson)'}}
                     >
-                        Spring 2026
+                        {selectedSemester}
                     </span>
                 </div>
             </div>

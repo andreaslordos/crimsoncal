@@ -1,0 +1,11 @@
+{
+  "semesters": [
+    {
+      "term": "Spring 2026",
+      "published": true,
+      "dataFile": "master_courses.json",
+      "lastScraped": null,
+      "courseCount": 6588
+    }
+  ]
+}

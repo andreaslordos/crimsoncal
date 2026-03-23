@@ -2,19 +2,29 @@ import React, { createContext, useState, useEffect, useMemo, useRef, useCallback
 import { useDebounce } from '../hooks/useDebounce';
 import LZString from 'lz-string';
 
-const DEFAULT_SEMESTER = 'Spring 2026';
-const SUPPORTED_SEMESTERS = ['Spring 2026'];
+// Semester config is loaded dynamically from config.json
+// These are initial fallbacks used before config loads
+let SUPPORTED_SEMESTERS = ['Spring 2026'];
+let SEMESTER_DATA_FILES = { 'Spring 2026': 'master_courses.json' };
+const FALLBACK_DEFAULT_SEMESTER = 'Spring 2026';
 const DEFAULT_CALENDAR_PREFIX = 'Calendar';
 
+const getDefaultSemester = () => SUPPORTED_SEMESTERS[0] || FALLBACK_DEFAULT_SEMESTER;
+
 const normalizeSemester = (semester) => (
-  SUPPORTED_SEMESTERS.includes(semester) ? semester : DEFAULT_SEMESTER
+  SUPPORTED_SEMESTERS.includes(semester) ? semester : getDefaultSemester()
 );
 
-const detectCourseSemester = (course, fallbackSemester = DEFAULT_SEMESTER) => {
-  if (!course) return fallbackSemester;
+const detectCourseSemester = (course, fallbackSemester) => {
+  const fb = fallbackSemester || getDefaultSemester();
+  if (!course) return fb;
   const rawTerm = `${course.current_term || course.year_term || ''}`.toLowerCase();
-  if (rawTerm.includes('spring') && rawTerm.includes('2026')) return 'Spring 2026';
-  return fallbackSemester;
+  // Match against all supported semesters dynamically
+  for (const sem of SUPPORTED_SEMESTERS) {
+    const [term, year] = sem.toLowerCase().split(' ');
+    if (rawTerm.includes(term) && rawTerm.includes(year)) return sem;
+  }
+  return fb;
 };
 
 const generateCalendarId = () => `calendar-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -23,7 +33,7 @@ const stripSemesterSuffix = (name = '') => {
   return name.replace(/\s+\((Spring|Fall)\s+20\d{2}\)$/i, '').trim();
 };
 
-const getSemesterKey = (semester) => normalizeSemester(semester || DEFAULT_SEMESTER);
+const getSemesterKey = (semester) => normalizeSemester(semester || getDefaultSemester());
 
 const ensureUniqueName = (desiredName, usedNamesBySemester, semester) => {
   const key = getSemesterKey(semester);
@@ -74,7 +84,7 @@ const generateShareData = (calendar) => {
   return {
     v: SHARE_DATA_VERSION,
     n: calendar.name || 'Shared Calendar',
-    s: calendar.semester || DEFAULT_SEMESTER,
+    s: calendar.semester || getDefaultSemester(),
     c: calendar.courses.map(course => ({
       id: course.course_id,
       sec: course.selectedSection?.section || null,
@@ -234,7 +244,7 @@ export const AppProvider = ({ children }) => {
     return [{
       id: generateCalendarId(),
       name: 'Calendar 1',
-      semester: DEFAULT_SEMESTER,
+      semester: getDefaultSemester(),
       courses: courses,
       hiddenCourses: hidden
     }];
@@ -260,7 +270,7 @@ export const AppProvider = ({ children }) => {
   });
 
   const [selectedSemester, setSelectedSemester] = useState(() => {
-    return activeCalendar?.semester || DEFAULT_SEMESTER;
+    return activeCalendar?.semester || getDefaultSemester();
   });
 
   const [filters, setFilters] = useState({
@@ -317,7 +327,7 @@ export const AppProvider = ({ children }) => {
     if (calendar) {
       setMyCourses(calendar.courses || []);
       setHiddenCourses(calendar.hiddenCourses || {});
-      setSelectedSemester(calendar.semester || DEFAULT_SEMESTER);
+      setSelectedSemester(calendar.semester || getDefaultSemester());
     }
   }, [activeCalendarId]);
 
@@ -328,13 +338,37 @@ export const AppProvider = ({ children }) => {
     return code.toUpperCase().replace(/\s+/g, ' ').trim();
   };
   
-  // Load JSON data with progressive loading
+  // Load config.json to get semester list, then load course data
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
 
-        // Use requestIdleCallback for non-blocking load if available
+        // Step 1: Load config to get available semesters and their data files
+        const today = new Date().toISOString().split('T')[0];
+        let dataFile = 'master_courses.json'; // fallback
+
+        try {
+          const configRes = await fetch(`/data/config.json?v=${today}`);
+          if (configRes.ok) {
+            const config = await configRes.json();
+            const published = (config.semesters || []).filter(s => s.published);
+            if (published.length > 0) {
+              SUPPORTED_SEMESTERS = published.map(s => s.term);
+              SEMESTER_DATA_FILES = {};
+              for (const s of published) {
+                SEMESTER_DATA_FILES[s.term] = s.dataFile;
+              }
+              // Use the data file for the currently selected semester, or the first published one
+              const currentSem = normalizeSemester(selectedSemester);
+              dataFile = SEMESTER_DATA_FILES[currentSem] || published[0].dataFile;
+            }
+          }
+        } catch {
+          // Config fetch failed — use defaults
+        }
+
+        // Step 2: Load the course data file
         const processData = (data) => {
           if ('requestIdleCallback' in window) {
             requestIdleCallback(() => {
@@ -342,7 +376,6 @@ export const AppProvider = ({ children }) => {
               setIsLoading(false);
             }, { timeout: 1000 });
           } else {
-            // Fallback for browsers without requestIdleCallback
             setTimeout(() => {
               setCoursesData(data);
               setIsLoading(false);
@@ -350,12 +383,8 @@ export const AppProvider = ({ children }) => {
           }
         };
 
-        // Load the master courses file (contains Spring 2026 data)
-        // Daily cache key - refreshes data once per day
-        const today = new Date().toISOString().split('T')[0];
-        const response = await fetch(`/data/master_courses.json?v=${today}`);
+        const response = await fetch(`/data/${dataFile}?v=${today}`);
         const data = await response.json();
-
         processData(data);
       } catch (error) {
         console.error("Error loading data:", error);
@@ -1326,7 +1355,8 @@ export const AppProvider = ({ children }) => {
       importSharedCalendar,
       findCalendarBySourceHash,
       parseShareURLParam,
-      cleanShareURLParam
+      cleanShareURLParam,
+      supportedSemesters: SUPPORTED_SEMESTERS
     }}>
       {children}
     </AppContext.Provider>

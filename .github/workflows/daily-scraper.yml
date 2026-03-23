@@ -8,8 +8,17 @@ on:
   schedule:
     - cron: '0 11 * * *'  # Runs at 11:00 UTC daily
 
-  # Allow manual triggering for testing
+  # Allow manual triggering with optional term/year inputs (used by admin panel)
   workflow_dispatch:
+    inputs:
+      term:
+        description: 'Term to scrape (Fall or Spring). Leave empty for default pipeline.'
+        required: false
+        default: ''
+      year:
+        description: 'Year to scrape (e.g. 2026). Leave empty for default pipeline.'
+        required: false
+        default: ''
 
 jobs:
   scrape_and_update:
@@ -45,9 +54,52 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Run pipeline
+        env:
+          INPUT_TERM: ${{ github.event.inputs.term }}
+          INPUT_YEAR: ${{ github.event.inputs.year }}
         run: |
           cd scraper
-          bash run_full_pipeline.sh
+          if [ -n "$INPUT_TERM" ] && [ -n "$INPUT_YEAR" ]; then
+            echo "Running targeted scrape for $INPUT_TERM $INPUT_YEAR"
+            bash run_single_term.sh "$INPUT_TERM" "$INPUT_YEAR"
+          else
+            echo "Running default full pipeline"
+            bash run_full_pipeline.sh
+          fi
+
+      - name: Update config.json after scrape
+        if: ${{ github.event.inputs.term != '' && github.event.inputs.year != '' }}
+        env:
+          INPUT_TERM: ${{ github.event.inputs.term }}
+          INPUT_YEAR: ${{ github.event.inputs.year }}
+        run: |
+          TERM_LOWER=$(echo "$INPUT_TERM" | tr '[:upper:]' '[:lower:]')
+          SEMESTER="$INPUT_TERM $INPUT_YEAR"
+          DATA_FILE="master_courses_${TERM_LOWER}${INPUT_YEAR}.json"
+          FILE_PATH="public/data/${DATA_FILE}"
+
+          if [ -f "$FILE_PATH" ]; then
+            COURSE_COUNT=$(python3 -c "import json; print(len(json.load(open('$FILE_PATH'))))")
+            NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+            # Update config.json with new scrape info
+            python3 -c "
+          import json
+          with open('public/data/config.json', 'r') as f:
+              config = json.load(f)
+          for sem in config['semesters']:
+              if sem['term'] == '$SEMESTER':
+                  sem['lastScraped'] = '$NOW'
+                  sem['courseCount'] = $COURSE_COUNT
+                  break
+          with open('public/data/config.json', 'w') as f:
+              json.dump(config, f, indent=2)
+              f.write('\n')
+          "
+            echo "Updated config.json: $SEMESTER has $COURSE_COUNT courses"
+          else
+            echo "Warning: $FILE_PATH not found, skipping config update"
+          fi
 
       - name: Check for changes
         id: check_changes
