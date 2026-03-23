@@ -44,10 +44,22 @@ fi
 echo "✓ Course links extracted"
 echo ""
 
+# Extract semester filter from filename (e.g. QReports_2025Fall.htm → 2025Fall)
+SEMESTER_FILTER=""
+if [ -n "$HTML_FILE" ]; then
+    SEMESTER_FILTER=$(echo "$HTML_FILE" | sed 's/QReports_//' | sed 's/\.htm.*//')
+    echo "Semester filter: $SEMESTER_FILTER"
+    echo ""
+fi
+
 # Step 2: Download individual Q-Guide reports
 echo "Step 2: Downloading Q-Guide reports..."
 echo "----------------------------------------"
-python3 downloader.py
+if [ -n "$SEMESTER_FILTER" ]; then
+    python3 downloader.py "$SEMESTER_FILTER"
+else
+    python3 downloader.py
+fi
 if [ $? -ne 0 ]; then
     echo "Error: Failed to download Q-Guide reports"
     exit 1
@@ -58,7 +70,11 @@ echo ""
 # Step 3: Analyze downloaded reports
 echo "Step 3: Analyzing Q-Guide data..."
 echo "----------------------------------------"
-python3 analyzer.py
+if [ -n "$HTML_FILE" ]; then
+    python3 analyzer.py --merge
+else
+    python3 analyzer.py
+fi
 if [ $? -ne 0 ]; then
     echo "Error: Failed to analyze Q-Guide data"
     exit 1

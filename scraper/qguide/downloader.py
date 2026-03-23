@@ -9,14 +9,19 @@ from urllib3.util.retry import Retry
 import time
 from threading import Lock
 
+import sys
+
 PACKAGES = []
+
+# Optional semester filter: e.g. "2025Fall" — only download reports matching this semester
+SEMESTER_FILTER = sys.argv[1] if len(sys.argv) > 1 else None
 
 
 def preprocess_qlinks():
     # Load the JSON file with courses grouped by FAS ID
     with open('courses_by_fas_id.json', 'r') as f:
         courses_data = json.load(f)
-    
+
     # Extract all unique links with their identifiers
     for fas_id, course_info in courses_data.items():
         for offering in course_info['offerings']:
@@ -24,11 +29,18 @@ def preprocess_qlinks():
             # Format: FAS_ID_SEMESTER_YEAR_PROFESSOR
             professor_clean = offering['professor'].replace(' ', '_').replace('/', '_')
             filename = f"{fas_id}_{offering['semester_year']}_{professor_clean}"
-            
+
+            # Skip if semester filter is set and doesn't match
+            if SEMESTER_FILTER and SEMESTER_FILTER not in offering['semester_year']:
+                continue
+
             # Add to packages list
             PACKAGES.append([offering['link'], filename, fas_id])
-    
-    print(f"Found {len(PACKAGES)} total Q guide links to download")
+
+    if SEMESTER_FILTER:
+        print(f"Found {len(PACKAGES)} Q guide links for semester {SEMESTER_FILTER}")
+    else:
+        print(f"Found {len(PACKAGES)} total Q guide links to download")
 
 
 preprocess_qlinks()

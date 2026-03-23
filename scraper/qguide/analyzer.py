@@ -353,28 +353,77 @@ def aggregate_by_course_and_semester_parallel():
     return sorted_data
 
 
+def merge_analytics(existing, new_data):
+    """Merge new analysis data into existing course_analytics.json."""
+    for fas_id, new_entry in new_data.items():
+        if fas_id not in existing:
+            existing[fas_id] = new_entry
+            continue
+
+        old = existing[fas_id]
+
+        # Merge semesters (add new ones, update existing ones)
+        for sem_key, sem_data in new_entry.get('semesters', {}).items():
+            old['semesters'][sem_key] = sem_data
+
+        # Update all_course_codes and all_course_titles
+        for code in new_entry.get('all_course_codes', []):
+            if code not in old.get('all_course_codes', []):
+                old.setdefault('all_course_codes', []).append(code)
+        for title in new_entry.get('all_course_titles', []):
+            if title not in old.get('all_course_titles', []):
+                old.setdefault('all_course_titles', []).append(title)
+
+        # Recalculate latest_* fields from all semesters
+        all_sems = sorted(old['semesters'].keys())
+        if all_sems:
+            latest = all_sems[-1]
+            latest_data = old['semesters'][latest]
+            old['latest_semester'] = latest
+            old['latest_course_code'] = latest_data.get('course_code', old.get('latest_course_code', ''))
+            old['latest_course_title'] = latest_data.get('course_title', old.get('latest_course_title', ''))
+            old['latest_course_rating'] = latest_data.get('avg_course_rating', 0)
+            old['latest_hours_per_week'] = latest_data.get('avg_hours_per_week', 0)
+            old['latest_num_students'] = latest_data.get('avg_num_students', 0)
+
+    return existing
+
+
 def main():
     """Main function to run the analysis."""
+    import sys
+    incremental = '--merge' in sys.argv
+
     print("Starting Q guide analysis with parallel processing...")
-    
+    if incremental:
+        print("Mode: Incremental merge into existing analytics")
+
     # Check if required files exist
     if not os.path.exists('courses_by_fas_id.json'):
         print("ERROR: courses_by_fas_id.json not found. Please run scraper.py first.")
         return
-    
+
     if not os.path.exists('QGuides'):
         print("ERROR: QGuides directory not found. Please run downloader.py first.")
         return
-    
+
     # Run parallel analysis
     aggregated_data = aggregate_by_course_and_semester_parallel()
-    
+
     if not aggregated_data:
         print("No data was successfully analyzed")
         return
-    
-    # Save to JSON
+
     output_file = 'results/course_analytics.json'
+
+    # If incremental, merge into existing data
+    if incremental and os.path.exists(output_file):
+        with open(output_file, 'r', encoding='utf-8') as f:
+            existing_data = json.load(f)
+        print(f"Merging {len(aggregated_data)} entries into existing {len(existing_data)} entries...")
+        aggregated_data = merge_analytics(existing_data, aggregated_data)
+
+    # Save to JSON
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(aggregated_data, f, indent=2, ensure_ascii=False)
     
