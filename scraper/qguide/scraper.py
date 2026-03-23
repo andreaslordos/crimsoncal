@@ -121,35 +121,69 @@ def merge_courses_by_fas_id(all_courses):
     return merged
 
 def main():
-    # Find all HTML files in old_html directory
-    html_files = glob('old_html/QReports_*.htm*')
-    
-    if not html_files:
-        # Try current directory for single file
-        html_files = glob('QReports.htm*')
-    
+    import sys
+
+    # If a specific file is passed as argument, only process that one
+    # and merge into the existing courses_by_fas_id.json
+    if len(sys.argv) > 1:
+        html_files = [sys.argv[1]]
+        incremental = True
+    else:
+        html_files = glob('old_html/QReports_*.htm*')
+        if not html_files:
+            html_files = glob('QReports.htm*')
+        incremental = False
+
     all_courses = []
-    
+
     print(f"Processing {len(html_files)} HTML files...")
-    
+
     for filepath in html_files:
         print(f"Processing {filepath}...")
         courses = parse_html_file(filepath)
         all_courses.extend(courses)
         print(f"  Found {len(courses)} courses")
-    
-    # Merge courses by FAS ID
-    merged_courses = merge_courses_by_fas_id(all_courses)
-    
-    # Save to JSON
+
+    # Merge new courses by FAS ID
+    new_courses = merge_courses_by_fas_id(all_courses)
+
+    # If incremental, merge into existing data
     output_file = 'courses_by_fas_id.json'
+    if incremental and os.path.exists(output_file):
+        with open(output_file, 'r', encoding='utf-8') as f:
+            existing = json.load(f)
+        # Merge: add new offerings to existing FAS IDs, or add new FAS IDs
+        for fas_id, data in new_courses.items():
+            if fas_id in existing:
+                existing_links = {o['link'] for o in existing[fas_id]['offerings']}
+                for offering in data['offerings']:
+                    if offering['link'] not in existing_links:
+                        existing[fas_id]['offerings'].append(offering)
+                for code in data['course_codes']:
+                    if code not in existing[fas_id]['course_codes']:
+                        existing[fas_id]['course_codes'].append(code)
+                for title in data['course_titles']:
+                    if title not in existing[fas_id]['course_titles']:
+                        existing[fas_id]['course_titles'].append(title)
+                for prof in data['professors']:
+                    if prof not in existing[fas_id]['professors']:
+                        existing[fas_id]['professors'].append(prof)
+            else:
+                existing[fas_id] = data
+        merged_courses = existing
+        print(f"\nMerged into existing data")
+    else:
+        merged_courses = new_courses
+
+    # Save to JSON
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(merged_courses, f, indent=2, ensure_ascii=False)
-    
+
     # Print statistics
+    total_offerings = sum(len(d['offerings']) for d in merged_courses.values())
     print(f"\nTotal unique FAS IDs: {len(merged_courses)}")
-    print(f"Total course offerings: {len(all_courses)}")
-    
+    print(f"Total course offerings: {total_offerings}")
+
     # Show some examples
     print("\nExample entries:")
     for i, (fas_id, data) in enumerate(list(merged_courses.items())[:3]):
@@ -157,7 +191,7 @@ def main():
         print(f"  Course codes: {', '.join(data['course_codes'])}")
         print(f"  Semesters: {', '.join(set(o['semester_year'] for o in data['offerings']))}")
         print(f"  Number of offerings: {len(data['offerings'])}")
-    
+
     print(f"\nData saved to {output_file}")
 
 if __name__ == "__main__":

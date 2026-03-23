@@ -1,11 +1,19 @@
 #!/bin/bash
 
 # Q-Guide data pipeline for CrimsonCal
-# Runs: scraper.py → downloader.py → analyzer.py → master_merge.py
+# Usage: bash run_qguide_pipeline.sh [filename]
+# If filename is provided, only processes that one file (incremental mode)
 # Expects QGUIDE_COOKIE to be set in the environment
+
+HTML_FILE=$1
 
 echo "=========================================="
 echo "CrimsonCal Q-Guide Pipeline"
+if [ -n "$HTML_FILE" ]; then
+    echo "Mode: Incremental (processing $HTML_FILE only)"
+else
+    echo "Mode: Full (processing all index files)"
+fi
 echo "=========================================="
 echo ""
 
@@ -24,7 +32,11 @@ echo ""
 # Step 1: Parse index HTML files to extract course links
 echo "Step 1: Parsing Q-Guide index HTML files..."
 echo "----------------------------------------"
-python3 scraper.py
+if [ -n "$HTML_FILE" ]; then
+    python3 scraper.py "old_html/$HTML_FILE"
+else
+    python3 scraper.py
+fi
 if [ $? -ne 0 ]; then
     echo "Error: Failed to parse Q-Guide index files"
     exit 1
@@ -74,7 +86,6 @@ if [ $? -ne 0 ]; then
     echo "Warning: copy_to_public.sh failed, trying manual copy"
     mkdir -p ../public/data
     cp results/master_courses.json ../public/data/ 2>/dev/null
-    # Also copy any term-specific files
     cp results/master_courses_*.json ../public/data/ 2>/dev/null
     cp results/last_updated.json ../public/data/ 2>/dev/null
 fi

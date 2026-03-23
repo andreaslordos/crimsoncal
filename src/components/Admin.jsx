@@ -564,9 +564,12 @@ function QGuideManager() {
     setRunStatus(null);
     setRunLogs([]);
     try {
+      // Pass the last uploaded filename so the pipeline only processes that file
+      const lastUploadedFile = `QReports_${uploadYear}${uploadTerm}.htm`;
       const res = await fetch('/api/admin/qguide-scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: lastUploadedFile }),
       });
       const data = await res.json();
       if (data.runId) {

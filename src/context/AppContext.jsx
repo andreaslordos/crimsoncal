@@ -357,9 +357,14 @@ export const AppProvider = ({ children }) => {
             for (const s of published) {
               SEMESTER_DATA_FILES[s.term] = s.dataFile;
             }
-            // Always start on the config's default semester on initial load
+            // Always start on the config's default semester on initial load.
+            // Switch the active calendar too, so the UI is consistent.
             const configDefault = SUPPORTED_SEMESTERS[0];
             if (configDefault) {
+              const matchingCal = userCalendars.find(cal => cal.semester === configDefault);
+              if (matchingCal) {
+                setActiveCalendarId(matchingCal.id);
+              }
               setSelectedSemester(configDefault);
             }
           }
@@ -386,25 +391,11 @@ export const AppProvider = ({ children }) => {
         const today = new Date().toISOString().split('T')[0];
         const dataFile = SEMESTER_DATA_FILES[currentSem] || 'master_courses.json';
 
-        const processData = (data) => {
-          if ('requestIdleCallback' in window) {
-            requestIdleCallback(() => {
-              setCoursesData(data);
-              setIsLoading(false);
-              loadedSemesterRef.current = currentSem;
-            }, { timeout: 1000 });
-          } else {
-            setTimeout(() => {
-              setCoursesData(data);
-              setIsLoading(false);
-              loadedSemesterRef.current = currentSem;
-            }, 0);
-          }
-        };
-
         const response = await fetch(`/data/${dataFile}?v=${today}`);
         const data = await response.json();
-        processData(data);
+        setCoursesData(data);
+        loadedSemesterRef.current = currentSem;
+        setIsLoading(false);
       } catch (error) {
         console.error("Error loading data:", error);
         setIsLoading(false);
@@ -1141,8 +1132,7 @@ export const AppProvider = ({ children }) => {
 
   const changeSemester = (semester) => {
     const targetSemester = normalizeSemester(semester);
-
-    if (activeCalendar?.semester === targetSemester) {
+    if (selectedSemester === targetSemester && loadedSemesterRef.current === targetSemester) {
       return;
     }
 
@@ -1153,7 +1143,6 @@ export const AppProvider = ({ children }) => {
       setSelectedSemester(targetSemester);
       return;
     }
-
     createNewCalendar(undefined, targetSemester);
     setSelectedSemester(targetSemester);
   };

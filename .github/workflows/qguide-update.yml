@@ -2,6 +2,11 @@ name: Q-Guide Data Update
 
 on:
   workflow_dispatch:
+    inputs:
+      filename:
+        description: 'Specific HTML file to process (e.g. QReports_2025Fall.htm). Leave empty for full run.'
+        required: false
+        default: ''
 
 jobs:
   update_qguide:
@@ -33,9 +38,14 @@ jobs:
       - name: Run Q-Guide pipeline
         env:
           QGUIDE_COOKIE: ${{ secrets.QGUIDE_COOKIE }}
+          INPUT_FILENAME: ${{ github.event.inputs.filename }}
         run: |
           cd scraper
-          bash run_qguide_pipeline.sh
+          if [ -n "$INPUT_FILENAME" ]; then
+            bash run_qguide_pipeline.sh "$INPUT_FILENAME"
+          else
+            bash run_qguide_pipeline.sh
+          fi
 
       - name: Check for changes
         id: check_changes

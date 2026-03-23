@@ -570,7 +570,7 @@ const AppContent = () => {
       </div>
 
       {/* Desktop: Two-column resizable layout */}
-      <div className="hidden md:flex flex-1 overflow-hidden w-full relative">
+      <div className="hidden md:flex flex-1 overflow-hidden w-full relative z-0">
         {/* Main content area with calendar and MyCourses */}
         <div
           className="overflow-auto p-4 relative"

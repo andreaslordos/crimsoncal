@@ -6,7 +6,7 @@ const Header = () => {
     const { selectedSemester, supportedSemesters, changeSemester } = useAppContext();
 
     return (
-        <header className="border-b px-4 md:px-6 py-4 flex items-center justify-between bg-white" style={{
+        <header className="border-b px-4 md:px-6 py-4 flex items-center justify-between bg-white relative z-50 overflow-visible" style={{
             borderBottomColor: '#e5e5e5'
         }}>
             <div className="flex items-center">

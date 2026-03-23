@@ -10,11 +10,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Dispatch the Q-Guide workflow
+    const { filename } = req.body || {};
+
+    // Dispatch the Q-Guide workflow, optionally with a specific file
+    const inputs = {};
+    if (filename) inputs.filename = filename;
+
     await githubFetch('/actions/workflows/qguide-update.yml/dispatches', {
       method: 'POST',
       body: JSON.stringify({
         ref: 'main',
+        inputs,
       }),
     });
 

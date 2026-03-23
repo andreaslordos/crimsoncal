@@ -134,7 +134,7 @@ const Sidebar = ({ onCloseMobile, isMobile }) => {
             )}
             <input
               type="text"
-              placeholder={filters.courseCodePrefixes.length > 0 ? "Search within prefixes..." : "Code, course name or instructor.."}
+              placeholder={filters.courseCodePrefixes.length > 0 ? "Search within prefixes..." : "Code, course name or instructor.. (tip: type ECON and hit Tab)"}
               className="w-full p-2.5 rounded border border-gray-300 text-sm transition-colors focus:outline-none focus:border-gray-400 bg-white"
               style={filters.courseCodePrefixes.length > 0 ? {
                 paddingLeft: `${filters.courseCodePrefixes.reduce((total, prefix) =>
