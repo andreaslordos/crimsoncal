@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Lock, LogOut, Plus, Play, Eye, EyeOff, Trash2, ChevronDown, ChevronUp, Loader2, CheckCircle2, XCircle, ExternalLink, Cookie, FlaskConical, Save } from 'lucide-react';
+import { Lock, LogOut, Plus, Play, Eye, EyeOff, Trash2, ChevronDown, ChevronUp, Loader2, CheckCircle2, XCircle, ExternalLink, Cookie, FlaskConical, Save, Upload, BookOpen } from 'lucide-react';
 
 // --- Login Screen ---
 function AdminLogin({ onLogin }) {
@@ -339,6 +339,299 @@ function CookieManager() {
   );
 }
 
+// --- Q-Guide Manager ---
+function QGuideManager() {
+  const [cookieValue, setCookieValue] = useState('');
+  const [testing, setTesting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [cookieResult, setCookieResult] = useState(null);
+
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
+
+  const [running, setRunning] = useState(false);
+  const [runId, setRunId] = useState(null);
+  const [runStatus, setRunStatus] = useState(null);
+  const [runLogs, setRunLogs] = useState([]);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const pollRef = useRef(null);
+
+  // Cleanup poll on unmount
+  useEffect(() => {
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
+
+  const handleTestCookie = async () => {
+    if (!cookieValue.trim()) return;
+    setTesting(true);
+    setCookieResult(null);
+    try {
+      const res = await fetch('/api/admin/qguide-cookie-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cookie: cookieValue }),
+      });
+      const data = await res.json();
+      setCookieResult({ type: data.valid ? 'success' : 'error', message: data.detail });
+    } catch {
+      setCookieResult({ type: 'error', message: 'Failed to test cookie' });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const handleSaveCookie = async () => {
+    if (!cookieValue.trim()) return;
+    setSaving(true);
+    setCookieResult(null);
+    try {
+      const res = await fetch('/api/admin/qguide-cookie-save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cookie: cookieValue }),
+      });
+      const data = await res.json();
+      setCookieResult({
+        type: res.ok ? 'success' : 'error',
+        message: res.ok ? data.detail : (data.error || 'Failed to save'),
+      });
+    } catch {
+      setCookieResult({ type: 'error', message: 'Failed to save cookie' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadResult(null);
+
+    try {
+      const content = await file.text();
+      const res = await fetch('/api/admin/qguide-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, content }),
+      });
+      const data = await res.json();
+      setUploadResult({
+        type: res.ok ? 'success' : 'error',
+        message: res.ok ? `Uploaded ${file.name} to ${data.path}` : (data.error || 'Upload failed'),
+      });
+    } catch {
+      setUploadResult({ type: 'error', message: 'Upload failed' });
+    } finally {
+      setUploading(false);
+      e.target.value = ''; // Reset file input
+    }
+  };
+
+  const pollStatus = useCallback((id) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+
+    const poll = async () => {
+      try {
+        const statusRes = await fetch(`/api/admin/scrape-status?runId=${id}`);
+        const statusData = await statusRes.json();
+
+        const logsRes = await fetch(`/api/admin/scrape-logs?runId=${id}`);
+        const logsData = await logsRes.json();
+
+        setRunStatus(statusData);
+        setRunLogs(logsData.steps || []);
+
+        if (statusData.status === 'completed') {
+          setRunning(false);
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+      } catch { /* retry on next poll */ }
+    };
+
+    poll();
+    pollRef.current = setInterval(poll, 8000);
+  }, []);
+
+  const handleRunPipeline = async () => {
+    setRunning(true);
+    setRunStatus(null);
+    setRunLogs([]);
+    try {
+      const res = await fetch('/api/admin/qguide-scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (data.runId) {
+        setRunId(data.runId);
+        pollStatus(data.runId);
+      } else {
+        setRunning(false);
+      }
+    } catch {
+      setRunning(false);
+    }
+  };
+
+  const isComplete = runStatus?.status === 'completed';
+  const elapsed = runStatus?.startedAt
+    ? Math.round((Date.now() - new Date(runStatus.startedAt).getTime()) / 1000)
+    : null;
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-5 space-y-5">
+      <div className="flex items-center gap-2">
+        <BookOpen size={16} className="text-gray-500" />
+        <h3 className="text-sm font-semibold text-gray-900">Q-Guide Data</h3>
+      </div>
+
+      {/* Q-Guide Cookie */}
+      <div>
+        <p className="text-xs text-gray-500 mb-2">
+          Q-Guide cookie from <span className="font-mono">qreports.fas.harvard.edu</span>. Get it from DevTools → Application → Cookies. Need <span className="font-mono">ASP.NET_SessionId</span> and <span className="font-mono">CookieName</span>.
+        </p>
+        <textarea
+          value={cookieValue}
+          onChange={(e) => setCookieValue(e.target.value)}
+          placeholder="ASP.NET_SessionId=...; CookieName=..."
+          rows={2}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-xs font-mono focus:outline-none focus:ring-2 focus:border-transparent resize-y mb-2"
+          style={{ '--tw-ring-color': 'var(--harvard-crimson)' }}
+        />
+        {cookieResult && (
+          <div className={`mb-2 p-3 rounded-md border text-sm flex items-center gap-2 ${
+            cookieResult.type === 'success'
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : 'bg-red-50 border-red-200 text-red-700'
+          }`}>
+            {cookieResult.type === 'success' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+            {cookieResult.message}
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleTestCookie}
+            disabled={testing || !cookieValue.trim()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
+          >
+            {testing ? <Loader2 size={14} className="animate-spin" /> : <FlaskConical size={14} />}
+            {testing ? 'Testing...' : 'Test Cookie'}
+          </button>
+          <button
+            onClick={handleSaveCookie}
+            disabled={saving || !cookieValue.trim()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-md disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-opacity"
+            style={{ backgroundColor: 'var(--harvard-crimson)' }}
+          >
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            {saving ? 'Saving...' : 'Save to GitHub'}
+          </button>
+        </div>
+      </div>
+
+      <hr className="border-gray-200" />
+
+      {/* Upload Index HTML */}
+      <div>
+        <p className="text-xs text-gray-500 mb-2">
+          Upload Q-Guide browse page HTML. Save the page from <span className="font-mono">qreports.fas.harvard.edu/browse/index</span> (Ctrl+S → HTML only) and upload it here.
+        </p>
+        {uploadResult && (
+          <div className={`mb-2 p-3 rounded-md border text-sm flex items-center gap-2 ${
+            uploadResult.type === 'success'
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : 'bg-red-50 border-red-200 text-red-700'
+          }`}>
+            {uploadResult.type === 'success' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+            {uploadResult.message}
+          </div>
+        )}
+        <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
+          <Upload size={14} />
+          {uploading ? 'Uploading...' : 'Upload HTML File'}
+          <input
+            type="file"
+            accept=".html,.htm"
+            onChange={handleUpload}
+            disabled={uploading}
+            className="hidden"
+          />
+        </label>
+      </div>
+
+      <hr className="border-gray-200" />
+
+      {/* Run Pipeline */}
+      <div>
+        <p className="text-xs text-gray-500 mb-2">
+          Run the full Q-Guide pipeline: parse index → download reports → analyze → merge with course data. Requires cookie to be saved and at least one index HTML uploaded.
+        </p>
+
+        {running && (
+          <div className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700 flex items-center gap-2">
+            <Loader2 size={14} className="animate-spin" />
+            <span>Q-Guide pipeline running{elapsed !== null ? ` · ${Math.floor(elapsed / 60)}m ${elapsed % 60}s elapsed` : ''}...</span>
+          </div>
+        )}
+
+        {isComplete && runStatus?.conclusion && (
+          <div className={`mb-2 p-3 rounded-md border text-sm flex items-center gap-2 ${
+            runStatus.conclusion === 'success'
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : 'bg-red-50 border-red-200 text-red-700'
+          }`}>
+            {runStatus.conclusion === 'success' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+            Q-Guide pipeline {runStatus.conclusion}
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRunPipeline}
+            disabled={running}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
+          >
+            {running ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+            {running ? 'Running...' : 'Download & Analyze'}
+          </button>
+
+          {runId && (
+            <button
+              onClick={() => setLogsOpen(!logsOpen)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer transition-colors"
+            >
+              {logsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              Logs
+            </button>
+          )}
+
+          {runStatus?.htmlUrl && (
+            <a
+              href={runStatus.htmlUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <ExternalLink size={14} />
+              GitHub
+            </a>
+          )}
+        </div>
+
+        {logsOpen && runLogs.length > 0 && (
+          <div className="mt-2 p-3 bg-gray-900 rounded-md text-xs text-gray-300 font-mono overflow-x-auto max-h-60 overflow-y-auto">
+            {runLogs.map((line, i) => (
+              <div key={i} className="whitespace-pre">{line}</div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // --- Admin Dashboard ---
 function AdminDashboard({ onLogout }) {
   const [semesters, setSemesters] = useState([]);
@@ -599,8 +892,11 @@ function AdminDashboard({ onLogout }) {
           </form>
         </div>
 
-        {/* Cookie management */}
+        {/* Harvard cookie management */}
         <CookieManager />
+
+        {/* Q-Guide management */}
+        <QGuideManager />
       </main>
     </div>
   );
