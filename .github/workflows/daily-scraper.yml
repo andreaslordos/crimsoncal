@@ -64,34 +64,24 @@ jobs:
             echo "Running targeted scrape for $INPUT_TERM $INPUT_YEAR"
             bash run_single_term.sh "$INPUT_TERM" "$INPUT_YEAR" --no-push
           else
-            # Daily cron — read config.json and scrape all configured semesters
-            echo "Reading semesters from config.json..."
-            SEMESTERS=$(python3 -c "
+            # Daily cron — scrape only the default semester (first in config.json)
+            echo "Reading default semester from config.json..."
+            DEFAULT_SEM=$(python3 -c "
           import json
           with open('../public/data/config.json') as f:
               config = json.load(f)
-          for s in config['semesters']:
-              term, year = s['term'].split(' ')
+          if config['semesters']:
+              term, year = config['semesters'][0]['term'].split(' ')
               print(f'{term} {year}')
           ")
 
-            if [ -z "$SEMESTERS" ]; then
+            if [ -z "$DEFAULT_SEM" ]; then
               echo "No semesters in config.json, running default pipeline"
               bash run_full_pipeline.sh --no-push
             else
-              echo "Found semesters to scrape:"
-              echo "$SEMESTERS"
-              echo ""
-              FAIL=0
-              while IFS=' ' read -r TERM YEAR; do
-                echo "=========================================="
-                echo "Scraping $TERM $YEAR"
-                echo "=========================================="
-                bash run_single_term.sh "$TERM" "$YEAR" --no-push || FAIL=1
-              done <<< "$SEMESTERS"
-              if [ "$FAIL" -ne 0 ]; then
-                echo "Warning: one or more semesters failed to scrape"
-              fi
+              read -r TERM YEAR <<< "$DEFAULT_SEM"
+              echo "Scraping default semester: $TERM $YEAR"
+              bash run_single_term.sh "$TERM" "$YEAR" --no-push
             fi
           fi
 
