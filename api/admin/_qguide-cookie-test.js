@@ -1,7 +1,7 @@
 import { verifyToken } from './_auth.js';
 
-// Test Q-Guide auth by fetching the browse index page
-const TEST_URL = 'https://qreports.fas.harvard.edu/browse/index?school=FAS&calTerm=2025%20Fall';
+// Test by fetching an actual Q-Guide report page on bluera.com (same domain the downloader uses)
+const TEST_URL = 'https://my-harvard-bc.bluera.com/rpv-eng.aspx?lang=eng&redi=1&SelectedIDforPrint=4d261612ca3939d596643f28c19d1e645ed628a5747b371ee6a7c675d62dd8529216a97944bd245cb751fafd12d11676&ReportType=2&regl=en-US';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -18,60 +18,53 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Follow redirects — Q-Guide may redirect even with valid cookies
     const response = await fetch(TEST_URL, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Cookie': cookie.trim(),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
+      redirect: 'manual',
     });
+
+    // A redirect means auth failed — bluera sends you to login
+    if (response.status >= 300 && response.status < 400) {
+      return res.status(200).json({
+        valid: false,
+        detail: 'Cookie is expired or invalid — redirected to login',
+      });
+    }
 
     if (!response.ok) {
       return res.status(200).json({
         valid: false,
-        detail: `HTTP ${response.status} from qreports.fas.harvard.edu`,
+        detail: `HTTP ${response.status} from bluera.com`,
       });
     }
 
     const html = await response.text();
-    const finalUrl = response.url || TEST_URL;
 
-    // If we were redirected to a login page
-    if (finalUrl.includes('login') || finalUrl.includes('signin') || finalUrl.includes('auth')) {
-      return res.status(200).json({
-        valid: false,
-        detail: 'Cookie is expired or invalid — redirected to login page',
-      });
-    }
-
-    // Check if the page contains Q-Guide course links (bluera URLs)
-    const hasCourseLinks = html.includes('bluera');
-    // Check for FAS ID elements which indicate real course data
-    const hasFasIds = html.includes('FAS-');
-
-    if (hasCourseLinks || hasFasIds) {
-      const fasCount = (html.match(/FAS-\d+/g) || []).length;
+    // A valid response contains a Q-Guide report with table data
+    if (html.includes('<table') && (html.includes('Evaluate') || html.includes('Hours per week') || html.includes('Responded'))) {
       return res.status(200).json({
         valid: true,
-        detail: `Cookie is working. Found ~${fasCount} Q-Guide entries on the browse page.`,
+        detail: 'Cookie is working — successfully fetched a Q-Guide report.',
       });
     }
 
-    // Check page content for auth failure signals
+    // Check for login/auth prompts in the page content
     const lowerHtml = html.toLowerCase();
-    if (lowerHtml.includes('sign in') || lowerHtml.includes('log in') || lowerHtml.includes('authentication')) {
+    if (lowerHtml.includes('sign in') || lowerHtml.includes('log in') || lowerHtml.includes('authentication') || lowerHtml.includes('unauthorized')) {
       return res.status(200).json({
         valid: false,
         detail: 'Cookie is expired — page shows login prompt',
       });
     }
 
-    // Page loaded but no recognizable content — return a snippet for debugging
-    const snippet = html.substring(0, 500).replace(/\s+/g, ' ').trim();
+    // Got a page but can't identify it
     return res.status(200).json({
       valid: false,
-      detail: `Page loaded but no Q-Guide data found. Page starts with: "${snippet.substring(0, 200)}..."`,
+      detail: 'Page loaded but could not verify Q-Guide content. Cookie may be invalid.',
     });
   } catch (err) {
     return res.status(200).json({
