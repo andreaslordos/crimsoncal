@@ -143,6 +143,7 @@ jobs:
             echo "No changes detected - data is already up to date"
           else
             git commit -m "Update course data on $(date +%Y-%m-%d)"
+            git pull --rebase origin main || true
             git push
             echo "Changes committed and pushed"
           fi

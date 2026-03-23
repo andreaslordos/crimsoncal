@@ -115,6 +115,7 @@ echo "=========================================="
 cd ../
 git add .
 git commit -m "Update Q-Guide data on $(date +%Y-%m-%d)"
+git pull --rebase origin main || true
 git push
 
 echo ""

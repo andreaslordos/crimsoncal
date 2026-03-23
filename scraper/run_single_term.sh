@@ -102,6 +102,7 @@ if [ "$NO_PUSH" = false ]; then
     cd ../
     git add .
     git commit -m "Scrape $TERM $YEAR data on $(date +%Y-%m-%d)"
+    git pull --rebase origin main || true
     git push
 else
     echo "=========================================="

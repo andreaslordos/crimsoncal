@@ -117,10 +117,15 @@ def get_session():
     return thread_local.session
 
 
+# Rewrite new-format URLs to old domain that returns static HTML with tables
+def normalize_url(url):
+    return url.replace('my-harvard-bc.bluera.com', 'harvard.bluera.com/harvard')
+
+
 # Retrieve a single page and report the URL and contents
 def load_url(package):
     global global_count, last_print_time
-    url = package[0]
+    url = normalize_url(package[0])
     filename = package[1]
     fas_id = package[2]
     
