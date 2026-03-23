@@ -5,6 +5,7 @@ import json
 from collections import defaultdict
 from typing import Dict, List, Any, Tuple
 from datetime import datetime
+from glob import glob
 
 def load_json(filepath: str) -> Any:
     """Load JSON file safely."""
@@ -253,19 +254,29 @@ def generate_summary_stats(merged_data: List[Dict]) -> Dict:
     
     return stats
 
-def main(term=None, year=None):
-    """Main merge function.
-
-    Args:
-        term: Optional term (Fall/Spring) for output filename
-        year: Optional year for output filename
-    """
+def main():
+    """Main merge function. Reads all cleaned_*.json files and merges into one master_courses.json."""
     print("Loading data files...")
 
-    # Load all courses (current offerings)
-    all_courses = load_json('results/all_courses_cleaned.json')
+    # Load all courses from all term-specific cleaned files
+    cleaned_files = sorted(glob('results/cleaned_*.json'))
+    all_courses = []
+
+    if cleaned_files:
+        for f in cleaned_files:
+            data = load_json(f)
+            if data:
+                print(f"  Loaded {len(data)} courses from {f}")
+                all_courses.extend(data)
+
+    # Fall back to all_courses_cleaned.json if no cleaned_* files exist
     if not all_courses:
-        print("Failed to load all_courses_cleaned.json")
+        all_courses = load_json('results/all_courses_cleaned.json')
+        if all_courses:
+            print(f"  Loaded {len(all_courses)} courses from all_courses_cleaned.json")
+
+    if not all_courses:
+        print("Failed to load any course data")
         return
 
     # Load analytics (historical Q guide data)
@@ -275,20 +286,10 @@ def main(term=None, year=None):
         return
 
     # Load existing master data to preserve locations when new data is empty
-    # (handles case where cookies expired and locations weren't scraped)
-    if term and year:
-        # Try term-specific file first, fall back to default
-        term_lower = term.lower()
-        old_master_path = f'../public/data/master_courses_{term_lower}{year}.json'
-        old_master = load_json(old_master_path)
-        if not old_master:
-            # Fall back to default master_courses.json
-            old_master = load_json('../public/data/master_courses.json')
-    else:
-        old_master = load_json('../public/data/master_courses.json')
+    old_master = load_json('../public/data/master_courses.json')
     old_locations = build_old_locations(old_master)
 
-    print(f"Loaded {len(all_courses)} current course entries")
+    print(f"Loaded {len(all_courses)} total current course entries")
     print(f"Loaded {len(analytics)} courses with analytics data")
     if old_locations:
         print(f"Loaded {len(old_locations)} existing locations for preservation")
@@ -296,18 +297,12 @@ def main(term=None, year=None):
     # Perform merge
     print("\nMerging data (keeping only currently offered courses)...")
     merged_data, locations_preserved = merge_data(all_courses, analytics, old_locations)
-    
+
     # Generate statistics
     stats = generate_summary_stats(merged_data)
-    
-    # Save merged data
-    if term and year:
-        # Create term-specific filename
-        term_lower = term.lower()
-        output_file = f'results/master_courses_{term_lower}{year}.json'
-    else:
-        # Default filename
-        output_file = 'results/master_courses.json'
+
+    # Always output single file
+    output_file = 'results/master_courses.json'
 
     print(f"\nSaving merged data to {output_file}...")
     with open(output_file, 'w', encoding='utf-8') as f:
@@ -391,13 +386,4 @@ def main(term=None, year=None):
     print(f"   Only currently offered courses were included in the merge.")
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description='Merge course data with analytics')
-    parser.add_argument('--term', choices=['Fall', 'Spring'],
-                       help='Term for output filename (e.g., Fall or Spring)')
-    parser.add_argument('--year', help='Year for output filename (e.g., 2025 or 2026)')
-
-    args = parser.parse_args()
-
-    main(term=args.term, year=args.year)
+    main()

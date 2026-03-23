@@ -5,7 +5,6 @@ import LZString from 'lz-string';
 // Semester config is loaded dynamically from config.json
 // These are initial fallbacks used before config loads
 let SUPPORTED_SEMESTERS = ['Spring 2026'];
-let SEMESTER_DATA_FILES = { 'Spring 2026': 'master_courses.json' };
 const FALLBACK_DEFAULT_SEMESTER = 'Spring 2026';
 const DEFAULT_CALENDAR_PREFIX = 'Calendar';
 
@@ -353,10 +352,6 @@ export const AppProvider = ({ children }) => {
           const published = (config.semesters || []).filter(s => s.published);
           if (published.length > 0) {
             SUPPORTED_SEMESTERS = published.map(s => s.term);
-            SEMESTER_DATA_FILES = {};
-            for (const s of published) {
-              SEMESTER_DATA_FILES[s.term] = s.dataFile;
-            }
             // Always start on the config's default semester on initial load.
             // Switch the active calendar too, so the UI is consistent.
             const configDefault = SUPPORTED_SEMESTERS[0];
@@ -388,24 +383,20 @@ export const AppProvider = ({ children }) => {
     loadConfig();
   }, []);
 
-  // Load the course data file for the selected semester (runs on mount + semester switch)
+  // Load master_courses.json once after config is loaded (contains all semesters)
   useEffect(() => {
     if (!configLoaded) return;
-
-    const currentSem = normalizeSemester(selectedSemester);
-    // Skip if we already loaded this semester's data
-    if (loadedSemesterRef.current === currentSem) return;
+    if (loadedSemesterRef.current) return; // already loaded
 
     const loadData = async () => {
       try {
         setIsLoading(true);
         const today = new Date().toISOString().split('T')[0];
-        const dataFile = SEMESTER_DATA_FILES[currentSem] || 'master_courses.json';
 
-        const response = await fetch(`/data/${dataFile}?v=${today}`);
+        const response = await fetch(`/data/master_courses.json?v=${today}`);
         const data = await response.json();
         setCoursesData(data);
-        loadedSemesterRef.current = currentSem;
+        loadedSemesterRef.current = 'loaded';
         setIsLoading(false);
       } catch (error) {
         console.error("Error loading data:", error);
@@ -414,7 +405,7 @@ export const AppProvider = ({ children }) => {
     };
 
     loadData();
-  }, [configLoaded, selectedSemester]);
+  }, [configLoaded]);
   
   // Helper to convert time string to minutes for comparison
   const timeStringToMinutes = (timeStr) => {
@@ -1143,7 +1134,7 @@ export const AppProvider = ({ children }) => {
 
   const changeSemester = (semester) => {
     const targetSemester = normalizeSemester(semester);
-    if (selectedSemester === targetSemester && loadedSemesterRef.current === targetSemester) {
+    if (selectedSemester === targetSemester) {
       return;
     }
 

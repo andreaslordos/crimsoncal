@@ -97,43 +97,39 @@ jobs:
 
       - name: Update config.json after scrape
         run: |
-          # Update config.json with course counts and timestamps for all scraped semesters
+          # Update config.json with course counts and timestamps per semester
           python3 -c "
           import json, os
           from datetime import datetime, timezone
 
           config_path = 'public/data/config.json'
-          if not os.path.exists(config_path):
-              print('No config.json found, skipping update')
+          master_path = 'public/data/master_courses.json'
+          if not os.path.exists(config_path) or not os.path.exists(master_path):
+              print('Missing config.json or master_courses.json, skipping')
               exit(0)
 
           with open(config_path) as f:
               config = json.load(f)
+          with open(master_path) as f:
+              courses = json.load(f)
 
           now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-          updated = []
 
+          # Count courses per semester from the single master file
           for sem in config['semesters']:
-              data_file = sem.get('dataFile', '')
-              file_path = f'public/data/{data_file}'
-              if os.path.exists(file_path):
-                  try:
-                      with open(file_path) as f:
-                          data = json.load(f)
-                      sem['courseCount'] = len(data)
-                      sem['lastScraped'] = now
-                      updated.append(f\"{sem['term']}: {len(data)} courses\")
-                  except Exception as e:
-                      print(f\"Warning: could not read {file_path}: {e}\")
+              term_parts = sem['term'].split(' ')
+              if len(term_parts) == 2:
+                  term_name, term_year = term_parts
+                  count = sum(1 for c in courses
+                      if term_name in (c.get('current_term') or c.get('year_term') or '')
+                      and term_year in (c.get('current_term') or c.get('year_term') or ''))
+                  sem['courseCount'] = count
+                  sem['lastScraped'] = now
+                  print(f\"{sem['term']}: {count} courses\")
 
           with open(config_path, 'w') as f:
               json.dump(config, f, indent=2)
               f.write('\n')
-
-          for u in updated:
-              print(f'Updated: {u}')
-          if not updated:
-              print('No data files found to update')
           "
 
       - name: Commit and push

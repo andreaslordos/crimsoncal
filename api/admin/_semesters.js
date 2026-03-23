@@ -21,8 +21,6 @@ export default async function handler(req, res) {
     }
 
     const semesterName = `${term} ${year}`;
-    const termLower = term.toLowerCase();
-    const dataFile = `master_courses_${termLower}${year}.json`;
 
     try {
       const { content: config, sha } = await getConfigFromGitHub();
@@ -34,7 +32,6 @@ export default async function handler(req, res) {
       config.semesters.push({
         term: semesterName,
         published: false,
-        dataFile,
         lastScraped: null,
         courseCount: 0,
       });

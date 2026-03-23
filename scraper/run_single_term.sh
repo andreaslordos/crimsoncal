@@ -60,10 +60,15 @@ fi
 echo "✓ Subject catalog cleaned for $TERM $YEAR"
 echo ""
 
-# Step 3: Merge all data sources
-echo "Step 3: Merging all data sources for $TERM $YEAR..."
+# Save cleaned data with term-specific name so all terms accumulate
+cp results/all_courses_cleaned.json "results/cleaned_${TERM_LOWER}${YEAR}.json"
+echo "✓ Saved cleaned data as cleaned_${TERM_LOWER}${YEAR}.json"
+echo ""
+
+# Step 3: Merge all data sources (all terms into one master_courses.json)
+echo "Step 3: Merging all data sources..."
 echo "----------------------------------------"
-python3 master_merge.py --term "$TERM" --year "$YEAR"
+python3 master_merge.py
 if [ $? -ne 0 ]; then
     echo "Error: Failed to merge data for $TERM $YEAR"
     exit 1
@@ -76,12 +81,11 @@ echo "Step 4: Copying files to public directory..."
 echo "----------------------------------------"
 mkdir -p ../public/data
 
-DATA_FILE="master_courses_${TERM_LOWER}${YEAR}.json"
-if [ -f "results/${DATA_FILE}" ]; then
-    cp "results/${DATA_FILE}" "../public/data/"
-    echo "✓ Copied ${DATA_FILE}"
+if [ -f "results/master_courses.json" ]; then
+    cp results/master_courses.json ../public/data/
+    echo "✓ Copied master_courses.json"
 else
-    echo "Error: results/${DATA_FILE} not found"
+    echo "Error: results/master_courses.json not found"
     exit 1
 fi
 
@@ -116,5 +120,5 @@ echo "✅ Pipeline completed for $TERM $YEAR!"
 echo "=========================================="
 echo ""
 echo "Generated files:"
-echo "  - public/data/${DATA_FILE}"
+echo "  - public/data/master_courses.json"
 echo "  - public/data/last_updated.json"
