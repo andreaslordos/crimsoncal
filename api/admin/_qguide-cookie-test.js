@@ -44,8 +44,8 @@ export default async function handler(req, res) {
 
     const html = await response.text();
 
-    // A valid response contains a Q-Guide report with table data
-    if (html.includes('<table') && (html.includes('Evaluate') || html.includes('Hours per week') || html.includes('Responded'))) {
+    // A valid response contains an explorance Blue Q-Guide report
+    if (html.includes('explorance') || html.includes('Feedback for') || (html.includes('<table') && (html.includes('Evaluate') || html.includes('Hours per week') || html.includes('Responded')))) {
       return res.status(200).json({
         valid: true,
         detail: 'Cookie is working — successfully fetched a Q-Guide report.',
