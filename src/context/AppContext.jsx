@@ -338,47 +338,61 @@ export const AppProvider = ({ children }) => {
     return code.toUpperCase().replace(/\s+/g, ' ').trim();
   };
   
-  // Load config.json to get semester list, then load course data
+  // Track which semester's data is currently loaded to avoid redundant fetches
+  const loadedSemesterRef = useRef(null);
+
+  // Load config.json once on mount to get semester list and data file mappings
+  const [configLoaded, setConfigLoaded] = useState(false);
   useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const configRes = await fetch(`/data/config.json?v=${today}`);
+        if (configRes.ok) {
+          const config = await configRes.json();
+          const published = (config.semesters || []).filter(s => s.published);
+          if (published.length > 0) {
+            SUPPORTED_SEMESTERS = published.map(s => s.term);
+            SEMESTER_DATA_FILES = {};
+            for (const s of published) {
+              SEMESTER_DATA_FILES[s.term] = s.dataFile;
+            }
+          }
+        }
+      } catch {
+        // Config fetch failed — use defaults
+      }
+      setConfigLoaded(true);
+    };
+    loadConfig();
+  }, []);
+
+  // Load the course data file for the selected semester (runs on mount + semester switch)
+  useEffect(() => {
+    if (!configLoaded) return;
+
+    const currentSem = normalizeSemester(selectedSemester);
+    // Skip if we already loaded this semester's data
+    if (loadedSemesterRef.current === currentSem) return;
+
     const loadData = async () => {
       try {
         setIsLoading(true);
-
-        // Step 1: Load config to get available semesters and their data files
         const today = new Date().toISOString().split('T')[0];
-        let dataFile = 'master_courses.json'; // fallback
+        const dataFile = SEMESTER_DATA_FILES[currentSem] || 'master_courses.json';
 
-        try {
-          const configRes = await fetch(`/data/config.json?v=${today}`);
-          if (configRes.ok) {
-            const config = await configRes.json();
-            const published = (config.semesters || []).filter(s => s.published);
-            if (published.length > 0) {
-              SUPPORTED_SEMESTERS = published.map(s => s.term);
-              SEMESTER_DATA_FILES = {};
-              for (const s of published) {
-                SEMESTER_DATA_FILES[s.term] = s.dataFile;
-              }
-              // Use the data file for the currently selected semester, or the first published one
-              const currentSem = normalizeSemester(selectedSemester);
-              dataFile = SEMESTER_DATA_FILES[currentSem] || published[0].dataFile;
-            }
-          }
-        } catch {
-          // Config fetch failed — use defaults
-        }
-
-        // Step 2: Load the course data file
         const processData = (data) => {
           if ('requestIdleCallback' in window) {
             requestIdleCallback(() => {
               setCoursesData(data);
               setIsLoading(false);
+              loadedSemesterRef.current = currentSem;
             }, { timeout: 1000 });
           } else {
             setTimeout(() => {
               setCoursesData(data);
               setIsLoading(false);
+              loadedSemesterRef.current = currentSem;
             }, 0);
           }
         };
@@ -393,7 +407,7 @@ export const AppProvider = ({ children }) => {
     };
 
     loadData();
-  }, []);
+  }, [configLoaded, selectedSemester]);
   
   // Helper to convert time string to minutes for comparison
   const timeStringToMinutes = (timeStr) => {
@@ -479,8 +493,8 @@ export const AppProvider = ({ children }) => {
       // Skip if not matching selected semester
       // Check both current_term and year_term fields
       const termToCheck = course.current_term || course.year_term || '';
-      // Filter for Spring 2026 courses only
-      if (!termToCheck.includes('Spring') || !termToCheck.includes('2026')) {
+      const [semTerm, semYear] = selectedSemester.split(' ');
+      if (!termToCheck.includes(semTerm) || !termToCheck.includes(semYear)) {
         return;
       }
       

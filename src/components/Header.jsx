@@ -3,7 +3,7 @@ import { useAppContext } from "../context/AppContext";
 
 // ===== Header Component =====
 const Header = () => {
-    const { selectedSemester } = useAppContext();
+    const { selectedSemester, supportedSemesters, changeSemester } = useAppContext();
 
     return (
         <header className="border-b px-4 md:px-6 py-4 flex items-center justify-between bg-white" style={{
@@ -18,12 +18,21 @@ const Header = () => {
             <div className="flex flex-col md:flex-row md:space-x-4 items-end">
                 <div className="flex items-center space-x-3 text-base md:text-base">
                     <CalendarDropdown />
-                    <span
-                        className="px-3 py-1.5 rounded text-sm font-medium shadow-sm"
-                        style={{color: 'white', backgroundColor: 'var(--harvard-crimson)'}}
-                    >
-                        {selectedSemester}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                        {supportedSemesters.map(sem => (
+                            <button
+                                key={sem}
+                                onClick={() => changeSemester(sem)}
+                                className="px-3 py-1.5 rounded text-sm font-medium transition-colors cursor-pointer"
+                                style={sem === selectedSemester
+                                    ? { color: 'white', backgroundColor: 'var(--harvard-crimson)' }
+                                    : { color: 'var(--harvard-crimson)', backgroundColor: 'transparent' }
+                                }
+                            >
+                                {sem}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
         </header>

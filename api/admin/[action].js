@@ -13,6 +13,7 @@ import qguideCookieTestHandler from './_qguide-cookie-test.js';
 import qguideUploadHandler from './_qguide-upload.js';
 import qguideScrapeHandler from './_qguide-scrape.js';
 import cookieGetSavedHandler from './_cookie-get-saved.js';
+import setDefaultHandler from './_set-default.js';
 
 const handlers = {
   'login': loginHandler,
@@ -30,6 +31,7 @@ const handlers = {
   'qguide-upload': qguideUploadHandler,
   'qguide-scrape': qguideScrapeHandler,
   'cookie-get-saved': cookieGetSavedHandler,
+  'set-default': setDefaultHandler,
 };
 
 export const config = {
