@@ -61,10 +61,11 @@ export default async function handler(req, res) {
       });
     }
 
-    // Got a page but can't identify it
+    // Got a page but can't identify it — return snippet for debugging
+    const snippet = html.substring(0, 500).replace(/\s+/g, ' ').trim();
     return res.status(200).json({
       valid: false,
-      detail: 'Page loaded but could not verify Q-Guide content. Cookie may be invalid.',
+      detail: `Page loaded (${html.length} chars) but could not verify Q-Guide content. Snippet: "${snippet.substring(0, 200)}..."`,
     });
   } catch (err) {
     return res.status(200).json({
