@@ -364,6 +364,17 @@ export const AppProvider = ({ children }) => {
               const matchingCal = userCalendars.find(cal => cal.semester === configDefault);
               if (matchingCal) {
                 setActiveCalendarId(matchingCal.id);
+              } else {
+                // No calendar for default semester — create one
+                const newCal = {
+                  id: `calendar-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                  name: 'Calendar 1',
+                  semester: configDefault,
+                  courses: [],
+                  hiddenCourses: {},
+                };
+                setUserCalendars(prev => [...prev, newCal]);
+                setActiveCalendarId(newCal.id);
               }
               setSelectedSemester(configDefault);
             }
