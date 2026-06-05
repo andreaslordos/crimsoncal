@@ -60,9 +60,9 @@ export function checkRateLimit(ip) {
   return true;
 }
 
-// GitHub API helper
-const GITHUB_OWNER = 'andreaslordos';
-const GITHUB_REPO = 'crimsoncal';
+// GitHub API helper — owner/repo come from env so the app is portable across forks
+const GITHUB_OWNER = process.env.GITHUB_OWNER || 'andreaslordos';
+const GITHUB_REPO = process.env.GITHUB_REPO || 'crimsoncal';
 
 export async function githubFetch(path, options = {}) {
   const token = process.env.GITHUB_TOKEN;

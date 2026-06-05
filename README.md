@@ -1,6 +1,19 @@
 # CrimsonCal
 
-The most useful course calendar for picking Harvard classes: [crimsoncal.lordos.tech](https://crimsoncal.lordos.tech)
+The most useful course calendar for picking Harvard classes.
+
+## Deployment (Vercel)
+
+Set the following environment variables in your Vercel project:
+
+| Variable | Purpose |
+|---|---|
+| `ADMIN_JWT_SECRET` | Signing secret for admin session JWTs. Generate with `openssl rand -hex 32`. |
+| `ADMIN_PASSWORD` | Password gating the `/keepout` admin panel. |
+| `GITHUB_TOKEN` | Personal access token with `contents:write` on the config repo (used by the admin "publish" action). |
+| `GITHUB_OWNER` | GitHub user/org that hosts the deployed fork (defaults to `andreaslordos` for backward compat). |
+| `GITHUB_REPO` | Repo name (defaults to `crimsoncal`). |
+| `VITE_SITE_URL` | Full URL for social previews (e.g. `https://yourdomain.com`). Substituted into `index.html` at build time. |
 
 ## Features
 
