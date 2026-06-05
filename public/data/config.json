@@ -3,14 +3,14 @@
     {
       "term": "Fall 2026",
       "published": true,
-      "lastScraped": "2026-06-04T14:12:57Z",
-      "courseCount": 3283
+      "lastScraped": "2026-06-05T14:01:20Z",
+      "courseCount": 3640
     },
     {
       "term": "Spring 2026",
       "published": false,
-      "lastScraped": "2026-06-04T14:12:57Z",
-      "courseCount": 4863
+      "lastScraped": "2026-06-05T14:01:20Z",
+      "courseCount": 4705
     }
   ]
 }
