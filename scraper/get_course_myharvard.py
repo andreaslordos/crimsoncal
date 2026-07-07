@@ -459,7 +459,7 @@ class CourseScraper:
 
 
 if __name__ == "__main__":
-    url = "https://beta.my.harvard.edu/course/STAT109A/2025-Fall/001"
+    url = "https://my.harvard.edu/course/STAT109A/2025-Fall/001"
     # Example with debug mode enabled
     scraper = CourseScraper(url, debug=True)
     course_data = scraper.scrape()

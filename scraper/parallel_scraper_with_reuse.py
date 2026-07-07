@@ -39,7 +39,7 @@ class ParallelCourseScraperWithReuse:
             max_retries: Maximum retries per URL
             retry_delay: Base delay between retries (exponential backoff)
         """
-        self.base_url = "https://beta.my.harvard.edu/"
+        self.base_url = "https://my.harvard.edu/"
         self.max_concurrent = max_concurrent
         self.timeout = timeout
         self.max_retries = max_retries

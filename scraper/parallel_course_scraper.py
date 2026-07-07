@@ -45,7 +45,7 @@ class ParallelHarvardCourseScraper:
             term: Term (Fall/Spring)
             school: School code or "All"
         """
-        self.base_url = "https://beta.my.harvard.edu/search/"
+        self.base_url = "https://my.harvard.edu/search/"
         self.max_concurrent = max_concurrent
         self.timeout = timeout
         self.max_retries = max_retries
@@ -82,7 +82,7 @@ class ParallelHarvardCourseScraper:
     async def fetch_multi_section_urls(self, data_url: str) -> List[str]:
         """Fetch section URLs for a multi-section course."""
         try:
-            full_url = f"https://beta.my.harvard.edu{data_url}"
+            full_url = f"https://my.harvard.edu{data_url}"
             async with self.session.get(full_url) as response:
                 if response.status == 200:
                     data = await response.json()

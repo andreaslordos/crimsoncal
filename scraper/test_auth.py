@@ -4,6 +4,7 @@ Quick script to test if authentication cookies are working.
 Tests by fetching a course page and checking if location data is visible.
 """
 
+import re
 import requests
 from bs4 import BeautifulSoup
 from pathlib import Path
@@ -31,11 +32,27 @@ def test_authentication():
     print(f"  Cookie length: {len(cookies)} characters")
     print()
 
-    # Test URLs - courses known to have location data
-    test_urls = [
-        ('https://beta.my.harvard.edu/course/GENED1186/2025-Fall/001', 'GENED1186 - Harvard Hall 201'),
-        ('https://beta.my.harvard.edu/course/COMPSCI2880/2026-Spring/001', 'COMPSCI2880 - To Be Announced'),
-    ]
+    # Pick test courses dynamically from the search API — past-term pages stop
+    # rendering the location section, so hardcoded URLs rot every semester
+    try:
+        search_resp = requests.get(
+            'https://my.harvard.edu/search/?q=&sort=subject_catalog&page=1',
+            headers={'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'},
+            timeout=10,
+        )
+        hits_soup = BeautifulSoup(search_resp.json().get('hits', ''), 'html.parser')
+        seen = []
+        for a in hits_soup.find_all('a', href=re.compile(r'^/course/')):
+            if a['href'] not in seen:
+                seen.append(a['href'])
+        test_urls = [(f'https://my.harvard.edu{h}', h.split('/course/')[1]) for h in seen[:5]]
+    except Exception as e:
+        print(f"❌ ERROR: Could not fetch course list from search API: {e}")
+        return False
+
+    if not test_urls:
+        print("❌ ERROR: Search API returned no courses to test against")
+        return False
 
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -46,7 +63,8 @@ def test_authentication():
     print("Testing authentication with sample courses...\n")
     print("=" * 70)
 
-    all_passed = True
+    any_success = False
+    auth_failure_seen = False
 
     for url, expected_info in test_urls:
         print(f"\nTesting: {expected_info}")
@@ -57,7 +75,6 @@ def test_authentication():
 
             if response.status_code != 200:
                 print(f"❌ FAILED: HTTP {response.status_code}")
-                all_passed = False
                 continue
 
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -66,8 +83,7 @@ def test_authentication():
             location_div = soup.find('div', id='course-location')
 
             if not location_div:
-                print("❌ FAILED: Location div not found")
-                all_passed = False
+                print("⚠️  SKIPPED: Location div not found")
                 continue
 
             # Find the span with location text
@@ -82,31 +98,28 @@ def test_authentication():
                         print(f"❌ FAILED: Authentication required")
                         print(f"   Location shows: '{location_text}'")
                         print(f"   → Cookies are expired or invalid")
-                        all_passed = False
+                        auth_failure_seen = True
                         continue
 
                     # Success - we got location data
                     print(f"✅ SUCCESS: Location extracted")
                     print(f"   Location: '{location_text}'")
+                    any_success = True
                 else:
-                    print("❌ FAILED: Location span not found")
-                    all_passed = False
+                    print("⚠️  SKIPPED: Location span not found")
             else:
-                print("❌ FAILED: Location flex div not found")
-                all_passed = False
+                print("⚠️  SKIPPED: Location flex div not found")
 
         except requests.RequestException as e:
             print(f"❌ FAILED: Network error - {e}")
-            all_passed = False
         except Exception as e:
             print(f"❌ FAILED: Unexpected error - {e}")
-            all_passed = False
 
     print("\n" + "=" * 70)
 
-    if all_passed:
+    if any_success and not auth_failure_seen:
         print("\n🎉 SUCCESS: Authentication is working!")
-        print("   All location data was successfully extracted.")
+        print("   Location data was successfully extracted.")
         print("   You can proceed with scraping.")
         return True
     else:
