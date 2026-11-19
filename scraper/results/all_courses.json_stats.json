@@ -4,9 +4,9 @@
   "parse_failed": 9,
   "not_found": 0,
   "failed": 0,
-  "elapsed_time": 485.3865523338318,
-  "courses_per_second": 20.6000762730712,
-  "timestamp": "2026-11-18T19:25:52.198622",
+  "elapsed_time": 394.7717626094818,
+  "courses_per_second": 25.328559301976377,
+  "timestamp": "2026-11-19T19:32:24.974692",
   "unique_courses": 9089,
   "duplicates_removed": 910
 }
